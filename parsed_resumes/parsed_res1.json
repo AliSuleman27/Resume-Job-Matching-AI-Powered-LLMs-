@@ -1,0 +1,136 @@
+{
+    "basic_info": {
+        "full_name": "Alice Zhang",
+        "current_title": "Machine Learning Engineer",
+        "gender": "Female",
+        "date_of_birth": "1992-05-10",
+        "nationality": "American"
+    },
+    "contact_info": {
+        "email": "alice.zhang@example.com",
+        "phone": "+1-555-867-5309",
+        "address": {
+            "street": "123 Maple Ave",
+            "city": "San Francisco",
+            "state": "CA",
+            "zip_code": "94107",
+            "country": "USA"
+        },
+        "linkedin": "https://www.linkedin.com/in/alicezhang",
+        "github": "https://github.com/alice-ml",
+        "portfolio": "https://alicezhang.ai"
+    },
+    "summary": "Results-driven ML Engineer with 5+ years of experience in building scalable ML pipelines, specializing in NLP and deep learning for enterprise applications.",
+    "skills": [
+        {
+            "skill_name": "Python",
+            "proficiency": "Expert",
+            "category": "Programming",
+            "years_of_experience": 6
+        },
+        {
+            "skill_name": "TensorFlow",
+            "proficiency": "Advanced",
+            "category": "Framework",
+            "years_of_experience": 4
+        },
+        {
+            "skill_name": "NLP",
+            "proficiency": "Advanced",
+            "category": "Domain",
+            "years_of_experience": 5
+        }
+    ],
+    "education": [
+        {
+            "degree": "MS",
+            "field": "Computer Science",
+            "institution": "Stanford University",
+            "start_date": "2016-08",
+            "end_date": "2018-06",
+            "grade": "3.9 GPA",
+            "location": "California, USA",
+            "courses": [
+                "Machine Learning",
+                "Deep Learning",
+                "Natural Language Processing"
+            ]
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Machine Learning Engineer",
+            "company": "OpenAI",
+            "start_date": "2019-03",
+            "end_date": "2023-10",
+            "employment_type": "Full-time",
+            "location": "Remote",
+            "responsibilities": [
+                "Built NLP models for chatbot applications using BERT and GPT architectures",
+                "Optimized training pipelines and reduced inference latency by 40%"
+            ],
+            "skills_used": [
+                "TensorFlow",
+                "Python",
+                "BERT",
+                "Kubernetes"
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "title": "Contextual Resume Ranker",
+            "description": "An NLP-powered system for ranking resumes against job descriptions using BERT embeddings.",
+            "technologies": [
+                "Python",
+                "HuggingFace",
+                "FAISS"
+            ],
+            "role": "Lead ML Engineer",
+            "start_date": "2023-01",
+            "end_date": "2023-04",
+            "link": "https://github.com/alice-ml/resume-ranker"
+        }
+    ],
+    "certifications": [
+        {
+            "title": "TensorFlow Developer Certificate",
+            "issuer": "Google",
+            "issue_date": "2021-06",
+            "expiration_date": "2026-06",
+            "credential_id": "TF-12345",
+            "url": "https://developers.google.com/certification/tensorflow"
+        }
+    ],
+    "publications": [],
+    "languages": [
+        {
+            "language": "English",
+            "proficiency": "Native"
+        },
+        {
+            "language": "Mandarin",
+            "proficiency": "Professional"
+        }
+    ],
+    "interests": [
+        "AI Ethics",
+        "Creative Writing",
+        "Robotics"
+    ],
+    "volunteer_experience": [],
+    "awards": [
+        {
+            "title": "Best Paper Award",
+            "issuer": "ACL",
+            "date": "2022-07",
+            "description": "For paper on Few-Shot Learning in NLP"
+        }
+    ],
+    "links": [
+        {
+            "label": "Portfolio",
+            "url": "https://alicezhang.ai"
+        }
+    ]
+}

@@ -1,0 +1,541 @@
+{
+    "basic_info": {
+        "full_name": "Ali Suleman",
+        "current_title": "Machine Learning Engineer (Trainee)",
+        "gender": null,
+        "date_of_birth": null,
+        "nationality": "Pakistani"
+    },
+    "contact_info": {
+        "email": "alisulemanrajpar27@gmail.com",
+        "phone": "+92-3107744817",
+        "address": {
+            "street": null,
+            "city": "Karachi",
+            "state": null,
+            "zip_code": null,
+            "country": "Pakistan"
+        },
+        "linkedin": "https://www.linkedin.com/in/ali-suleman-a511942aa",
+        "github": "https://github.com/AliSuleman27",
+        "portfolio": null
+    },
+    "summary": null,
+    "skills": [
+        {
+            "skill_name": "Python",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C++",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Dart",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQL",
+            "proficiency": null,
+            "category": "Database Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Bash",
+            "proficiency": null,
+            "category": "Scripting Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "JAVA",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Prolog",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Flutter",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Scikit-Learn",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "NLTK",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SpaCy",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "TensorFlow",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Keras",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Django",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Flask",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "PyTorch",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "OpenCV",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "PyGame",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "GIT",
+            "proficiency": null,
+            "category": "Version Control",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Firebase",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MySQL",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQLite",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Oracle",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MS Excel",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MS Access",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "PowerBI",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "PowerQuery",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Linux",
+            "proficiency": null,
+            "category": "Operating System",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Web",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Windows",
+            "proficiency": null,
+            "category": "Operating System",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "GCP",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Leadership",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Event Management",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Writing",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Public Speaking",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Time Management",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        }
+    ],
+    "education": [
+        {
+            "degree": "Bachelor of Science",
+            "field": "Artificial Intelligence",
+            "institution": "FAST National University Karachi",
+            "start_date": "2022-08-01",
+            "end_date": "2026-08-01",
+            "grade": "3.75/4.0",
+            "location": "Karachi, Pakistan",
+            "courses": [
+                "Operating Systems",
+                "Data Structures",
+                "Analysis Of Algorithms",
+                "Artificial Intelligence",
+                "Machine Learning",
+                "Deep Learning",
+                "Recommendation Systems",
+                "CV",
+                "NLP",
+                "Networking",
+                "Databases"
+            ]
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Machine Learning Engineer (Trainee)",
+            "company": "Nexpred Solutions, Pvt. Ltd.",
+            "start_date": "2025-03-01",
+            "end_date": "2025-05-01",
+            "employment_type": "Full-time",
+            "location": "Remote",
+            "responsibilities": [
+                "Computer Vision Research : Working in the R&D team on designing, evaluating, and deploying computer vision models for real-world applications.",
+                "Model Development and Optimization : Implemented CV pipelines involving image preprocessing, classification, object detection, and verification using deep learning frameworks and nvidia deepstream engines."
+            ],
+            "skills_used": [
+                "Python",
+                "Deep Learning",
+                "Computer Vision"
+            ]
+        },
+        {
+            "job_title": "AI Software Engineer (Intern)",
+            "company": "Wellness Innovations, LLC",
+            "start_date": "2025-01-01",
+            "end_date": "2025-04-01",
+            "employment_type": "Internship",
+            "location": "Remote, United States",
+            "responsibilities": [
+                "AI Agent Development : Built intelligent AI agents i.e. end-to-end database agents using NLP techniques as part of the research and development team."
+            ],
+            "skills_used": [
+                "Python",
+                "NLP",
+                "AI"
+            ]
+        },
+        {
+            "job_title": "Mobile Application Developer - Flutter",
+            "company": "VSL Lab, FAST Karachi",
+            "start_date": "2024-09-01",
+            "end_date": "2025-03-01",
+            "employment_type": "Full-time",
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Responsive UI Development : Designed responsive user interfaces for applications using Flutter.",
+                "Backend and API Integration : Integrated Firebase APIs and managed backend services for real-time updates.",
+                "Cloud & Deployment : Worked on deployment and cloud integration for scalable mobile applications."
+            ],
+            "skills_used": [
+                "Flutter",
+                "Firebase",
+                "Cloud Computing"
+            ]
+        },
+        {
+            "job_title": "Teaching Assistant",
+            "company": "FAST NUCES",
+            "start_date": null,
+            "end_date": null,
+            "employment_type": "Part-time",
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Assisted in Data Structures, Operating Systems, and Artificial Intelligence courses by mentoring students, evaluating projects and quizzes, and supporting lab sessions and programming assignments across multiple semesters."
+            ],
+            "skills_used": [
+                "Teaching",
+                "Mentoring"
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "title": "Document Based QA Chatbot",
+            "description": "Developed a QA chatbot using Langchain, FaissDB for indexing, and LLAMA2 for document understanding. Deployed with Streamlit.",
+            "technologies": [
+                "Python",
+                "Langchain",
+                "LLAMA2",
+                "Streamlit"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Resume\u2013Job Matching System",
+            "description": "Built a bilateral recommendation system to match resumes with job descriptions using Named Entity Recognition (NER) and topic modeling to extract key skills and roles. Employed a constraint-based optimization framework to ensure balanced assignments based on expertise, job coverage, and workload. Modeled the task as a convex cost flow problem for optimal matching, with support for dynamic feedback to refine future recommendations.",
+            "technologies": [
+                "Python",
+                "NLP",
+                "NER",
+                "Topic Modeling",
+                "Optimization"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Realtime Verification for Authorized Person (FACENET)",
+            "description": "Developed a real-time face recognition system to verify authorized personnel using webcam feed. Achieved an accuracy of 92% using a FaceNet embedding-based approach.",
+            "technologies": [
+                "Python",
+                "OpenCV",
+                "Face Recognition"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Ontology Based Course Teacher Assignment",
+            "description": "Designed a detailed ontology of university teachers and courses to support automated teacher-course assignments. Used RDF Turtle for ontology creation and Python for reasoning and answering competency questions. Built a UI with Streamlit for interactive querying and deployed it on a server.",
+            "technologies": [
+                "RDF Turtle",
+                "Python",
+                "Streamlit"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Ecommerce Website",
+            "description": "Built an e-commerce site for a laptop store using Django, with features like cart sessions, user authentication, product reviews, and price prediction via ML.",
+            "technologies": [
+                "Django",
+                "HTML",
+                "CSS",
+                "Bootstrap",
+                "JavaScript",
+                "Python"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Realtime Chatting Application",
+            "description": "Developed a real-time chatting application using Flutter and Firebase.",
+            "technologies": [
+                "Flutter",
+                "Firebase"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "PowerBI Reports and Analysis",
+            "description": "Created detailed PowerBI reports and analysis using MS Excel on various datasets.",
+            "technologies": [
+                "PowerBI",
+                "MS Excel"
+            ],
+            "role": "Analyst",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Music Player",
+            "description": "Developed a music player using Java Swing.",
+            "technologies": [
+                "Java",
+                "Java Swing"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Inventory Management System",
+            "description": "Built an inventory management system using Java.",
+            "technologies": [
+                "Java"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Parallel Analysis of Sorting Algorithms",
+            "description": "Performed parallel analysis of sorting algorithms using OpenMP.",
+            "technologies": [
+                "OpenMP"
+            ],
+            "role": "Analyst",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Divide and Conquer Algorithm Visualizer",
+            "description": "Developed a visualizer for divide and conquer algorithms using Python.",
+            "technologies": [
+                "Python"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        }
+    ],
+    "certifications": [],
+    "publications": [],
+    "languages": [
+        {
+            "language": "English",
+            "proficiency": null
+        },
+        {
+            "language": "Urdu",
+            "proficiency": null
+        }
+    ],
+    "interests": [
+        "Artificial Intelligence",
+        "Machine Learning",
+        "Data Science",
+        "Web Development",
+        "Mobile App Development"
+    ],
+    "volunteer_experience": [
+        {
+            "role": "Outreach Assistant Manager",
+            "organization": "Developer Student Club, FAST Karachi",
+            "start_date": null,
+            "end_date": null,
+            "description": "Engaged with companies to organize events, secure sponsorships, and coordinate job fairs impacting over 3000 students."
+        },
+        {
+            "role": "Co-Lead",
+            "organization": "Microsoft Learn Student Ambassadors (MLSA), FAST Karachi Chapter",
+            "start_date": null,
+            "end_date": null,
+            "description": "Arranged competitions, created problem sets for competitive events, and managed the technical aspects of competition"
+        }
+    ],
+    "awards": [
+        {
+            "title": "3 x 1st Position in AI Department",
+            "issuer": "FAST National University Karachi",
+            "date": null,
+            "description": "Achieved 1st position in AI department for three consecutive semesters."
+        },
+        {
+            "title": "Gold Medalist",
+            "issuer": "FAST National University Karachi",
+            "date": null,
+            "description": "Awarded gold medal for outstanding academic performance."
+        },
+        {
+            "title": "Deans\u2019 List",
+            "issuer": "FAST National University Karachi",
+            "date": null,
+            "description": "Earned name on Dean\u2019s List for academic excellence."
+        }
+    ],
+    "links": [
+        {
+            "label": "LinkedIn",
+            "url": "https://www.linkedin.com/in/ali-suleman-a511942aa"
+        },
+        {
+            "label": "Github",
+            "url": "https://github.com/AliSuleman27"
+        }
+    ]
+}

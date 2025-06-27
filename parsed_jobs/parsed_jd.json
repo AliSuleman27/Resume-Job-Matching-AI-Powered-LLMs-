@@ -1,0 +1,107 @@
+{
+    "job_id": "00000000-0000-0000-0000-000000000001",
+    "title": "Machine Learning Engineer (NLP)",
+    "description": "We are hiring an Entry-Level Machine Learning Engineer with a focus on Natural Language Processing (NLP) to join our growing AI team in Karachi.",
+    "summary": "Entry-Level Machine Learning Engineer with NLP focus",
+    "employment_type": "full_time",
+    "industry": "Artificial Intelligence",
+    "department": "AI / Data Science",
+    "function": "Machine Learning / NLP",
+    "job_level": "entry",
+    "locations": [
+        {
+            "city": "Karachi",
+            "state": null,
+            "country": "Pakistan",
+            "zip_code": null,
+            "remote": false
+        }
+    ],
+    "is_remote": false,
+    "is_hybrid": false,
+    "is_onsite": true,
+    "application_url": null,
+    "posting_date": null,
+    "closing_date": null,
+    "salary": {
+        "currency": null,
+        "min": null,
+        "max": null,
+        "period": "year",
+        "is_estimated": true
+    },
+    "benefits": [
+        "Hands-on mentorship and skill development",
+        "Access to internal workshops and learning resources",
+        "Career path in applied AI/NLP roles"
+    ],
+    "qualifications": {
+        "education": [
+            {
+                "degree": "Bachelor's degree",
+                "field_of_study": "Data Science or Artificial Intelligence",
+                "level": "bachelor"
+            }
+        ],
+        "experience_years": {
+            "min": 0,
+            "max": 0
+        },
+        "certifications": []
+    },
+    "skills": {
+        "mandatory": [
+            "Python",
+            "NLP basics",
+            "text preprocessing"
+        ],
+        "optional": [
+            "scikit-learn",
+            "NLTK",
+            "spaCy",
+            "Git",
+            "Jupyter"
+        ],
+        "tools": []
+    },
+    "languages": [
+        {
+            "language": "English",
+            "proficiency": "conversational"
+        }
+    ],
+    "responsibilities": [
+        "Help gather, clean, and prepare text data for training",
+        "Implement basic NLP tasks such as tokenization, stemming, and vectorization",
+        "Support the team in training and evaluating simple models",
+        "Assist in building and refining chatbot and sentiment analysis modules",
+        "Document your code and findings clearly for future reference",
+        "Stay updated with new tools and practices in the NLP space"
+    ],
+    "requirements": [
+        "Strong foundation in machine learning principles and interest in NLP",
+        "Working knowledge of Python and basic NLP libraries like NLTK or spaCy",
+        "Problem-solving mindset with attention to detail",
+        "Willingness to learn and grow in a team environment"
+    ],
+    "nice_to_have": [
+        "Final year or capstone project in NLP or ML",
+        "Familiarity with pre-trained models or vector embeddings",
+        "Experience with Git, Jupyter Notebooks, or collaborative development"
+    ],
+    "company": {
+        "name": null,
+        "website": null,
+        "description": null
+    },
+    "analytics": {
+        "views": 0,
+        "applications": 0
+    },
+    "metadata": {
+        "created_at": "2024-09-16",
+        "updated_at": "2024-09-16",
+        "created_by_user_id": "00000000-0000-0000-0000-000000000000",
+        "source": "manual_post"
+    }
+}

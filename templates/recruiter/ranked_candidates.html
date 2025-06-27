@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Ranked Candidates - {{ job.parsed_data.title }} | NerdyParser.com{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Section -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+                <nav class="flex mb-4" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="{{ url_for('recruiter_dashboard') }}" class="text-gray-700 hover:text-primary-600">
+                                <i class="fas fa-home mr-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="{{ url_for('view_job', job_id=job._id) }}" class="text-gray-700 hover:text-primary-600">
+                                    {{ job.parsed_data.title }}
+                                </a>
+                            </div>
+                        </li>
+                        <li aria-current="page">
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <span class="text-gray-500">Ranked Candidates</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+                <h1 class="text-3xl font-bold text-gray-900">AI-Ranked Candidates</h1>
+                <p class="text-gray-600 mt-1">{{ job.parsed_data.title }} at {{ job.company }}</p>
+            </div>
+            <div class="mt-4 sm:mt-0 flex space-x-3">
+                <button id="filterToggle" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-filter mr-2"></i> Filters
+                </button>
+                <button id="exportBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+                    <i class="fas fa-download mr-2"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-users text-blue-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Candidates</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.total_candidates }}</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-green-500">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-star text-green-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">High Match (70%+)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.high_score }}</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-star-half-alt text-yellow-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Medium Match (50-70%)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.medium_score }}</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-red-500">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-star text-red-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dt class="text-sm font-medium text-gray-500 truncate">Low Match (<50%)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.low_score }}</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Panel (Hidden by default) -->
+    <div id="filterPanel" class="hidden bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="scoreFilter" class="block text-sm font-medium text-gray-700">Minimum Score</label>
+                <select id="scoreFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                    <option value="0">All Candidates</option>
+                    <option value="0.3">30% and above</option>
+                    <option value="0.5">50% and above</option>
+                    <option value="0.7">70% and above</option>
+                    <option value="0.8">80% and above</option>
+                </select>
+            </div>
+            <div>
+                <label for="statusFilter" class="block text-sm font-medium text-gray-700">Application Status</label>
+                <select id="statusFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                    <option value="">All Statuses</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="shortlisted">Shortlisted</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div>
+                <label for="sortBy" class="block text-sm font-medium text-gray-700">Sort By</label>
+                <select id="sortBy" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                    <option value="overall_score">Overall Score</option>
+                    <option value="applied_at">Application Date</option>
+                    <option value="applicant_name">Name</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candidates List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                <i class="fas fa-ranking-star text-primary-600 mr-2"></i> Candidate Rankings
+            </h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Candidates ranked by AI matching algorithm</p>
+        </div>
+
+        <div id="candidatesList" class="divide-y divide-gray-200">
+            {% for candidate in candidates %}
+            <div class="candidate-item px-4 py-6 sm:px-6 hover:bg-gray-50 transition-colors duration-150" 
+                 data-score="{{ candidate.overall_score }}" 
+                 data-status="{{ candidate.status }}"
+                 data-name="{{ candidate.applicant_name }}">
+                
+                <!-- Candidate Header with Score -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-shrink-0">
+                            <div class="h-12 w-12 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center">
+                                <span class="text-white font-semibold text-lg">
+                                    {{ candidate.applicant_name[0].upper() }}
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-900">{{ candidate.applicant_name }}</h4>
+                            <p class="text-sm text-gray-500">Applied {{ candidate.applied_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Overall Score Badge -->
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-500">Overall Match</span>
+                                <div class="px-3 py-1 rounded-full text-sm font-semibold
+                                    {% if candidate.overall_score >= 0.8 %}bg-green-100 text-green-800
+                                    {% elif candidate.overall_score >= 0.7 %}bg-blue-100 text-blue-800
+                                    {% elif candidate.overall_score >= 0.5 %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ (candidate.overall_score * 100) | round(1) }}%
+                                </div>
+                            </div>
+                        </div>
+                        <button class="toggle-details text-gray-400 hover:text-primary-600 transition-colors">
+                            <i class="fas fa-chevron-down text-xl transform transition-transform duration-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Metrics Row -->
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Skills</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.skills * 100) | round(0) }}%
+                        </div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Education</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.education * 100) | round(0) }}%
+                        </div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Experience Domain Match</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.experience_title * 100) | round(0) }}%
+                        </div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Experience Responsibilities Match</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.experience_responsibilities * 100) | round(0) }}%
+                        </div>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Projects</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.projects * 100) | round(0) }}%
+                        </div>
+                    </div>
+                    
+                    <div class="text-center p-3 bg-gray-50 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900">Summary</div>
+                        <div class="text-lg font-semibold text-primary-600">
+                            {{ (candidate.section_scores.summary * 100) | round(0) }}%
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Detailed Analysis (Hidden by default) -->
+                <div class="details-panel hidden">
+                    <!-- Constraint Analysis -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <h5 class="text-md font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-clipboard-check text-primary-600 mr-2"></i>Constraint Analysis
+                        </h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% for key, constraint in candidate.constraint_results.items() %}
+                            {% if key != 'overall' %}
+                            <div class="bg-white p-3 rounded border">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-medium text-gray-900 capitalize">{{ key.replace('_', ' ') }}</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded
+                                        {% if constraint.normalized_score >= 0.8 %}bg-green-100 text-green-800
+                                        {% elif constraint.normalized_score >= 0.6 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ (constraint.normalized_score * 100) | round(0) }}%
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600">{{ constraint.explanation }}</p>
+                                {% if constraint.weight > 0 %}
+                                <div class="mt-2 text-xs text-gray-500">Weight: {{ (constraint.weight * 100) | round(0) }}%</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                        <div class="flex space-x-2">
+                            <button class="view-resume-btn px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
+                                    data-resume-id="{{ candidate.resume_id }}">
+                                <i class="fas fa-file-alt mr-2"></i>View Resume
+                            </button>
+                            <button class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
+                                <i class="fas fa-check mr-2"></i>Shortlist
+                            </button>
+                            <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-envelope mr-2"></i>Contact
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Application ID: {{ candidate.application_id }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not candidates %}
+        <div class="px-4 py-12 sm:px-6 text-center">
+            <i class="fas fa-users text-gray-300 text-4xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900">No candidates found</h3>
+            <p class="mt-1 text-sm text-gray-500">No applications have been submitted for this job yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resume Modal -->
+<div id="resumeModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Candidate Resume</h3>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="resumeContent" class="max-h-96 overflow-y-auto">
+            <!-- Resume content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle filter panel
+    const filterToggle = document.getElementById('filterToggle');
+    const filterPanel = document.getElementById('filterPanel');
+    
+    filterToggle.addEventListener('click', function() {
+        filterPanel.classList.toggle('hidden');
+    });
+
+    // Toggle candidate details
+    document.querySelectorAll('.toggle-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const candidateItem = this.closest('.candidate-item');
+            const detailsPanel = candidateItem.querySelector('.details-panel');
+            const icon = this.querySelector('i');
+            
+            detailsPanel.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        });
+    });
+
+    // Filter functionality
+    const scoreFilter = document.getElementById('scoreFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const sortBy = document.getElementById('sortBy');
+    
+    function filterCandidates() {
+        const minScore = parseFloat(scoreFilter.value);
+        const statusValue = statusFilter.value;
+        const candidates = Array.from(document.querySelectorAll('.candidate-item'));
+        
+        candidates.forEach(candidate => {
+            const score = parseFloat(candidate.dataset.score);
+            const status = candidate.dataset.status;
+            
+            let show = true;
+            
+            if (score < minScore) show = false;
+            if (statusValue && status !== statusValue) show = false;
+            
+            candidate.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    function sortCandidates() {
+        const sortValue = sortBy.value;
+        const candidatesList = document.getElementById('candidatesList');
+        const candidates = Array.from(candidatesList.querySelectorAll('.candidate-item'));
+        
+        candidates.sort((a, b) => {
+            if (sortValue === 'overall_score') {
+                return parseFloat(b.dataset.score) - parseFloat(a.dataset.score);
+            } else if (sortValue === 'applicant_name') {
+                return a.dataset.name.localeCompare(b.dataset.name);
+            } else if (sortValue === 'applied_at') {
+                // This would need additional data attributes for proper sorting
+                return 0;
+            }
+        });
+        
+        candidates.forEach(candidate => {
+            candidatesList.appendChild(candidate);
+        });
+    }
+    
+    scoreFilter.addEventListener('change', filterCandidates);
+    statusFilter.addEventListener('change', filterCandidates);
+    sortBy.addEventListener('change', sortCandidates);
+
+    // Resume modal functionality
+    const modal = document.getElementById('resumeModal');
+    const closeModal = document.getElementById('closeModal');
+    const resumeContent = document.getElementById('resumeContent');
+    
+    document.querySelectorAll('.view-resume-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const resumeId = this.dataset.resumeId;
+            
+            // Show loading state
+            resumeContent.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i><p class="mt-2 text-gray-500">Loading resume...</p></div>';
+            modal.classList.remove('hidden');
+            
+            // Fetch resume details
+            fetch(`/api/candidate/${resumeId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayResumeContent(data.candidate);
+                    } else {
+                        resumeContent.innerHTML = '<div class="text-center py-8 text-red-500">Error loading resume</div>';
+                    }
+                })
+                .catch(error => {
+                    resumeContent.innerHTML = '<div class="text-center py-8 text-red-500">Error loading resume</div>';
+                });
+        });
+    });
+    
+    closeModal.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+    
+    function displayResumeContent(candidate) {
+        let html = `
+            <div class="space-y-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg">${candidate.basic_info?.full_name || 'N/A'}</h4>
+                    <p class="text-gray-600">${candidate.basic_info?.email || 'N/A'}</p>
+                    <p class="text-gray-600">${candidate.basic_info?.phone || 'N/A'}</p>
+                </div>
+        `;
+        
+        if (candidate.experience && candidate.experience.length > 0) {
+            html += `
+                <div>
+                    <h5 class="font-semibold mb-3">Experience</h5>
+                    <div class="space-y-3">
+            `;
+            candidate.experience.forEach(exp => {
+                html += `
+                    <div class="border-l-2 border-primary-200 pl-4">
+                        <h6 class="font-medium">${exp.job_title || 'N/A'}</h6>
+                        <p class="text-sm text-gray-600">${exp.company || 'N/A'}</p>
+                        <p class="text-sm text-gray-500">${exp.start_date || 'N/A'} - ${exp.end_date || 'Present'}</p>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+        }
+        
+        if (candidate.skills && candidate.skills.length > 0) {
+            html += `
+                <div>
+                    <h5 class="font-semibold mb-3">Skills</h5>
+                    <div class="flex flex-wrap gap-2">
+            `;
+            candidate.skills.forEach(skill => {
+                html += `<span class="px-2 py-1 bg-primary-100 text-primary-800 text-sm rounded">${skill.skill_name || skill}</span>`;
+            });
+            html += `</div></div>`;
+        }
+        
+        html += `</div>`;
+        resumeContent.innerHTML = html;
+    }
+
+    // Export functionality
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        // Implement export functionality
+        alert('Export functionality would be implemented here');
+    });
+});
+</script>
+
+<style>
+.rotate-180 {
+    transform: rotate(180deg);
+}
+
+.candidate-item {
+    transition: all 0.2s ease-in-out;
+}
+
+.candidate-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.details-panel {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+</style>
+{% endblock %}

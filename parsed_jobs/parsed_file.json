@@ -1,0 +1,119 @@
+{
+    "job_id": "00000000-0000-0000-0000-000000000001",
+    "title": "Machine Learning Engineer",
+    "description": "We are seeking a highly motivated Machine Learning Engineer to join our AI/ML team.",
+    "summary": "Design, develop, and deploy scalable machine learning models and systems that power intelligent applications.",
+    "employment_type": "full_time",
+    "industry": "Technology",
+    "department": "AI/ML",
+    "function": "Engineering",
+    "job_level": "mid",
+    "locations": [
+        {
+            "city": null,
+            "state": null,
+            "country": null,
+            "zip_code": null,
+            "remote": false
+        }
+    ],
+    "is_remote": false,
+    "is_hybrid": true,
+    "is_onsite": true,
+    "application_url": null,
+    "posting_date": null,
+    "closing_date": null,
+    "salary": {
+        "currency": "USD",
+        "min": null,
+        "max": null,
+        "period": "year",
+        "is_estimated": true
+    },
+    "benefits": [
+        "Competitive salary and equity package",
+        "Flexible working hours and remote options",
+        "Health, dental, and vision insurance",
+        "Career development support and learning budget"
+    ],
+    "qualifications": {
+        "education": [
+            {
+                "degree": "Bachelor's or Master's",
+                "field_of_study": "Computer Science, Engineering, Mathematics, or a related field",
+                "level": "bachelor"
+            }
+        ],
+        "experience_years": {
+            "min": 2,
+            "max": null
+        },
+        "certifications": []
+    },
+    "skills": {
+        "mandatory": [
+            "Python",
+            "ML libraries (e.g., TensorFlow, PyTorch, Scikit-learn)",
+            "Algorithms",
+            "Data structures",
+            "Software design",
+            "ML lifecycle tools (e.g., MLflow, Airflow, or Kubeflow)",
+            "Cloud platforms (e.g., AWS, GCP, Azure)",
+            "Containerization (Docker, Kubernetes)"
+        ],
+        "optional": [
+            "NLP",
+            "Computer vision",
+            "Time-series analysis",
+            "Big data tools (Spark, Hadoop)",
+            "Data warehousing solutions"
+        ],
+        "tools": [
+            "TensorFlow",
+            "PyTorch",
+            "Scikit-learn",
+            "MLflow",
+            "Airflow",
+            "Kubeflow",
+            "Docker",
+            "Kubernetes"
+        ]
+    },
+    "languages": [],
+    "responsibilities": [
+        "Design and implement end-to-end machine learning pipelines",
+        "Collaborate with data scientists, data engineers, and product teams",
+        "Optimize ML models for performance, scalability, and accuracy",
+        "Monitor and maintain deployed models",
+        "Conduct A/B testing and statistical analysis",
+        "Work with large-scale datasets",
+        "Stay updated with state-of-the-art machine learning research and techniques",
+        "Develop APIs and services to expose machine learning functionality"
+    ],
+    "requirements": [
+        "Bachelor's or Master's degree in Computer Science, Engineering, Mathematics, or a related field",
+        "2+ years of experience in developing and deploying machine learning models in production",
+        "Proficiency in Python and ML libraries"
+    ],
+    "nice_to_have": [
+        "Experience with NLP, computer vision, or time-series analysis",
+        "Exposure to big data tools and data warehousing solutions",
+        "Understanding of data privacy, model explainability, and responsible AI principles",
+        "Publications or contributions to open-source ML projects"
+    ],
+    "company": {
+        "name": null,
+        "website": null,
+        "description": null
+    },
+    "analytics": {
+        "views": 0,
+        "applications": 0
+    },
+    "metadata": {
+        "created_at": "2024-05-15",
+        "updated_at": "2024-05-15",
+        "created_by_user_id": "00000000-0000-0000-0000-000000000000",
+        "source": "manual_post"
+    }
+}

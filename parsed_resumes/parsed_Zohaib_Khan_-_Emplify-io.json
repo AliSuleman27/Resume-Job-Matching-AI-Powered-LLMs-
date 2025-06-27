@@ -1,0 +1,376 @@
+{
+    "basic_info": {
+        "full_name": "Zohaib Khan",
+        "current_title": "Research Assistant/ Lab Instructor",
+        "gender": null,
+        "date_of_birth": null,
+        "nationality": "Pakistani"
+    },
+    "contact_info": {
+        "email": "me_zohaib@ymail.com",
+        "phone": "+92-334-1251568",
+        "address": {
+            "street": "House No. J-6/3 Pak Jamhoria Colony near P.N. Shifa Hospital Karachi Cantt",
+            "city": "Karachi",
+            "state": null,
+            "zip_code": "75530",
+            "country": "Pakistan"
+        },
+        "linkedin": "",
+        "github": "",
+        "portfolio": ""
+    },
+    "summary": "",
+    "skills": [
+        {
+            "skill_name": "Information Retrieval and Mining",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Artificial Intelligence",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Software Engineering",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Machine Learning",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Data Management and Information Retrieval",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C++",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C#",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Matlab",
+            "proficiency": "Beginner",
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQL",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MS SQL Server",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Oracle",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Access",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "HTML",
+            "proficiency": null,
+            "category": "Web Development",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "CSS3",
+            "proficiency": null,
+            "category": "Web Development",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MS Office",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MS Project",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Visio",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Visual Studio",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "DevC++",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        }
+    ],
+    "education": [
+        {
+            "degree": "Bachelor's",
+            "field": "Computer Science",
+            "institution": "Federal Urdu University of Arts, Science and Technology",
+            "start_date": "2012-01-01",
+            "end_date": "2016-12-31",
+            "grade": "3.79/4.0",
+            "location": "Karachi, Pakistan",
+            "courses": [
+                "Object Oriented Programming",
+                "Database Management Systems",
+                "Software Engineering-I",
+                "Data Structures",
+                "Calculus",
+                "Operating Systems",
+                "Artificial Intelligence",
+                "Design & Analysis of Algorithms",
+                "Software Engineering-II",
+                "Data Mining"
+            ]
+        },
+        {
+            "degree": "Pre-Engineering",
+            "field": null,
+            "institution": "F.G Boys Inter College Karachi Cantt",
+            "start_date": "2009-01-01",
+            "end_date": "2011-12-31",
+            "grade": null,
+            "location": "Karachi, Pakistan",
+            "courses": []
+        },
+        {
+            "degree": "Science",
+            "field": null,
+            "institution": "Ever Shine Govt. Boys Secondary School Karachi",
+            "start_date": "2007-01-01",
+            "end_date": "2009-12-31",
+            "grade": null,
+            "location": "Karachi, Pakistan",
+            "courses": []
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Tuition Tutor",
+            "company": "N/A",
+            "start_date": "2009-01-01",
+            "end_date": null,
+            "employment_type": "Part-time",
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Teaching different classes from Beginner to Inter"
+            ],
+            "skills_used": []
+        },
+        {
+            "job_title": "School Teacher",
+            "company": "Star Academy Secondary School",
+            "start_date": "2011-09-01",
+            "end_date": null,
+            "employment_type": "Full-time",
+            "location": "Sultanabad Karachi",
+            "responsibilities": [
+                "Teaching different classes from 6 to 10 (Matric)"
+            ],
+            "skills_used": []
+        }
+    ],
+    "projects": [
+        {
+            "title": "Some Modules of School Management System (SMS)",
+            "description": "Developing Computer Based Desktop Application for Administration of a school",
+            "technologies": [
+                "C#.Net",
+                "MS Access"
+            ],
+            "role": "Team Lead",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Matrix Calculator",
+            "description": "",
+            "technologies": [
+                "C",
+                "C++",
+                "C#"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Fibonacci series",
+            "description": "",
+            "technologies": [
+                "C",
+                "C++",
+                "C#"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Copy of Microsoft Notepad",
+            "description": "",
+            "technologies": [
+                "C#"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Simple Picture Viewer",
+            "description": "",
+            "technologies": [
+                "C#"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Calculator",
+            "description": "",
+            "technologies": [
+                "C#"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "ZAWS Process Model",
+            "description": "",
+            "technologies": [
+                "MS Project"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        },
+        {
+            "title": "Project Scheduling",
+            "description": "",
+            "technologies": [
+                "MS Project"
+            ],
+            "role": "",
+            "start_date": null,
+            "end_date": null,
+            "link": ""
+        }
+    ],
+    "certifications": [
+        {
+            "title": ".NET Framework 4.5 (Windows Application Development)",
+            "issuer": "CEP (Continuing Education Program), SSUET Karachi",
+            "issue_date": "2013-04-01",
+            "expiration_date": null,
+            "credential_id": "",
+            "url": ""
+        }
+    ],
+    "publications": [],
+    "languages": [
+        {
+            "language": "English",
+            "proficiency": "Working knowledge"
+        }
+    ],
+    "interests": [
+        "Current affairs",
+        "Travelling",
+        "Reading",
+        "Listening Songs",
+        "Making new friends",
+        "Social networking",
+        "Learning from every possible source of my interests",
+        "Searching for new future technology"
+    ],
+    "volunteer_experience": [
+        {
+            "role": "Volunteer (Team Leader)",
+            "organization": "All Karachi Debate Competition",
+            "start_date": null,
+            "end_date": null,
+            "description": "Supported administrative activities, and Manage other Team Leaders Activities"
+        },
+        {
+            "role": "University Ambassador",
+            "organization": "Streebo Developers Day2014",
+            "start_date": null,
+            "end_date": null,
+            "description": ""
+        },
+        {
+            "role": "Volunteer",
+            "organization": "ICICTT Conference",
+            "start_date": "2013-09-01",
+            "end_date": null,
+            "description": "Supported administrative activities related to the Conference"
+        },
+        {
+            "role": "Batch and Class Representative",
+            "organization": "FUUAST",
+            "start_date": null,
+            "end_date": null,
+            "description": ""
+        },
+        {
+            "role": "President",
+            "organization": "FUUASTCS Society",
+            "start_date": null,
+            "end_date": null,
+            "description": ""
+        }
+    ],
+    "awards": [],
+    "links": []
+}

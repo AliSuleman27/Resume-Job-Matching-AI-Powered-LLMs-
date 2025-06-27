@@ -1,0 +1,138 @@
+{
+    "basic_info": {
+        "full_name": "Maria Gonzalez",
+        "current_title": "AI Research Engineer",
+        "gender": "Female",
+        "date_of_birth": "1990-02-14",
+        "nationality": "Spanish"
+    },
+    "contact_info": {
+        "email": "maria.g@example.com",
+        "phone": "+34-612345678",
+        "address": {
+            "street": "45 Innovation Street",
+            "city": "Barcelona",
+            "state": "Catalonia",
+            "zip_code": "08007",
+            "country": "Spain"
+        },
+        "linkedin": "https://linkedin.com/in/maria-gonzalez",
+        "github": "https://github.com/mariag-ai",
+        "portfolio": "https://mariagonzalez.ai"
+    },
+    "summary": "AI Research Engineer with strong academic and industrial experience in representation learning, active learning, and graph-based ML.",
+    "skills": [
+        {
+            "skill_name": "Graph Neural Networks",
+            "proficiency": "Advanced",
+            "category": "ML Technique",
+            "years_of_experience": 3
+        },
+        {
+            "skill_name": "Scikit-learn",
+            "proficiency": "Expert",
+            "category": "Library",
+            "years_of_experience": 5
+        },
+        {
+            "skill_name": "Docker",
+            "proficiency": "Intermediate",
+            "category": "DevOps",
+            "years_of_experience": 2
+        }
+    ],
+    "education": [
+        {
+            "degree": "PhD",
+            "field": "Artificial Intelligence",
+            "institution": "University of Barcelona",
+            "start_date": "2015-09",
+            "end_date": "2019-12",
+            "grade": "Distinction",
+            "location": "Barcelona, Spain",
+            "courses": [
+                "Graph Theory",
+                "Advanced Machine Learning",
+                "Bayesian Inference"
+            ]
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "AI Research Engineer",
+            "company": "Meta AI",
+            "start_date": "2020-01",
+            "end_date": "Present",
+            "employment_type": "Full-time",
+            "location": "Remote",
+            "responsibilities": [
+                "Published 4+ papers in top-tier ML conferences",
+                "Built semi-supervised learning models using GNNs for social network data"
+            ],
+            "skills_used": [
+                "PyTorch Geometric",
+                "Python",
+                "GraphQL"
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "title": "Active Learning for GNNs",
+            "description": "Proposed a novel framework for node classification with limited labels.",
+            "technologies": [
+                "PyTorch",
+                "GNN",
+                "Jupyter"
+            ],
+            "role": "Principal Investigator",
+            "start_date": "2021-05",
+            "end_date": "2022-01",
+            "link": "https://github.com/mariag-ai/active-gnn"
+        }
+    ],
+    "certifications": [],
+    "publications": [
+        {
+            "title": "Graph Active Learning with Adaptive Queries",
+            "journal": "NeurIPS",
+            "authors": [
+                "Maria Gonzalez",
+                "James Wu"
+            ],
+            "year": 2022,
+            "doi": "10.1234/neurips.2022.45678",
+            "url": "https://neurips.cc/graph-active-learning"
+        }
+    ],
+    "languages": [
+        {
+            "language": "Spanish",
+            "proficiency": "Native"
+        },
+        {
+            "language": "English",
+            "proficiency": "Professional"
+        }
+    ],
+    "interests": [
+        "Graph Theory",
+        "Scientific Visualization",
+        "Cooking"
+    ],
+    "volunteer_experience": [],
+    "awards": [
+        {
+            "title": "NeurIPS Best Reviewer",
+            "issuer": "NeurIPS",
+            "date": "2023-12",
+            "description": "Recognized for outstanding peer review contributions"
+        }
+    ],
+    "links": [
+        {
+            "label": "Research Portfolio",
+            "url": "https://mariagonzalez.ai"
+        }
+    ]
+}

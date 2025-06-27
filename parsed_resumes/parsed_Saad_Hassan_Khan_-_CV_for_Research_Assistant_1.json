@@ -1,0 +1,276 @@
+{
+    "basic_info": {
+        "full_name": "Saad Hassan Khan",
+        "current_title": null,
+        "gender": null,
+        "date_of_birth": "1990-04-03",
+        "nationality": "Pakistani"
+    },
+    "contact_info": {
+        "email": "Saadhassan@live.co.uk",
+        "phone": "03364214764",
+        "address": {
+            "street": "HOUSE # 1. STREET # 8. FASIAL TOWN, BREWERY ROAD",
+            "city": "QUETTA",
+            "state": "BALUCHISTAN",
+            "zip_code": null,
+            "country": "Pakistan"
+        },
+        "linkedin": null,
+        "github": null,
+        "portfolio": null
+    },
+    "summary": null,
+    "skills": [
+        {
+            "skill_name": "Mobile Software Development",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "DATABASE management",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Web Development",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MATLAB",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Android and Windows Phone 8 Interfaces",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Operating Systems",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Microsoft Office Suite",
+            "proficiency": null,
+            "category": "Technical",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "English",
+            "proficiency": "Excellent",
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Urdu",
+            "proficiency": "Excellent",
+            "category": "Language",
+            "years_of_experience": null
+        }
+    ],
+    "education": [
+        {
+            "degree": "BS (Electrical Engineering)",
+            "field": "Electrical Engineering",
+            "institution": "University of Engineering and Technology (UET) Lahore",
+            "start_date": "2009-01-01",
+            "end_date": "2014-01-01",
+            "grade": "2.5/4.00",
+            "location": "Lahore, Pakistan",
+            "courses": [
+                "Communication Skills",
+                "Electronic Circuit Design",
+                "Data Communication & Networking",
+                "Professional & Social Ethics",
+                "Digital Signal Processing",
+                "Operating Systems",
+                "Computer Architecture",
+                "Data Base",
+                "Comp Networking"
+            ]
+        },
+        {
+            "degree": "FSc (Pre-Engineering)",
+            "field": "Pre-Engineering",
+            "institution": "Board of Intermediate and Secondary Education, Quetta",
+            "start_date": "2007-01-01",
+            "end_date": "2008-01-01",
+            "grade": "78%",
+            "location": "Quetta, Pakistan",
+            "courses": []
+        },
+        {
+            "degree": "Matriculation (Computer)",
+            "field": "Computer",
+            "institution": "Board of Intermediate and Secondary Education, Quetta",
+            "start_date": "2005-01-01",
+            "end_date": "2006-01-01",
+            "grade": "70%",
+            "location": "Quetta, Pakistan",
+            "courses": []
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Intern",
+            "company": "HUAWEI Center",
+            "start_date": "2012-01-01",
+            "end_date": "2012-12-31",
+            "employment_type": "Internship",
+            "location": "Lahore, Pakistan",
+            "responsibilities": [
+                "Worked in HUAWEI Center in CVAR (Centre for Visualization, Analysis and Research) Lab",
+                "Learned about Mobile phone interfacing, Software Development, Database management, Web Designing"
+            ],
+            "skills_used": [
+                "Mobile Software Development",
+                "DATABASE management",
+                "Web Development"
+            ]
+        },
+        {
+            "job_title": "Intern",
+            "company": "CVAR (Center for Visualization, Analysis and Research)",
+            "start_date": "2013-01-01",
+            "end_date": "2013-12-31",
+            "employment_type": "Internship",
+            "location": "Lahore, Pakistan",
+            "responsibilities": [
+                "Worked in CVAR (Center for Visualization, Analysis and Research) in University Of Engineering and Technology (UET), Lahore"
+            ],
+            "skills_used": []
+        }
+    ],
+    "projects": [
+        {
+            "title": "Mobile Phone Based Disease Investigation and Data Collection",
+            "description": "Developed a mobile app for disease investigation and data collection",
+            "technologies": [
+                "Mobile Software Development",
+                "DATABASE management"
+            ],
+            "role": "Developer",
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "IC\u2019s Trainers",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "NOT, AND, OR, etc\u2026 IC\u2019s Checker trainer",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Remote control Plane",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Developing a website and Data management",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Audio Amplifiers",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Digital clock",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Operational Amplifier",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Line follower Robot by using 8051 Controller",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Bus station database system",
+            "description": null,
+            "technologies": [],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        }
+    ],
+    "certifications": [],
+    "publications": [],
+    "languages": [
+        {
+            "language": "Urdu",
+            "proficiency": "Excellent"
+        },
+        {
+            "language": "English",
+            "proficiency": "Excellent"
+        }
+    ],
+    "interests": [
+        "Reading",
+        "Traveling",
+        "Cricket"
+    ],
+    "volunteer_experience": [
+        {
+            "role": "Member",
+            "organization": "IET Society of UET Lahore",
+            "start_date": "2010-01-01",
+            "end_date": "2013-12-31",
+            "description": "Participated in organization of events"
+        }
+    ],
+    "awards": [],
+    "links": []
+}

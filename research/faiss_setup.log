@@ -1,0 +1,291 @@
+2025-06-03 02:41:07,386 - INFO - Connected to MongoDB successfully
+2025-06-03 02:41:08,696 - INFO - Retrieved 14 resumes from MongoDB
+2025-06-03 02:43:26,807 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 02:43:26,811 - INFO - Use pytorch device_name: cpu
+2025-06-03 02:43:26,812 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 02:43:33,132 - INFO - FAISS Manager initialized successfully
+2025-06-03 02:44:06,637 - INFO - Retrieved 14 resumes from MongoDB
+2025-06-03 02:57:30,446 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 02:57:30,447 - INFO - Use pytorch device_name: cpu
+2025-06-03 02:57:30,448 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 02:57:36,127 - INFO - FAISS Manager initialized successfully
+2025-06-03 02:57:46,427 - ERROR - Failed to add embeddings for resume 68239302fa72d6be02ad478f: Error in virtual void faiss::Index::add_with_ids(faiss::idx_t, const float*, const faiss::idx_t*) at /project/faiss/faiss/Index.cpp:45: add_with_ids not implemented for this type of index
+2025-06-03 02:58:47,689 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 02:58:47,690 - INFO - Use pytorch device_name: cpu
+2025-06-03 02:58:47,690 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 02:58:52,726 - INFO - FAISS Manager initialized successfully
+2025-06-03 02:58:59,660 - ERROR - Failed to remove old embeddings for 68239302fa72d6be02ad478f: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2025-06-03 03:03:43,453 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 03:03:43,455 - INFO - Use pytorch device_name: cpu
+2025-06-03 03:03:43,455 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 03:03:50,925 - INFO - FAISS Manager initialized successfully
+2025-06-03 03:06:35,775 - INFO - Retrieved 6 jobs from MongoDB
+2025-06-03 03:07:53,341 - INFO - Connected to MongoDB successfully
+2025-06-03 03:07:55,463 - INFO - Retrieved 14 resumes from MongoDB
+2025-06-03 03:08:06,776 - INFO - Retrieved 6 jobs from MongoDB
+2025-06-03 03:08:33,970 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 03:08:33,971 - INFO - Use pytorch device_name: cpu
+2025-06-03 03:08:33,972 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 03:08:40,872 - INFO - FAISS Manager initialized successfully
+2025-06-03 03:08:43,787 - INFO - Retrieved 6 jobs from MongoDB
+2025-06-03 16:27:29,722 - INFO - Connected to MongoDB successfully
+2025-06-03 16:27:31,463 - INFO - Retrieved 14 resumes from MongoDB
+2025-06-03 16:27:46,093 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 16:27:46,095 - INFO - Use pytorch device_name: cpu
+2025-06-03 16:27:46,096 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 16:27:50,156 - INFO - FAISS Manager initialized successfully
+2025-06-03 16:28:02,787 - INFO - Retrieved 6 jobs from MongoDB
+2025-06-03 16:29:13,558 - INFO - Connected to MongoDB successfully
+2025-06-03 16:48:11,787 - INFO - Retrieved 6 jobs from MongoDB
+2025-06-03 16:51:31,687 - WARNING - No applicant resumes found for job 65f123456789abcdef123456
+2025-06-03 16:51:47,692 - INFO - Ranking 2 resumes for job 6823c6821911bfb1a8428748
+2025-06-03 16:51:47,694 - INFO - Successfully ranked 2 resumes for job 6823c6821911bfb1a8428748
+2025-06-03 16:56:04,326 - INFO - Retrieved 14 resumes from MongoDB
+2025-06-03 16:56:54,462 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 16:57:03,349 - WARNING - No applicant resumes found for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:03:27,433 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:03:49,865 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:03:49,866 - WARNING - No embeddings found for resume 683ee3d172bd949dd6fb1031
+2025-06-03 17:03:49,866 - WARNING - No embeddings found for resume 683ee42a72bd949dd6fb1033
+2025-06-03 17:03:49,866 - WARNING - No embeddings found for resume 683ee3ae72bd949dd6fb1030
+2025-06-03 17:03:49,867 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:03:57,073 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:03:57,074 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:03:57,075 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:04:01,003 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:04:24,307 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:04:24,308 - WARNING - No embeddings found for resume 683ee3d172bd949dd6fb1031
+2025-06-03 17:04:24,308 - WARNING - No embeddings found for resume 683ee42a72bd949dd6fb1033
+2025-06-03 17:04:24,309 - WARNING - No embeddings found for resume 683ee3ae72bd949dd6fb1030
+2025-06-03 17:04:24,309 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:04:33,076 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:04:33,077 - WARNING - No embeddings found for resume 683ee3d172bd949dd6fb1031
+2025-06-03 17:04:33,077 - WARNING - No embeddings found for resume 683ee42a72bd949dd6fb1033
+2025-06-03 17:04:33,077 - WARNING - No embeddings found for resume 683ee3ae72bd949dd6fb1030
+2025-06-03 17:04:33,078 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:04:51,838 - INFO - Connected to MongoDB successfully
+2025-06-03 17:04:52,754 - INFO - Retrieved 17 resumes from MongoDB
+2025-06-03 17:04:56,216 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:04:56,217 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:04:56,218 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:04:59,372 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:05:12,236 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:05:27,581 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:05:27,583 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:08:21,171 - INFO - Connected to MongoDB successfully
+2025-06-03 17:10:24,139 - INFO - Connected to MongoDB successfully
+2025-06-03 17:19:40,217 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:19:40,219 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:19:40,219 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:19:44,458 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:19:58,436 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:20:09,321 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:20:09,324 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:26:19,771 - INFO - Connected to MongoDB successfully
+2025-06-03 17:26:19,778 - INFO - Retrieved 1 resumes from MongoDB
+2025-06-03 17:26:19,828 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:26:19,829 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:26:19,829 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:26:23,167 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:26:23,317 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:26:23,471 - INFO - Ranking 4 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:26:23,471 - WARNING - No embeddings found for resume 683ee3d172bd949dd6fb1031
+2025-06-03 17:26:23,472 - WARNING - No embeddings found for resume 683ee42a72bd949dd6fb1033
+2025-06-03 17:26:23,472 - WARNING - No embeddings found for resume 683ee3ae72bd949dd6fb1030
+2025-06-03 17:26:23,473 - INFO - Successfully ranked 4 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:27:53,543 - WARNING - Weights don't sum to 1.0: 2.0
+2025-06-03 17:28:05,356 - INFO - Connected to MongoDB successfully
+2025-06-03 17:28:06,826 - INFO - Retrieved 1 resumes from MongoDB
+2025-06-03 17:28:11,754 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:28:11,757 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:28:11,757 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:28:14,965 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:28:18,367 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:29:38,426 - INFO - Connected to MongoDB successfully
+2025-06-03 17:29:38,436 - INFO - Retrieved 1 resumes from MongoDB
+2025-06-03 17:29:38,512 - INFO - Initializing FAISS Manager with model: all-MiniLM-L6-v2
+2025-06-03 17:29:38,515 - INFO - Use pytorch device_name: cpu
+2025-06-03 17:29:38,515 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 17:29:42,096 - INFO - FAISS Manager initialized successfully
+2025-06-03 17:29:42,289 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:29:42,481 - WARNING - Weights don't sum to 1.0: 2.0
+2025-06-03 17:29:42,492 - INFO - Ranking 1 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:29:42,495 - INFO - Successfully ranked 1 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:31:21,338 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:31:40,998 - INFO - Retrieved 2 resumes from MongoDB
+2025-06-03 17:31:49,949 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:32:31,108 - INFO - Retrieved 2 resumes from MongoDB
+2025-06-03 17:32:31,395 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:32:45,911 - WARNING - Weights don't sum to 1.0: 2.0
+2025-06-03 17:32:49,005 - INFO - Ranking 2 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:32:49,008 - INFO - Successfully ranked 2 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:34:15,361 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-03 17:34:15,828 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-03 17:34:25,724 - WARNING - Weights don't sum to 1.0: 2.0
+2025-06-03 17:34:30,548 - INFO - Ranking 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 17:34:30,552 - INFO - Successfully ranked 3 resumes for job 682615488cdb8c6bdb1aa95a
+2025-06-03 18:16:33,040 - INFO - Connected to MongoDB successfully
+2025-06-03 18:16:33,097 - INFO - Use pytorch device_name: cpu
+2025-06-03 18:16:33,098 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 18:16:39,491 - INFO - Processing 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 18:16:39,533 - ERROR - Error evaluating experience constraint: '>' not supported between instances of 'float' and 'NoneType'
+2025-06-03 18:16:39,550 - ERROR - Error evaluating education constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:16:39,605 - ERROR - Error evaluating location constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:16:39,623 - INFO - Phase 1 complete: 2 qualified candidates out of 3 applicants
+2025-06-03 18:29:38,675 - INFO - Connected to MongoDB successfully
+2025-06-03 18:29:38,710 - INFO - Use pytorch device_name: cpu
+2025-06-03 18:29:38,711 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 18:29:42,350 - INFO - Processing 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 18:29:42,407 - ERROR - Error evaluating education constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:29:42,456 - ERROR - Error evaluating location constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:29:42,475 - INFO - Phase 1 complete: 3 qualified candidates out of 3 applicants
+2025-06-03 18:51:51,528 - INFO - Connected to MongoDB successfully
+2025-06-03 18:51:51,604 - INFO - Use pytorch device_name: cpu
+2025-06-03 18:51:51,605 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 18:51:54,956 - INFO - Processing 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 18:51:55,181 - ERROR - Error evaluating education constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:51:55,320 - ERROR - Error evaluating location constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:51:55,349 - INFO - Phase 1 complete: 0 qualified candidates out of 3 applicants
+2025-06-03 18:59:08,626 - INFO - Connected to MongoDB successfully
+2025-06-03 18:59:08,701 - INFO - Use pytorch device_name: cpu
+2025-06-03 18:59:08,702 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 18:59:13,388 - INFO - Processing 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 18:59:13,630 - ERROR - Error evaluating education constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:59:13,780 - ERROR - Error evaluating location constraint: 'NoneType' object has no attribute 'lower'
+2025-06-03 18:59:13,813 - INFO - Phase 1 complete: 0 qualified candidates out of 3 applicants
+2025-06-03 19:15:44,127 - INFO - Connected to MongoDB successfully
+2025-06-03 19:15:44,149 - INFO - Use pytorch device_name: cpu
+2025-06-03 19:15:44,150 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 19:15:48,108 - INFO - Processing 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 19:15:48,344 - INFO - Phase 1 complete: 0 qualified candidates out of 3 applicants
+2025-06-03 19:22:01,197 - INFO - Connected to MongoDB successfully
+2025-06-03 19:22:01,222 - INFO - Use pytorch device_name: cpu
+2025-06-03 19:22:01,223 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 19:22:04,888 - INFO - No applications found for job 507f1f77bcf86cd799439011
+2025-06-03 19:22:04,888 - WARNING - No results to save
+2025-06-03 19:22:04,890 - INFO - No active jobs found
+2025-06-03 19:22:23,095 - INFO - Connected to MongoDB successfully
+2025-06-03 19:22:23,118 - INFO - Use pytorch device_name: cpu
+2025-06-03 19:22:23,119 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 19:22:26,167 - INFO - Evaluating 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 19:22:26,400 - INFO - Inserted 3 evaluation results
+2025-06-03 19:22:26,401 - INFO - Successfully saved 3 evaluation results
+2025-06-03 19:22:26,402 - INFO - No active jobs found
+2025-06-03 19:42:54,728 - INFO - Connected to MongoDB successfully
+2025-06-03 19:42:54,753 - INFO - Use pytorch device_name: cpu
+2025-06-03 19:42:54,754 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 19:42:59,792 - INFO - Evaluating 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 19:43:00,141 - INFO - Inserted 3 evaluation results
+2025-06-03 19:43:00,142 - INFO - Successfully saved 3 evaluation results
+2025-06-03 19:43:00,142 - INFO - No active jobs found
+2025-06-03 20:02:04,771 - INFO - Connected to MongoDB successfully
+2025-06-03 20:02:04,797 - INFO - Use pytorch device_name: cpu
+2025-06-03 20:02:04,798 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 20:02:08,397 - INFO - Evaluating 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 20:02:08,559 - ERROR - Error evaluating hard constraints: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,559 - ERROR - Error evaluating application 683ee9c8be4f92cf16c108e3 for job 682615488cdb8c6bdb1aa95a: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,654 - ERROR - Error evaluating hard constraints: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,655 - ERROR - Error evaluating application 683eeafcbe4f92cf16c108e6 for job 682615488cdb8c6bdb1aa95a: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,763 - ERROR - Error evaluating hard constraints: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,764 - ERROR - Error evaluating application 683eeba5be4f92cf16c108e8 for job 682615488cdb8c6bdb1aa95a: HardConstraintScore.__init__() missing 2 required positional arguments: 'passed_constraints' and 'failed_constraints'
+2025-06-03 20:02:08,766 - INFO - Inserted 3 evaluation results
+2025-06-03 20:02:08,766 - INFO - Successfully saved 3 evaluation results
+2025-06-03 20:02:08,767 - INFO - No active jobs found
+2025-06-03 20:02:56,656 - INFO - Connected to MongoDB successfully
+2025-06-03 20:02:56,679 - INFO - Use pytorch device_name: cpu
+2025-06-03 20:02:56,679 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 20:02:59,732 - INFO - Evaluating 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 20:02:59,857 - ERROR - Error evaluating application 683ee9c8be4f92cf16c108e3 for job 682615488cdb8c6bdb1aa95a: 'HardConstraintScore' object has no attribute 'failed_constraints'
+2025-06-03 20:02:59,947 - ERROR - Error evaluating application 683eeafcbe4f92cf16c108e6 for job 682615488cdb8c6bdb1aa95a: 'HardConstraintScore' object has no attribute 'failed_constraints'
+2025-06-03 20:03:00,052 - ERROR - Error evaluating application 683eeba5be4f92cf16c108e8 for job 682615488cdb8c6bdb1aa95a: 'HardConstraintScore' object has no attribute 'failed_constraints'
+2025-06-03 20:03:00,055 - INFO - Inserted 3 evaluation results
+2025-06-03 20:03:00,055 - INFO - Successfully saved 3 evaluation results
+2025-06-03 20:03:00,056 - INFO - No active jobs found
+2025-06-03 20:04:50,328 - INFO - Connected to MongoDB successfully
+2025-06-03 20:04:50,352 - INFO - Use pytorch device_name: cpu
+2025-06-03 20:04:50,353 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-03 20:04:53,365 - INFO - Evaluating 3 applications for job 682615488cdb8c6bdb1aa95a
+2025-06-03 20:04:53,712 - INFO - Inserted 3 evaluation results
+2025-06-03 20:04:53,713 - INFO - Successfully saved 3 evaluation results
+2025-06-03 20:04:53,714 - INFO - No active jobs found
+2025-06-06 17:08:26,103 - INFO - Connected to MongoDB successfully
+2025-06-06 17:08:54,778 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:08:59,121 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:11:46,828 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:12:05,228 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:14:53,857 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:15:22,152 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:15:22,155 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:27:05,081 - INFO - Use pytorch device_name: cpu
+2025-06-06 17:27:05,082 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-06 17:29:32,095 - INFO - Use pytorch device_name: cpu
+2025-06-06 17:29:32,096 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-06 17:30:52,213 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:30:52,214 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:31:02,694 - INFO - Use pytorch device_name: cpu
+2025-06-06 17:31:02,695 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-06 17:36:10,182 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:36:10,184 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:37:25,604 - INFO - Use pytorch device_name: cpu
+2025-06-06 17:37:25,604 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-06 17:49:59,790 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:49:59,791 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:50:02,584 - INFO - Use pytorch device_name: cpu
+2025-06-06 17:50:02,584 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-06 17:52:43,168 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:52:43,170 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:52:50,947 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:52:50,949 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:52:55,550 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:52:55,551 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:53:02,468 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:53:02,469 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 17:53:13,213 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 17:53:13,214 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:02:12,718 - INFO - Retrieved 1 jobs from MongoDB
+2025-06-06 18:02:12,719 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:11:47,766 - INFO - Retrieved 2 jobs from MongoDB
+2025-06-06 18:11:47,767 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:12:14,150 - INFO - Retrieved 2 jobs from MongoDB
+2025-06-06 18:12:14,152 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:13:04,128 - INFO - Retrieved 2 jobs from MongoDB
+2025-06-06 18:13:04,130 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:18:10,595 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:18:10,597 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:18:50,600 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:18:50,601 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:19:06,476 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:19:06,477 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:26:11,300 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:26:11,302 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:26:41,805 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:26:41,807 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:27:49,630 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:27:49,631 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:28:15,004 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:28:15,006 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:28:51,587 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:28:51,589 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:31:50,636 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:31:50,638 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:32:52,785 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:32:52,787 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:33:34,671 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:33:34,672 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:36:09,277 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:36:09,279 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:37:33,872 - INFO - Retrieved 3 resumes from MongoDB
+2025-06-06 18:37:33,873 - INFO - Retrieved 3 jobs from MongoDB
+2025-06-06 18:55:45,348 - INFO - Use pytorch device_name: cpu
+2025-06-06 18:55:45,349 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-08 18:20:51,137 - INFO - Loading faiss with AVX2 support.
+2025-06-08 18:20:51,171 - INFO - Successfully loaded faiss with AVX2 support.
+2025-06-08 18:20:51,179 - INFO - Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2025-06-08 18:33:41,371 - INFO - Use pytorch device_name: cpu
+2025-06-08 18:33:41,372 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-06-08 18:39:22,527 - INFO - Use pytorch device_name: cpu
+2025-06-08 18:39:22,528 - INFO - Load pretrained SentenceTransformer: hkunlp/instructor-xl
+2025-06-08 18:40:29,598 - WARNING - Error while downloading from https://cdn-lfs.hf.co/repos/f9/20/f9200a0c9b2a67d23536a3af5b6770bd46f3f8854d23e2468d6e56d72c070857/9b065dd74cb4423b155cada6ebf11f97cdcb67b2f10841a8a810d674b10bbf99?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27pytorch_model.bin%3B+filename%3D%22pytorch_model.bin%22%3B&response-content-type=application%2Foctet-stream&Expires=1749393568&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc0OTM5MzU2OH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5oZi5jby9yZXBvcy9mOS8yMC9mOTIwMGEwYzliMmE2N2QyMzUzNmEzYWY1YjY3NzBiZDQ2ZjNmODg1NGQyM2UyNDY4ZDZlNTZkNzJjMDcwODU3LzliMDY1ZGQ3NGNiNDQyM2IxNTVjYWRhNmViZjExZjk3Y2RjYjY3YjJmMTA4NDFhOGE4MTBkNjc0YjEwYmJmOTk%7EcmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj0qJnJlc3BvbnNlLWNvbnRlbnQtdHlwZT0qIn1dfQ__&Signature=lzOrxk6zH0R2u%7EUDMH1ZH2URzbkXTLm1sThSP9mEro5H46Nh9JCnGjQAdW4FFJhzowwZnI01%7E2ij6YCFeLjhIX2KCOOtk-tPrGWLH6i4XlBgczG1hkQNy30dg%7EtgGyzvIX6Ny9mTV2vXovsWPHqqDcR0KyjNcpeuZbKhrcUkynh8dvvL42gaDO80BMAWscKv3-dpekUij8jlNsHZq8-FCdbuqW-S5CXnqjW5Hudzj4xM3Q1DJPIsIuwu2YCUvqzSyQwaVtH49S8MaF6uH-wwztaCagwdV3YGV7UZBJEntOf4WJrlhA13KBuUXNF6auPTnkCLXvYx0zWbH1zchAy8yQ__&Key-Pair-Id=K3RPWS32NSSJCE: HTTPSConnectionPool(host='cdn-lfs.hf.co', port=443): Read timed out.
+Trying to resume download...
+2025-06-08 18:46:56,160 - INFO - Use pytorch device_name: cpu
+2025-06-08 18:46:56,161 - INFO - Load pretrained SentenceTransformer: hkunlp/instructor-xl

@@ -1,0 +1,427 @@
+{
+    "basic_info": {
+        "full_name": "Ahsan Ali",
+        "current_title": null,
+        "gender": null,
+        "date_of_birth": null,
+        "nationality": null
+    },
+    "contact_info": {
+        "email": "ahsanal2072@gmail.com",
+        "phone": "+92-326-9955645",
+        "address": {
+            "street": null,
+            "city": null,
+            "state": null,
+            "zip_code": null,
+            "country": null
+        },
+        "linkedin": "www.linkedin.com/in/ahsan\u2013ali",
+        "github": "github.com/AhsanAli-exe",
+        "portfolio": null
+    },
+    "summary": null,
+    "skills": [
+        {
+            "skill_name": "Python",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Java",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Dart",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C/C++",
+            "proficiency": null,
+            "category": "Programming Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQL",
+            "proficiency": null,
+            "category": "Database",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "HTML/CSS",
+            "proficiency": null,
+            "category": "Web Development",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Flutter",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Django",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SciKit Learn",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "LangChain",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "LangGraph",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Streamlit",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Pandas",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Keras",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Firebase",
+            "proficiency": null,
+            "category": "Cloud Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "OpenCV",
+            "proficiency": null,
+            "category": "Library",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Material-UI",
+            "proficiency": null,
+            "category": "UI Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Git",
+            "proficiency": null,
+            "category": "Version Control",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Excel",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Word",
+            "proficiency": null,
+            "category": "Software",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "DSA",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Operating System",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "OOP",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Data Structures",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "AI",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "ML",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Deep Learning",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Data Engineering",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Data Science",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "ETL",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "IOT",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Agile Methodology",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "KRR",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "RNN",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Optimizers",
+            "proficiency": null,
+            "category": "Concept",
+            "years_of_experience": null
+        }
+    ],
+    "education": [
+        {
+            "degree": "Bachelors in Artificial Intelligence",
+            "field": "Artificial Intelligence",
+            "institution": "FAST National University of Computer and Emerging Sciences Karachi",
+            "start_date": "2022-08-01",
+            "end_date": "2026-05-31",
+            "grade": "CGPA: 3.88/4.0",
+            "location": "Karachi, Pakistan",
+            "courses": []
+        },
+        {
+            "degree": "Cambridge International A-levels",
+            "field": null,
+            "institution": "Pakistan International School Jeddah PISJES",
+            "start_date": "2020-08-01",
+            "end_date": "2022-05-31",
+            "grade": null,
+            "location": "Jeddah, KSA",
+            "courses": []
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Agentic AI Intern",
+            "company": "Wellness Innovations",
+            "start_date": "2025-03-01",
+            "end_date": "2025-06-30",
+            "employment_type": "Intern",
+            "location": "USA",
+            "responsibilities": [
+                "Developed Fully Automated Database Agent using LLM\u2019s.",
+                "Implemented Reflection Agent using LangGraph\u2019s."
+            ],
+            "skills_used": []
+        },
+        {
+            "job_title": "Research Associate",
+            "company": "FAST NUCES University",
+            "start_date": "2025-02-01",
+            "end_date": null,
+            "employment_type": "Research",
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Conducting research on multi-camera coordination and real-time data exchange in a networked environment.",
+                "Implementing Python-based video analytics using OpenCV."
+            ],
+            "skills_used": []
+        },
+        {
+            "job_title": "Student Teaching Assistant",
+            "company": "FAST NUCES University",
+            "start_date": "2024-08-01",
+            "end_date": "2024-12-31",
+            "employment_type": "Teaching Assistant",
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Graded quizzes and assignments with accuracy for Computer Organization and Assembly Language (COAL) and Operating Systems (OS), ensuring a consistent evaluation standard across students.",
+                "Conducted project evaluations, offering insights that helped students refine their implementations and improve their understanding of core concepts."
+            ],
+            "skills_used": []
+        },
+        {
+            "job_title": "Data Engineer Intern",
+            "company": "Abdul Lateef Jameel",
+            "start_date": "2024-06-01",
+            "end_date": "2024-09-30",
+            "employment_type": "Intern",
+            "location": "Jeddah, KSA",
+            "responsibilities": [
+                "Developed a customer-centric machine learning model, improving prediction accuracy by 15%.",
+                "Conducted exploratory data analysis (EDA) to extract meaningful insights, leading to better customer segmentation."
+            ],
+            "skills_used": []
+        }
+    ],
+    "projects": [
+        {
+            "title": "Recommender Systems",
+            "description": null,
+            "technologies": [
+                "Python",
+                "TF-IDF Vectorizer",
+                "NLTK",
+                "Streamlit",
+                "OMDB API"
+            ],
+            "role": null,
+            "start_date": "2025-03-01",
+            "end_date": "2025-05-31",
+            "link": null
+        },
+        {
+            "title": "Information Retreival Model",
+            "description": null,
+            "technologies": [
+                "Python",
+                "NLTK",
+                "Lemmatizer",
+                "Tf-Idf Vectorizer",
+                "Streamlit"
+            ],
+            "role": null,
+            "start_date": "2025-02-01",
+            "end_date": "2025-04-30",
+            "link": null
+        },
+        {
+            "title": "Ontology Based Course Teacher Assignment",
+            "description": null,
+            "technologies": [
+                "Python",
+                "RDF",
+                "Ontology",
+                "SPARQL"
+            ],
+            "role": null,
+            "start_date": "2024-10-01",
+            "end_date": "2024-12-31",
+            "link": null
+        },
+        {
+            "title": "Hero Chat",
+            "description": null,
+            "technologies": [
+                "Flutter",
+                "Dart",
+                "Firebase",
+                "Git"
+            ],
+            "role": null,
+            "start_date": "2024-01-01",
+            "end_date": "2024-04-30",
+            "link": null
+        },
+        {
+            "title": "Document Based QA Chatbot",
+            "description": null,
+            "technologies": [
+                "Python",
+                "Langchain",
+                "LLAMA",
+                "Streamlit"
+            ],
+            "role": null,
+            "start_date": "2024-03-01",
+            "end_date": "2024-05-31",
+            "link": null
+        }
+    ],
+    "certifications": [],
+    "publications": [],
+    "languages": [],
+    "interests": [],
+    "volunteer_experience": [
+        {
+            "role": "Co-Head of AI Competitions",
+            "organization": "Microsoft Learn Student Ambassadors Society",
+            "start_date": null,
+            "end_date": null,
+            "description": "Served as Co-Head of AI Competitions, organizing and leading AI-focused events."
+        },
+        {
+            "role": "Active Member",
+            "organization": "The Literary Club Society",
+            "start_date": null,
+            "end_date": null,
+            "description": "Contributing to creative and analytical discussions."
+        }
+    ],
+    "awards": [
+        {
+            "title": "Gold Medalist",
+            "issuer": null,
+            "date": null,
+            "description": "Secured 2 \u00d7 Gold Medals for achieving a perfect 4.00 GPA in the entire AI department (Spring 2024, Fall 2024)."
+        },
+        {
+            "title": "Dean\u2019s List",
+            "issuer": null,
+            "date": null,
+            "description": "Recognized 3 \u00d7 on the Dean\u2019s List for academic excellence."
+        },
+        {
+            "title": "Rector\u2019s List",
+            "issuer": null,
+            "date": null,
+            "description": "Recognized 2 \u00d7 on the Rector\u2019s List for academic excellence."
+        }
+    ],
+    "links": []
+}

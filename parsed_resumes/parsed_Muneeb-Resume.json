@@ -1,0 +1,308 @@
+{
+    "basic_info": {
+        "full_name": "Muneeb Ur Rehman",
+        "current_title": null,
+        "gender": null,
+        "date_of_birth": null,
+        "nationality": "Pakistani"
+    },
+    "contact_info": {
+        "email": "muneeb.ur.rehm4n@gmail.com",
+        "phone": "+92-3182635995",
+        "address": {
+            "street": null,
+            "city": "Karachi",
+            "state": null,
+            "zip_code": null,
+            "country": "Pakistan"
+        },
+        "linkedin": "linkedin.com/in/muneeb-ur-rehman-461843246",
+        "github": "github.com/Muneeb1481",
+        "portfolio": null
+    },
+    "summary": null,
+    "skills": [
+        {
+            "skill_name": "Python",
+            "proficiency": null,
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "C++",
+            "proficiency": null,
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQL",
+            "proficiency": null,
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Bash",
+            "proficiency": null,
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "JAVA",
+            "proficiency": null,
+            "category": "Language",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Scikit-Learn",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "NLTK",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SpaCy",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "TensorFlow",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Keras",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Django",
+            "proficiency": null,
+            "category": "Framework",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "GIT",
+            "proficiency": null,
+            "category": "Tool",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "MySQL",
+            "proficiency": null,
+            "category": "Tool",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "SQLite",
+            "proficiency": null,
+            "category": "Tool",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Oracle",
+            "proficiency": null,
+            "category": "Tool",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Linux",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Web",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Windows",
+            "proficiency": null,
+            "category": "Platform",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Leadership",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Event Management",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Writing",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        },
+        {
+            "skill_name": "Time Management",
+            "proficiency": null,
+            "category": "Soft Skill",
+            "years_of_experience": null
+        }
+    ],
+    "education": [
+        {
+            "degree": "Bachelor of Science",
+            "field": "Artificial Intelligence",
+            "institution": "FAST National University",
+            "start_date": "2022-08-01",
+            "end_date": "2026-08-01",
+            "grade": "3.26/4.0",
+            "location": "Karachi, Pakistan",
+            "courses": [
+                "Operating Systems",
+                "Data Structures",
+                "Analysis Of Algorithms",
+                "Artificial Intelligence",
+                "Machine Learning",
+                "Deep Learning",
+                "Recommendation Systems",
+                "Networking",
+                "Databases"
+            ]
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Teaching Assistant",
+            "company": "FAST NUCES",
+            "start_date": "2025-01-01",
+            "end_date": null,
+            "employment_type": null,
+            "location": "Karachi, Pakistan",
+            "responsibilities": [
+                "Reviewed and graded students\u2019 assessments for COAL and Artificial Intelligence",
+                "Conducted evaluations for student projects, providing constructive feedback to enhance learning outcomes"
+            ],
+            "skills_used": null
+        }
+    ],
+    "projects": [
+        {
+            "title": "Document Based QA Chatbot",
+            "description": null,
+            "technologies": [
+                "Python",
+                "Langchain",
+                "LLAMA2",
+                "Streamlit"
+            ],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "HEC Degree Requirement",
+            "description": null,
+            "technologies": [
+                "Python",
+                "Pandas",
+                "PyPDF"
+            ],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Ecommerce Website",
+            "description": null,
+            "technologies": [
+                "HTML",
+                "CSS",
+                "Bootstrap",
+                "JavaScript",
+                "Python",
+                "Django"
+            ],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "ML Project: Laptop Price Regression",
+            "description": null,
+            "technologies": [
+                "Python",
+                "Pandas",
+                "Scikit-learn",
+                "Streamlit"
+            ],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        },
+        {
+            "title": "Gym Management System: Website",
+            "description": null,
+            "technologies": [
+                "HTML",
+                "Tailwind CSS",
+                "JavaScript",
+                "Django",
+                "SQLite"
+            ],
+            "role": null,
+            "start_date": null,
+            "end_date": null,
+            "link": null
+        }
+    ],
+    "certifications": [
+        {
+            "title": "Cloud Computing Fundamentals Course",
+            "issuer": "IBM",
+            "issue_date": null,
+            "expiration_date": null,
+            "credential_id": null,
+            "url": null
+        },
+        {
+            "title": "Master in Data Science, Data Analytics and Data Analysis",
+            "issuer": "Udemy",
+            "issue_date": null,
+            "expiration_date": null,
+            "credential_id": null,
+            "url": null
+        }
+    ],
+    "publications": [],
+    "languages": [],
+    "interests": [],
+    "volunteer_experience": [
+        {
+            "role": "Member",
+            "organization": "Microsoft Learn Student Ambassadors (MLSA), FAST Karachi Chapter",
+            "start_date": null,
+            "end_date": null,
+            "description": "Assisted in event management tasks"
+        }
+    ],
+    "awards": [
+        {
+            "title": "Deans\u2019 List",
+            "issuer": null,
+            "date": null,
+            "description": "Earned name on Dean\u2019s List (3.51 SGPA) - 2nd Semester"
+        }
+    ],
+    "links": []
+}

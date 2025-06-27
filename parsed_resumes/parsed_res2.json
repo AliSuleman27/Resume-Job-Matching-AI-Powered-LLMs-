@@ -1,0 +1,120 @@
+{
+    "basic_info": {
+        "full_name": "Raj Mehta",
+        "current_title": "Computer Vision Engineer",
+        "gender": "Male",
+        "date_of_birth": "1995-11-20",
+        "nationality": "Indian"
+    },
+    "contact_info": {
+        "email": "raj.mehta@example.com",
+        "phone": "+91-9876543210",
+        "address": {
+            "street": "202 Tech Park Road",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "zip_code": "560037",
+            "country": "India"
+        },
+        "linkedin": "https://linkedin.com/in/rajmehta-cv",
+        "github": "https://github.com/rajcv",
+        "portfolio": "https://rajmehta.dev"
+    },
+    "summary": "Computer Vision Engineer with 4+ years of hands-on experience in real-time video analytics and model deployment on edge devices like Jetson Nano.",
+    "skills": [
+        {
+            "skill_name": "OpenCV",
+            "proficiency": "Expert",
+            "category": "Library",
+            "years_of_experience": 5
+        },
+        {
+            "skill_name": "DeepStream",
+            "proficiency": "Advanced",
+            "category": "Deployment",
+            "years_of_experience": 3
+        },
+        {
+            "skill_name": "PyTorch",
+            "proficiency": "Intermediate",
+            "category": "Framework",
+            "years_of_experience": 4
+        }
+    ],
+    "education": [
+        {
+            "degree": "BTech",
+            "field": "Electronics and Communication Engineering",
+            "institution": "IIT Delhi",
+            "start_date": "2013-07",
+            "end_date": "2017-06",
+            "grade": "8.5 CGPA",
+            "location": "Delhi, India",
+            "courses": [
+                "Digital Signal Processing",
+                "Computer Vision",
+                "Embedded Systems"
+            ]
+        }
+    ],
+    "experience": [
+        {
+            "job_title": "Computer Vision Engineer",
+            "company": "Nvidia",
+            "start_date": "2021-01",
+            "end_date": "Present",
+            "employment_type": "Full-time",
+            "location": "Bangalore",
+            "responsibilities": [
+                "Developed DeepStream-based smart city analytics pipeline for real-time traffic monitoring",
+                "Integrated YOLOv5 with Jetson Xavier for edge deployment"
+            ],
+            "skills_used": [
+                "DeepStream",
+                "YOLOv5",
+                "Jetson",
+                "Python"
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "title": "Helmet Detection on Jetson Nano",
+            "description": "Real-time safety gear detection system for construction sites.",
+            "technologies": [
+                "YOLOv4",
+                "DeepStream",
+                "Jetson Nano"
+            ],
+            "role": "ML Developer",
+            "start_date": "2022-03",
+            "end_date": "2022-05",
+            "link": "https://github.com/rajcv/helmet-detection"
+        }
+    ],
+    "certifications": [],
+    "publications": [],
+    "languages": [
+        {
+            "language": "English",
+            "proficiency": "Fluent"
+        },
+        {
+            "language": "Hindi",
+            "proficiency": "Native"
+        }
+    ],
+    "interests": [
+        "Edge AI",
+        "Basketball",
+        "Drone Programming"
+    ],
+    "volunteer_experience": [],
+    "awards": [],
+    "links": [
+        {
+            "label": "GitHub",
+            "url": "https://github.com/rajcv"
+        }
+    ]
+}
