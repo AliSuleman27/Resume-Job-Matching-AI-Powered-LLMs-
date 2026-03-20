@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
     <!-- Back button -->
     <div class="mb-4">
-        <a href="{{ url_for('browse_jobs') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
+        <a href="{{ url_for('jobs.browse_jobs') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800">
             <i class="fas fa-arrow-left mr-2"></i> Back to Jobs
         </a>
     </div>
@@ -349,7 +349,7 @@
                         {% if not resumes %}
                         <p class="mt-2 text-sm text-red-600">
                             You haven't uploaded any resumes yet. 
-                            <a href="{{ url_for('dashboard') }}" class="text-primary-600 hover:text-primary-800">
+                            <a href="{{ url_for('applicant.dashboard') }}" class="text-primary-600 hover:text-primary-800">
                                 Upload a resume first.
                             </a>
                         </p>

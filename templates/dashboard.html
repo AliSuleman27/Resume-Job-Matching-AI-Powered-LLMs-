@@ -12,7 +12,7 @@
             <p class="text-gray-600 mt-1">Welcome back, {{ current_user.email }}</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ url_for('logout') }}" class="flex items-center px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+            <a href="{{ url_for('auth.logout') }}" class="flex items-center px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                 <i class="fas fa-sign-out-alt mr-2"></i> Logout
             </a>
         </div>
@@ -28,7 +28,7 @@
                 <h2 class="text-2xl font-semibold text-gray-800">Upload New Resume</h2>
             </div>
             <p class="text-gray-600 mb-6">Upload your resume in PDF, DOCX, or TXT format to extract valuable insights</p>
-            {% include 'upload_form.html' %}
+
         </div>
     </div>
 
@@ -59,7 +59,7 @@
                     </div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-2 truncate">{{ resume.original_filename }}</h3>
                     <div class="flex justify-between items-center mt-6">
-                        <a href="{{ url_for('view_resume', resume_id=resume._id) }}" 
+                        <a href="{{ url_for('applicant.view_resume', resume_id=resume._id) }}" 
                            class="text-primary-600 hover:text-primary-800 font-medium flex items-center">
                             View Details <i class="fas fa-chevron-right ml-1 text-sm"></i>
                         </a>
@@ -78,7 +78,7 @@
             </div>
             <h3 class="text-xl font-medium text-gray-800 mb-2">No Resumes Yet</h3>
             <p class="text-gray-600 mb-4">Upload your first resume to get started with parsing</p>
-            <a href="{{ url_for('upload_cv') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <a href="{{ url_for('applicant.upload_cv') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                 <i class="fas fa-cloud-upload-alt mr-2"></i> Upload Resume
             </a>
         </div>
@@ -115,7 +115,7 @@
         
         {% if applications|length > 3 %}
         <div class="px-4 py-3 bg-gray-50 text-right">
-            <a href="{{ url_for('my_applications') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+            <a href="{{ url_for('jobs.my_applications') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
                 View all applications <i class="fas fa-arrow-right ml-1"></i>
             </a>
         </div>
@@ -125,7 +125,7 @@
     <div class="bg-white shadow rounded-lg overflow-hidden">
         <div class="p-4 text-center text-sm text-gray-500">
             You haven't applied to any jobs yet.
-            <a href="{{ url_for('browse_jobs') }}" class="text-primary-600 hover:text-primary-500 ml-1">
+            <a href="{{ url_for('jobs.browse_jobs') }}" class="text-primary-600 hover:text-primary-500 ml-1">
                 Browse jobs
             </a>
         </div>
@@ -146,7 +146,7 @@
             <button onclick="document.getElementById('empty-state').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                 Maybe Later
             </button>
-            <a href="{{ url_for('upload_cv') }}" onclick="document.getElementById('empty-state').classList.add('hidden')" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+            <a href="{{ url_for('applicant.upload_cv') }}" onclick="document.getElementById('empty-state').classList.add('hidden')" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                 Upload Resume
             </a>
         </div>

@@ -7,7 +7,7 @@
         <p class="text-gray-600 mt-2">Create your recruiter account</p>
     </div>
     
-    <form method="POST" action="{{ url_for('signup_recruiter') }}" class="space-y-6">
+    <form method="POST" action="{{ url_for('auth.signup_recruiter') }}" class="space-y-6">
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input type="text" id="name" name="name" required
@@ -59,7 +59,7 @@
     
     <div class="mt-6 text-center">
         <p class="text-sm text-gray-600">
-            Already have an account? <a href="{{ url_for('login_recruiter') }}" class="text-primary-600 hover:text-primary-500">Sign in</a>
+            Already have an account? <a href="{{ url_for('auth.login_recruiter') }}" class="text-primary-600 hover:text-primary-500">Sign in</a>
         </p>
     </div>
     
@@ -75,7 +75,7 @@
         
         <div class="mt-6">
             <p class="text-sm text-gray-600 text-center">
-                Are you a candidate? <a href="{{ url_for('signup') }}" class="text-primary-600 hover:text-primary-500">Sign up here</a>
+                Are you a candidate? <a href="{{ url_for('auth.signup') }}" class="text-primary-600 hover:text-primary-500">Sign up here</a>
             </p>
         </div>
     </div>

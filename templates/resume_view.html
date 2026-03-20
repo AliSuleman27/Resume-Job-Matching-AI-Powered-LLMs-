@@ -10,11 +10,11 @@
         </div>
       
         <div class="flex gap-4 flex-wrap">
-          <a href="{{ url_for('download_resume', resume_id=resume._id) }}"
+          <a href="{{ url_for('applicant.download_resume', resume_id=resume._id) }}"
              class="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow">
             <i class="fas fa-download mr-2"></i> Download Resume
           </a>
-          <a href="{{ url_for('dashboard') }}"
+          <a href="{{ url_for('applicant.dashboard') }}"
              class="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors">
             <i class="fas fa-chevron-left mr-2"></i> Back to Dashboard
           </a>

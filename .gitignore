@@ -1,2 +1,14 @@
 .env
 env/
+__pycache__/
+*.pyc
+.vscode/
+faiss_indexes/
+uploads/
+parsed_resumes/
+parsed_jobs/
+old_indexes/
+model/
+research/
+*.pkl
+*.index

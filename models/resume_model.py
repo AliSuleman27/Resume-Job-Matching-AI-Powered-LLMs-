@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class Address(BaseModel):
@@ -36,34 +36,49 @@ class Skill(BaseModel):
 
 class Education(BaseModel):
     degree: str
-    field: Optional[str]
-    institution: Optional[str]
-    start_date: Optional[str]
-    end_date: Optional[str]
-    grade: Optional[str]
-    location: Optional[str]
-    courses: List[str]
+    field: Optional[str] = None
+    institution: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    grade: Optional[str] = None
+    location: Optional[str] = None
+    courses: Optional[List[str]] = []
+
+    @field_validator('courses', mode='before')
+    @classmethod
+    def coerce_courses(cls, v):
+        return v if v is not None else []
 
 
 class Experience(BaseModel):
     job_title: str
-    company: Optional[str]
-    start_date: Optional[str]
-    end_date: Optional[str]
-    employment_type: Optional[str]
-    location: Optional[str]
-    responsibilities: List[str]
-    skills_used: List[str]
+    company: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    employment_type: Optional[str] = None
+    location: Optional[str] = None
+    responsibilities: Optional[List[str]] = []
+    skills_used: Optional[List[str]] = []
+
+    @field_validator('responsibilities', 'skills_used', mode='before')
+    @classmethod
+    def coerce_lists(cls, v):
+        return v if v is not None else []
 
 
 class Project(BaseModel):
     title: str
-    description: Optional[str]
-    technologies: List[str]
-    role: Optional[str]
-    start_date: Optional[str]
-    end_date: Optional[str]
-    link: Optional[str]
+    description: Optional[str] = None
+    technologies: Optional[List[str]] = []
+    role: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    link: Optional[str] = None
+
+    @field_validator('technologies', mode='before')
+    @classmethod
+    def coerce_technologies(cls, v):
+        return v if v is not None else []
 
 
 class Certification(BaseModel):
@@ -112,15 +127,23 @@ class Link(BaseModel):
 class Resume(BaseModel):
     basic_info: BasicInfo
     contact_info: ContactInfo
-    summary: Optional[str]
-    skills: List[Skill]
-    education: List[Education]
-    experience: List[Experience]
-    projects: List[Project]
+    summary: Optional[str] = None
+    skills: Optional[List[Skill]] = []
+    education: Optional[List[Education]] = []
+    experience: Optional[List[Experience]] = []
+    projects: Optional[List[Project]] = []
     certifications: Optional[List[Certification]] = []
     publications: Optional[List[Publication]] = []
-    languages: List[Language]
+    languages: Optional[List[Language]] = []
     interests: Optional[List[str]] = []
     volunteer_experience: Optional[List[VolunteerExperience]] = []
     awards: Optional[List[Award]] = []
     links: Optional[List[Link]] = []
+
+    @field_validator('skills', 'education', 'experience', 'projects',
+                     'certifications', 'publications', 'languages',
+                     'interests', 'volunteer_experience', 'awards', 'links',
+                     mode='before')
+    @classmethod
+    def coerce_none_to_list(cls, v):
+        return v if v is not None else []

@@ -74,16 +74,16 @@
                     {% if current_user.is_authenticated %}
                         {% if current_user.__class__.__name__ == 'Recruiter' %}
                             <!-- Recruiter Navigation -->
-                            <a href="{{ url_for('recruiter_dashboard') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                             </a>
-                            <a href="{{ url_for('create_job') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('recruiter.create_job') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-plus-circle mr-2"></i> Post Job
                             </a>
                             <a href="#" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-list-ul mr-2"></i> My Jobs
                             </a>
-                            <a href="{{ url_for('view_applicants') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('recruiter.view_applicants') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-users mr-2"></i> Applicants
                             </a>
                             <div class="relative group ml-2">
@@ -99,7 +99,7 @@
                                         <a href="" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
                                             <i class="fas fa-user-edit mr-3 w-5 text-center"></i> Profile
                                         </a>
-                                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
+                                        <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
                                             <i class="fas fa-sign-out-alt mr-3 w-5 text-center"></i> Logout
                                         </a>
                                     </div>
@@ -107,16 +107,16 @@
                             </div>
                         {% else %}
                             <!-- Applicant Navigation -->
-                            <a href="{{ url_for('dashboard') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('applicant.dashboard') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                             </a>
-                            <a href="{{ url_for('browse_jobs') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('jobs.browse_jobs') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-briefcase mr-2"></i> Jobs
                             </a>
-                            <a href="{{ url_for('my_applications') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('jobs.my_applications') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-file-alt mr-2"></i> Applications
                             </a>
-                            <a href="{{ url_for('upload_cv') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                            <a href="{{ url_for('applicant.upload_cv') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                                 <i class="fas fa-upload mr-2"></i> Upload Resume
                             </a>
                             <div class="relative group ml-2">
@@ -131,7 +131,7 @@
                                         <a href="" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
                                             <i class="fas fa-user-edit mr-3 w-5 text-center"></i> Profile
                                         </a>
-                                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
+                                        <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-150 flex items-center">
                                             <i class="fas fa-sign-out-alt mr-3 w-5 text-center"></i> Logout
                                         </a>
                                     </div>
@@ -140,13 +140,13 @@
                         {% endif %}
                     {% else %}
                         <!-- Guest Navigation -->
-                        <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                        <a href="{{ url_for('auth.login') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                             <i class="fas fa-sign-in-alt mr-2"></i> Login
                         </a>
-                        <a href="{{ url_for('signup') }}" class="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 shadow-sm transition-all duration-200 flex items-center">
+                        <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 shadow-sm transition-all duration-200 flex items-center">
                             <i class="fas fa-user-plus mr-2"></i> Sign Up
                         </a>
-                        <a href="{{ url_for('login_recruiter') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
+                        <a href="{{ url_for('auth.login_recruiter') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 flex items-center">
                             <i class="fas fa-user-tie mr-2"></i> Recruiter Login
                         </a>
                     {% endif %}
@@ -168,51 +168,51 @@
                 {% if current_user.is_authenticated %}
                     {% if current_user.__class__.__name__ == 'Recruiter' %}
                         <!-- Recruiter Mobile Menu -->
-                        <a href="{{ url_for('recruiter_dashboard') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-tachometer-alt mr-3 w-5 text-center"></i> Dashboard
                         </a>
-                        <a href="{{ url_for('create_job') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('recruiter.create_job') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-plus-circle mr-3 w-5 text-center"></i> Post Job
                         </a>
                         <a href="#" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-list-ul mr-3 w-5 text-center"></i> My Jobs
                         </a>
-                        <a href="{{ url_for('view_applicants') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('recruiter.view_applicants') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-users mr-3 w-5 text-center"></i> Applicants
                         </a>
                         <a href="" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-user-edit mr-3 w-5 text-center"></i> Profile
                         </a>
-                        <a href="{{ url_for('logout') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-sign-out-alt mr-3 w-5 text-center"></i> Logout
                         </a>
                     {% else %}
                         <!-- Applicant Mobile Menu -->
-                        <a href="{{ url_for('dashboard') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('applicant.dashboard') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-tachometer-alt mr-3 w-5 text-center"></i> Dashboard
                         </a>
-                        <a href="{{ url_for('browse_jobs') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('jobs.browse_jobs') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-briefcase mr-3 w-5 text-center"></i> Jobs
                         </a>
-                        <a href="{{ url_for('my_applications') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('jobs.my_applications') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-file-alt mr-3 w-5 text-center"></i> Applications
                         </a>
-                        <a href="{{ url_for('upload_cv') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('applicant.upload_cv') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-upload mr-3 w-5 text-center"></i> Upload Resume
                         </a>
-                        <a href="{{ url_for('logout') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                        <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                             <i class="fas fa-sign-out-alt mr-3 w-5 text-center"></i> Logout
                         </a>
                     {% endif %}
                 {% else %}
                     <!-- Guest Mobile Menu -->
-                    <a href="{{ url_for('login') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                    <a href="{{ url_for('auth.login') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                         <i class="fas fa-sign-in-alt mr-3 w-5 text-center"></i> Login
                     </a>
-                    <a href="{{ url_for('signup') }}" class="block px-4 py-3 rounded-lg text-base font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 shadow-sm transition-colors duration-200 flex items-center">
+                    <a href="{{ url_for('auth.signup') }}" class="block px-4 py-3 rounded-lg text-base font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 shadow-sm transition-colors duration-200 flex items-center">
                         <i class="fas fa-user-plus mr-3 w-5 text-center"></i> Sign Up
                     </a>
-                    <a href="{{ url_for('login_recruiter') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
+                    <a href="{{ url_for('auth.login_recruiter') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-colors duration-200 flex items-center">
                         <i class="fas fa-user-tie mr-3 w-5 text-center"></i> Recruiter Login
                     </a>
                 {% endif %}
