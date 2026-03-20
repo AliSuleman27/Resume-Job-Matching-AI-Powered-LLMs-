@@ -1,0 +1,42 @@
+FATIMA ZAHRA MALIK
+Data Scientist
+Email: fatima.malik@email.com | Phone: +92-333-9876543
+Address: F-8, Islamabad, Pakistan
+LinkedIn: linkedin.com/in/fatimamalik
+
+SUMMARY
+Data Scientist with 3 years of experience in machine learning, statistical modeling, and data analytics. Strong background in NLP and computer vision with published research in deep learning applications for healthcare.
+
+EDUCATION
+Master of Science in Data Science
+NUST (National University of Sciences and Technology), Islamabad, Pakistan
+Graduation: August 2021 | GPA: 3.8/4.0
+Relevant Courses: Machine Learning, Deep Learning, Natural Language Processing, Statistical Inference, Big Data Analytics
+
+Bachelor of Science in Mathematics
+Quaid-i-Azam University, Islamabad, Pakistan
+Graduation: June 2019 | GPA: 3.5/4.0
+
+EXPERIENCE
+Data Scientist | Afiniti, Islamabad
+September 2021 - Present
+- Developed predictive models using XGBoost and neural networks achieving 92% accuracy in customer churn prediction
+- Built NLP pipeline for sentiment analysis processing 100K+ customer reviews daily
+- Created interactive dashboards using Plotly and Streamlit for stakeholder reporting
+- Implemented MLOps pipeline using MLflow for model versioning and deployment
+- Published internal research paper on transformer-based text classification
+Skills used: Python, TensorFlow, PyTorch, XGBoost, NLP, Pandas, SQL, MLflow, Streamlit
+
+Data Analyst Intern | Jazz (Mobilink), Islamabad
+June 2020 - August 2021
+- Analyzed subscriber data to identify usage patterns and reduce churn by 15%
+- Built automated reporting dashboards using Python and Tableau
+- Performed A/B testing for marketing campaigns
+Skills used: Python, SQL, Tableau, Excel, Statistics, A/B Testing
+
+SKILLS
+Python, R, TensorFlow, PyTorch, Scikit-learn, Pandas, NumPy, SQL, NLP, Computer Vision, XGBoost, Deep Learning, MLflow, Docker, Tableau, Streamlit, Statistics, A/B Testing
+
+PROJECTS
+Healthcare Diagnosis ML Model: Built a deep learning model for detecting pneumonia from chest X-rays with 95% accuracy. Technologies: Python, TensorFlow, OpenCV, Flask
+Urdu Sentiment Analyzer: Created an NLP model for Urdu language sentiment analysis using BERT fine-tuning. Technologies: Python, HuggingFace Transformers, PyTorch

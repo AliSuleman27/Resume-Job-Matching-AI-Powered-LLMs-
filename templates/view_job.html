@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}{{ job.parsed_data.title }} | NerdyParser.com{% endblock %}
+{% block title %}{{ job.parsed_data.title }} | Emploify.io{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
     <!-- Back button -->
     <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-indigo-700">Job Description</h1>
-          <p class="text-gray-600">Parsed on {{ job.created_at.strftime('%B %d, %Y') }}</p>
+          <h1 class="text-3xl font-bold text-primary-700 dark:text-primary-400">Job Description</h1>
+          <p class="text-gray-600 dark:text-gray-400">Parsed on {{ job.created_at.strftime('%B %d, %Y') }}</p>
         </div>
-      
+
         <div class="flex gap-4 flex-wrap">
           <a href="{{ url_for('applicant.download_jd', jd_id=job._id) }}"
-             class="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow">
+             class="inline-flex items-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow">
             <i class="fas fa-download mr-2"></i> Download JD
           </a>
           <a href="{{ url_for('recruiter.recruiter_dashboard') }}"
-             class="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors">
+             class="flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors">
             <i class="fas fa-chevron-left mr-2"></i> Back to Dashboard
           </a>
         </div>
     </div>
 
     <!-- Job Card -->
-    <div class="bg-white shadow overflow-hidden rounded-lg">
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
         <!-- Header -->
         <div class="bg-primary-600 px-6 py-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -55,12 +55,12 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <!-- Location -->
                 <div class="flex items-start">
-                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
                         <i class="fas fa-map-marker-alt text-primary-600"></i>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-gray-500">Location(s)</h3>
-                        <div class="text-sm text-gray-900">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location(s)</h3>
+                        <div class="text-sm text-gray-900 dark:text-white">
                             {% for location in job.parsed_data.locations %}
                             <div class="mb-1">
                                 {% if location.remote %}
@@ -73,17 +73,17 @@
                             {% endfor %}
                             <div class="flex gap-2 mt-1">
                                 {% if job.parsed_data.is_remote %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
                                     Remote
                                 </span>
                                 {% endif %}
                                 {% if job.parsed_data.is_hybrid %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
                                     Hybrid
                                 </span>
                                 {% endif %}
                                 {% if job.parsed_data.is_onsite %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">
                                     Onsite
                                 </span>
                                 {% endif %}
@@ -94,20 +94,20 @@
 
                 <!-- Salary -->
                 <div class="flex items-start">
-                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
                         <i class="fas fa-dollar-sign text-primary-600"></i>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-gray-500">Salary Range</h3>
-                        <div class="text-sm text-gray-900">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Salary Range</h3>
+                        <div class="text-sm text-gray-900 dark:text-white">
                             {% if job.parsed_data.salary %}
                             <div>
-                                {{ job.parsed_data.salary.min }} - 
-                                {{ job.parsed_data.salary.max }} 
+                                {{ job.parsed_data.salary.min }} -
+                                {{ job.parsed_data.salary.max }}
                                 per {{ job.parsed_data.salary.period }}
                             </div>
                             {% if job.parsed_data.salary.is_estimated %}
-                            <span class="text-xs text-gray-500">(Estimated)</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">(Estimated)</span>
                             {% endif %}
                             {% else %}
                             Not specified
@@ -118,12 +118,12 @@
 
                 <!-- Dates -->
                 <div class="flex items-start">
-                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
                         <i class="fas fa-calendar-alt text-primary-600"></i>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-gray-500">Dates</h3>
-                        <div class="text-sm text-gray-900">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Dates</h3>
+                        <div class="text-sm text-gray-900 dark:text-white">
                             <div>Posted: {{ job.parsed_data.posting_date }}</div>
                             <div>Closes: {{ job.parsed_data.closing_date }}</div>
                         </div>
@@ -133,17 +133,17 @@
 
             <!-- Job Description & Summary -->
             <div class="mb-8">
-                <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                     <i class="fas fa-align-left text-primary-600 mr-2"></i> Job Description
                 </h3>
-                <div class="prose max-w-none text-gray-600 mb-6">
+                <div class="prose max-w-none text-gray-600 dark:text-gray-400 mb-6">
                     {{ job.parsed_data.description|replace('\n', '<br>')|safe }}
                 </div>
-                
-                <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                     <i class="fas fa-info-circle text-primary-600 mr-2"></i> Summary
                 </h3>
-                <div class="prose max-w-none text-gray-600">
+                <div class="prose max-w-none text-gray-600 dark:text-gray-400">
                     {{ job.parsed_data.summary|replace('\n', '<br>')|safe }}
                 </div>
             </div>
@@ -154,7 +154,7 @@
                 <div class="space-y-8">
                     <!-- Responsibilities -->
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-tasks text-primary-600 mr-2"></i> Responsibilities
                         </h3>
                         <ul class="space-y-3">
@@ -163,7 +163,7 @@
                                 <div class="flex-shrink-0 h-5 w-5 text-primary-500 mt-0.5">
                                     <i class="fas fa-chevron-right"></i>
                                 </div>
-                                <p class="ml-3 text-sm text-gray-700">{{ responsibility }}</p>
+                                <p class="ml-3 text-sm text-gray-700 dark:text-gray-300">{{ responsibility }}</p>
                             </li>
                             {% endfor %}
                         </ul>
@@ -171,7 +171,7 @@
 
                     <!-- Requirements -->
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-clipboard-check text-primary-600 mr-2"></i> Requirements
                         </h3>
                         <ul class="space-y-3">
@@ -180,7 +180,7 @@
                                 <div class="flex-shrink-0 h-5 w-5 text-red-500 mt-0.5">
                                     <i class="fas fa-check-circle"></i>
                                 </div>
-                                <p class="ml-3 text-sm text-gray-700">{{ req }}</p>
+                                <p class="ml-3 text-sm text-gray-700 dark:text-gray-300">{{ req }}</p>
                             </li>
                             {% endfor %}
                         </ul>
@@ -189,7 +189,7 @@
                     <!-- Nice to Have -->
                     {% if job.parsed_data.nice_to_have %}
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-plus-circle text-primary-600 mr-2"></i> Nice to Have
                         </h3>
                         <ul class="space-y-3">
@@ -198,7 +198,7 @@
                                 <div class="flex-shrink-0 h-5 w-5 text-blue-500 mt-0.5">
                                     <i class="fas fa-star"></i>
                                 </div>
-                                <p class="ml-3 text-sm text-gray-700">{{ item }}</p>
+                                <p class="ml-3 text-sm text-gray-700 dark:text-gray-300">{{ item }}</p>
                             </li>
                             {% endfor %}
                         </ul>
@@ -210,14 +210,14 @@
                 <div class="space-y-8">
                     <!-- Skills -->
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-tools text-primary-600 mr-2"></i> Skills
                         </h3>
                         <div class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Mandatory</h4>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mandatory</h4>
                             <div class="flex flex-wrap gap-2">
                                 {% for skill in job.parsed_data.skills.mandatory %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">
                                     {{ skill }}
                                 </span>
                                 {% endfor %}
@@ -225,10 +225,10 @@
                         </div>
                         {% if job.parsed_data.skills.optional %}
                         <div class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Optional</h4>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Optional</h4>
                             <div class="flex flex-wrap gap-2">
                                 {% for skill in job.parsed_data.skills.optional %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
                                     {{ skill }}
                                 </span>
                                 {% endfor %}
@@ -237,10 +237,10 @@
                         {% endif %}
                         {% if job.parsed_data.skills.tools %}
                         <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Tools</h4>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tools</h4>
                             <div class="flex flex-wrap gap-2">
                                 {% for tool in job.parsed_data.skills.tools %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">
                                     {{ tool }}
                                 </span>
                                 {% endfor %}
@@ -251,33 +251,33 @@
 
                     <!-- Qualifications -->
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-graduation-cap text-primary-600 mr-2"></i> Qualifications
                         </h3>
                         <div class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Education</h4>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Education</h4>
                             <ul class="space-y-2">
                                 {% for edu in job.parsed_data.qualifications.education %}
-                                <li class="text-sm text-gray-700">
+                                <li class="text-sm text-gray-700 dark:text-gray-300">
                                     <div class="font-medium">{{ edu.degree }}</div>
-                                    <div class="text-gray-600">{{ edu.field_of_study }}</div>
+                                    <div class="text-gray-600 dark:text-gray-400">{{ edu.field_of_study }}</div>
                                 </li>
                                 {% endfor %}
                             </ul>
                         </div>
                         <div class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Experience</h4>
-                            <div class="text-sm text-gray-700">
-                                {{ job.parsed_data.qualifications.experience_years.min }} - 
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Experience</h4>
+                            <div class="text-sm text-gray-700 dark:text-gray-300">
+                                {{ job.parsed_data.qualifications.experience_years.min }} -
                                 {{ job.parsed_data.qualifications.experience_years.max }} years
                             </div>
                         </div>
                         {% if job.parsed_data.qualifications.certifications %}
                         <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Certifications</h4>
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Certifications</h4>
                             <ul class="space-y-2">
                                 {% for cert in job.parsed_data.qualifications.certifications %}
-                                <li class="text-sm text-gray-700">{{ cert }}</li>
+                                <li class="text-sm text-gray-700 dark:text-gray-300">{{ cert }}</li>
                                 {% endfor %}
                             </ul>
                         </div>
@@ -287,7 +287,7 @@
                     <!-- Benefits -->
                     {% if job.parsed_data.benefits %}
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                             <i class="fas fa-medal text-primary-600 mr-2"></i> Benefits
                         </h3>
                         <ul class="space-y-3">
@@ -296,7 +296,7 @@
                                 <div class="flex-shrink-0 h-5 w-5 text-green-500 mt-0.5">
                                     <i class="fas fa-check"></i>
                                 </div>
-                                <p class="ml-3 text-sm text-gray-700">{{ benefit }}</p>
+                                <p class="ml-3 text-sm text-gray-700 dark:text-gray-300">{{ benefit }}</p>
                             </li>
                             {% endfor %}
                         </ul>
@@ -306,21 +306,21 @@
             </div>
 
             <!-- Company Info -->
-            <div class="mt-8 border-t border-gray-200 pt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     <i class="fas fa-building text-primary-600 mr-2"></i> About {{ job.parsed_data.company.name }}
                 </h3>
-                <div class="prose max-w-none text-gray-600 mb-4">
+                <div class="prose max-w-none text-gray-600 dark:text-gray-400 mb-4">
                     {{ job.parsed_data.company.description|replace('\n', '<br>')|safe }}
                 </div>
-                <a href="{{ job.parsed_data.company.website }}" target="_blank" class="inline-flex items-center text-primary-600 hover:text-primary-800 text-sm">
+                <a href="{{ job.parsed_data.company.website }}" target="_blank" class="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 text-sm">
                     <i class="fas fa-external-link-alt mr-1"></i> Visit company website
                 </a>
             </div>
 
             <!-- Application Info -->
-            <div class="mt-8 border-t border-gray-200 pt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     <i class="fas fa-paper-plane text-primary-600 mr-2"></i> How to Apply
                 </h3>
                 <a href="{{ job.parsed_data.application_url }}" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -330,9 +330,9 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+        <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
                     <div class="mb-1">
                         <i class="fas fa-file-import mr-1"></i> Parsed from: {{ job.original_filename }}
                     </div>
@@ -341,7 +341,7 @@
                     </div>
                 </div>
                 <div class="mt-3 sm:mt-0 space-x-3">
-                    <button class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <button class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <i class="fas fa-pencil-alt mr-2"></i> Edit
                     </button>
                     <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -350,8 +350,8 @@
                 </div>
             </div>
             <div class="mt-2 text-xs text-gray-400">
-                Created: {{ job.parsed_data.metadata.created_at }} | 
-                Updated: {{ job.parsed_data.metadata.updated_at }} | 
+                Created: {{ job.parsed_data.metadata.created_at }} |
+                Updated: {{ job.parsed_data.metadata.updated_at }} |
                 Source: {{ job.parsed_data.metadata.source|replace('_', ' ')|title }}
             </div>
         </div>

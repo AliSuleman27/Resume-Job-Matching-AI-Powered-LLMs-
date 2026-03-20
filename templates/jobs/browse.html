@@ -1,29 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}Browse Jobs | NerdyParser.com{% endblock %}
+{% block title %}Browse Jobs | Emploify.io{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Browse Jobs</h1>
-        <p class="mt-2 text-gray-600">Find your next career opportunity</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Browse Jobs</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Find your next career opportunity</p>
     </div>
 
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="divide-y divide-gray-200">
+    <!-- Search & Filter Bar -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <div class="relative">
+                    <input type="text" id="jobSearch" placeholder="Search by title, company, or skills..."
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-primary-500 focus:border-primary-500">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <select id="typeFilter" class="w-full py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-primary-500 focus:border-primary-500">
+                    <option value="">All Types</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                </select>
+            </div>
+            <div>
+                <select id="remoteFilter" class="w-full py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-primary-500 focus:border-primary-500">
+                    <option value="">All Locations</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="onsite">Onsite</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div id="jobsList" class="divide-y divide-gray-200 dark:divide-gray-700">
             {% for job in jobs %}
-            <div class="p-6 hover:bg-gray-50 transition-colors">
+            <div class="job-item p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                 data-title="{{ job.parsed_data.title|lower }}"
+                 data-company="{{ job.company|lower }}"
+                 data-type="{{ job.parsed_data.job_type|default('') }}"
+                 data-remote="{{ 'remote' if job.parsed_data.is_remote else '' }} {{ 'hybrid' if job.parsed_data.is_hybrid else '' }} {{ 'onsite' if job.parsed_data.is_onsite else '' }}">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-900">
-                            <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="hover:text-primary-600">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="hover:text-primary-600 dark:hover:text-primary-400">
                                 {{ job.parsed_data.title }}
                             </a>
                         </h2>
-                        <div class="mt-1 flex items-center text-sm text-gray-500">
+                        <div class="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
                             <span class="mr-4">
-                                <i class="fas fa-building mr-1"></i>
-                                {{ job.company }}
+                                <i class="fas fa-building mr-1"></i> {{ job.company }}
                             </span>
                             <span>
                                 <i class="fas fa-map-marker-alt mr-1"></i>
@@ -35,42 +69,36 @@
                                     Remote
                                 {% endif %}
                             </span>
-                            
                         </div>
                     </div>
-                    {% if job.parsed_data.is_remote %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-                        Remote
-                    </span>
-                {% endif %}
-                {% if job.parsed_data.is_hybrid %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-                        Hybrid
-                    </span>
-                {% endif %}
-                {% if job.parsed_data.is_onsite %}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-                        Onsite
-                    </span>
-                {% endif %}
-                
+                    <div class="flex space-x-2">
+                        {% if job.parsed_data.is_remote %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Remote</span>
+                        {% endif %}
+                        {% if job.parsed_data.is_hybrid %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Hybrid</span>
+                        {% endif %}
+                        {% if job.parsed_data.is_onsite %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">Onsite</span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="mt-4">
-                    <p class="text-gray-600 line-clamp-2">
+                    <p class="text-gray-600 dark:text-gray-300 line-clamp-2">
                         {{ job.parsed_data.description | truncate(200) }}
                     </p>
                 </div>
                 <div class="mt-4 flex justify-between items-center">
-                    <span class="text-sm text-gray-500">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
                         Posted {{ job.created_at.strftime('%b %d, %Y') }}
                     </span>
-                    <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+                    <a href="{{ url_for('jobs.job_detail', job_id=job._id) }}" class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">
                         View details <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>
             </div>
             {% else %}
-            <div class="p-6 text-center text-gray-500">
+            <div class="p-6 text-center text-gray-500 dark:text-gray-400">
                 No jobs available at the moment. Check back later!
             </div>
             {% endfor %}
@@ -81,22 +109,47 @@
     <div class="mt-8 flex justify-center">
         <nav class="flex items-center space-x-4">
             {% if current_page > 1 %}
-            <a href="{{ url_for('jobs.browse_jobs', page=current_page-1) }}" class="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                Previous
-            </a>
+            <a href="{{ url_for('jobs.browse_jobs', page=current_page-1) }}" class="px-3 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Previous</a>
             {% endif %}
-            
-            <span class="px-3 py-1 rounded-md bg-primary-600 text-white text-sm font-medium">
-                Page {{ current_page }} of {{ total_pages }}
-            </span>
-            
+            <span class="px-3 py-1 rounded-md bg-primary-600 text-white text-sm font-medium">Page {{ current_page }} of {{ total_pages }}</span>
             {% if current_page < total_pages %}
-            <a href="{{ url_for('jobs.browse_jobs', page=current_page+1) }}" class="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                Next
-            </a>
+            <a href="{{ url_for('jobs.browse_jobs', page=current_page+1) }}" class="px-3 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Next</a>
             {% endif %}
         </nav>
     </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('jobSearch');
+    const typeFilter = document.getElementById('typeFilter');
+    const remoteFilter = document.getElementById('remoteFilter');
+    const items = document.querySelectorAll('.job-item');
+
+    function filterJobs() {
+        const search = searchInput.value.toLowerCase();
+        const type = typeFilter.value;
+        const remote = remoteFilter.value;
+
+        items.forEach(item => {
+            const title = item.dataset.title;
+            const company = item.dataset.company;
+            const itemType = item.dataset.type;
+            const itemRemote = item.dataset.remote;
+
+            let show = true;
+            if (search && !title.includes(search) && !company.includes(search)) show = false;
+            if (type && itemType !== type) show = false;
+            if (remote && !itemRemote.includes(remote)) show = false;
+
+            item.style.display = show ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterJobs);
+    typeFilter.addEventListener('change', filterJobs);
+    remoteFilter.addEventListener('change', filterJobs);
+});
+</script>
 {% endblock %}

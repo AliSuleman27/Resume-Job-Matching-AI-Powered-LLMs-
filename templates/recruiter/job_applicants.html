@@ -1,45 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Job Applicants | NerdyParser.com{% endblock %}
+{% block title %}Job Applicants | Emploify.io{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6">
-        <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800 mb-4">
+        <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 mb-4">
             <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
         </a>
-        <h1 class="text-2xl font-bold text-gray-900">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
             <i class="fas fa-users mr-2 text-primary-600"></i> Applicants for {{ job.parsed_data.title }}
         </h1>
-        <p class="text-gray-500 mt-1">{{ job.company }}</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">{{ job.company }}</p>
     </div>
 
     <!-- Stats Section -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <!-- Total Applicants -->
-        <div class="bg-white p-6 rounded-lg shadow">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <div class="flex items-center">
-                <div class="p-3 rounded-full bg-primary-100 text-primary-600 mr-4">
+                <div class="p-3 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-600 mr-4">
                     <i class="fas fa-users text-xl"></i>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Total Applicants</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ total_applicants }}</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applicants</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ total_applicants }}</p>
                 </div>
             </div>
         </div>
 
         <!-- Status Breakdown -->
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Application Status</h3>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Application Status</h3>
             <div class="space-y-3">
                 {% for status, count in status_counts.items() %}
                 <div>
                     <div class="flex justify-between text-sm mb-1">
-                        <span class="capitalize">{{ status }}</span>
-                        <span>{{ count }} ({{ (count / total_applicants * 100)|round(1) }}%)</span>
+                        <span class="capitalize text-gray-700 dark:text-gray-300">{{ status }}</span>
+                        <span class="text-gray-600 dark:text-gray-400">{{ count }} ({{ (count / total_applicants * 100)|round(1) }}%)</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-primary-600 h-2 rounded-full" 
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-primary-600 h-2 rounded-full"
                              style="width: {{ (count / total_applicants * 100)|round(1) }}%"></div>
                     </div>
                 </div>
@@ -48,17 +48,17 @@
         </div>
 
         <!-- Experience Levels -->
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Experience Levels</h3>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Experience Levels</h3>
             <div class="space-y-3">
                 {% for level, count in experience_levels.items() %}
                 <div>
                     <div class="flex justify-between text-sm mb-1">
-                        <span>{{ level }}</span>
-                        <span>{{ count }} ({{ (count / total_applicants * 100)|round(1) }}%)</span>
+                        <span class="text-gray-700 dark:text-gray-300">{{ level }}</span>
+                        <span class="text-gray-600 dark:text-gray-400">{{ count }} ({{ (count / total_applicants * 100)|round(1) }}%)</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-primary-600 h-2 rounded-full" 
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-primary-600 h-2 rounded-full"
                              style="width: {{ (count / total_applicants * 100)|round(1) }}%"></div>
                     </div>
                 </div>
@@ -68,58 +68,74 @@
     </div>
 
     <!-- Top Skills -->
-    <div class="bg-white p-6 rounded-lg shadow mb-8">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Top Skills</h3>
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Top Skills</h3>
         <div class="flex flex-wrap gap-2">
             {% for skill, count in top_skills %}
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-                {{ skill }} <span class="ml-1 text-primary-600">({{ count }})</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-300">
+                {{ skill }} <span class="ml-1 text-primary-600 dark:text-primary-400">({{ count }})</span>
             </span>
             {% endfor %}
         </div>
     </div>
 
+    <!-- Bulk Actions Toolbar -->
+    <div id="bulkActions" class="hidden bg-primary-50 dark:bg-primary-900/30 p-4 rounded-lg mb-4 flex items-center justify-between">
+        <span id="selectedCount" class="text-sm font-medium text-primary-700 dark:text-primary-300">0 selected</span>
+        <div class="flex space-x-2">
+            <button onclick="bulkUpdateStatus('reviewed')" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Mark Reviewed</button>
+            <button onclick="bulkUpdateStatus('shortlisted')" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700">Shortlist</button>
+            <button onclick="bulkUpdateStatus('rejected')" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
+        </div>
+    </div>
+
     <!-- Applicants Table -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500">
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Applicant
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Experience
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Skills
                         </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Status
                         </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Actions
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {% for app in applications %}
-                    <tr>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" class="app-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500" data-application-id="{{ app._id }}">
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
                                     <i class="fas fa-user text-primary-600"></i>
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ app.resume_data.basic_info.full_name }}
                                     </div>
-                                    <div class="text-sm text-gray-500">{{ app.user_email }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ app.user_email }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">
+                            <div class="text-sm text-gray-900 dark:text-white">
                                 {{ app.total_experience }} years
 
                             </div>
@@ -127,32 +143,38 @@
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
                                 {% for skill in app.resume_data.get('skills', [])[:3] %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                                     {{ skill.skill_name }}
                                 </span>
                                 {% endfor %}
                                 {% if app.resume_data.get('skills', [])|length > 3 %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                                     +{{ app.resume_data.get('skills', [])|length - 3 }} more
                                 </span>
                                 {% endif %}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <select class="status-select border-gray-300 rounded-md shadow-sm text-sm" 
+                            <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-sm"
                                     data-application-id="{{ app._id }}"
                                     onchange="updateStatus(this)">
                                 <option value="submitted" {% if app.status == 'submitted' %}selected{% endif %}>Submitted</option>
                                 <option value="reviewed" {% if app.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                                <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
                                 <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
                                 <option value="hired" {% if app.status == 'hired' %}selected{% endif %}>Hired</option>
                             </select>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}" class="text-primary-600 hover:text-primary-900 mr-4">
+                            <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3">
                                 <i class="fas fa-eye mr-1"></i> View
                             </a>
-                            <a href="#" class="text-indigo-600 hover:text-indigo-900">
+                            <button class="feedback-btn text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 mr-3"
+                                    data-application-id="{{ app._id }}"
+                                    data-existing-feedback="{{ app.feedback or '' }}">
+                                <i class="fas fa-comment-dots mr-1"></i> Feedback
+                            </button>
+                            <a href="mailto:{{ app.user_email }}?subject=Regarding your application for {{ job.parsed_data.title }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 <i class="fas fa-envelope mr-1"></i> Contact
                             </a>
                         </td>
@@ -164,12 +186,38 @@
     </div>
 </div>
 
+<!-- Feedback Modal -->
+<div id="feedbackModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-comment-dots mr-2 text-amber-500"></i>Applicant Feedback</h3>
+            <button id="closeFeedbackModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Feedback</label>
+                <textarea id="feedbackText" rows="6" maxlength="2000" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Provide feedback for this applicant..."></textarea>
+                <div class="text-right text-xs text-gray-400 mt-1"><span id="feedbackCharCount">0</span>/2000</div>
+            </div>
+            <input type="hidden" id="feedbackAppId">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelFeedback" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="saveFeedback" class="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-md hover:bg-amber-600 transition-colors">
+                    <i class="fas fa-save mr-1"></i>Save Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function updateStatus(selectElement) {
     const applicationId = selectElement.dataset.applicationId;
     const newStatus = selectElement.value;
-    
-    fetch(`/api/applications/${applicationId}/status`, {
+
+    fetch(`/recruiter/api/applications/${applicationId}/status`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -179,13 +227,123 @@ function updateStatus(selectElement) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Optional: Show a success message
-            console.log('Status updated successfully');
+            Emploify.showToast('Status updated', 'success');
         }
     })
     .catch(error => {
-        console.error('Error updating status:', error);
+        Emploify.showToast('Error updating status', 'error');
     });
 }
+
+// Select All checkbox functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.app-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    updateBulkActions();
+});
+
+// Individual checkbox change
+document.querySelectorAll('.app-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const allCheckboxes = document.querySelectorAll('.app-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.app-checkbox:checked');
+        document.getElementById('selectAll').checked = allCheckboxes.length === checkedCheckboxes.length;
+        updateBulkActions();
+    });
+});
+
+function updateBulkActions() {
+    const checked = document.querySelectorAll('.app-checkbox:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+
+    if (checked.length > 0) {
+        bulkActions.classList.remove('hidden');
+        selectedCount.textContent = checked.length + ' selected';
+    } else {
+        bulkActions.classList.add('hidden');
+    }
+}
+
+function bulkUpdateStatus(status) {
+    const checked = document.querySelectorAll('.app-checkbox:checked');
+    const ids = Array.from(checked).map(cb => cb.dataset.applicationId);
+    if (!ids.length) return;
+
+    fetch('/recruiter/api/applications/bulk-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ application_ids: ids, status: status })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            Emploify.showToast(`Updated ${data.updated} applications`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        }
+    })
+    .catch(() => Emploify.showToast('Error updating statuses', 'error'));
+}
+
+// Feedback modal
+const feedbackModal = document.getElementById('feedbackModal');
+const feedbackText = document.getElementById('feedbackText');
+const feedbackCharCount = document.getElementById('feedbackCharCount');
+const feedbackAppId = document.getElementById('feedbackAppId');
+
+feedbackText.addEventListener('input', function() {
+    feedbackCharCount.textContent = this.value.length;
+});
+
+document.querySelectorAll('.feedback-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        feedbackAppId.value = this.dataset.applicationId;
+        feedbackText.value = this.dataset.existingFeedback || '';
+        feedbackCharCount.textContent = feedbackText.value.length;
+        feedbackModal.classList.remove('hidden');
+    });
+});
+
+function closeFeedbackModalFn() {
+    feedbackModal.classList.add('hidden');
+}
+
+document.getElementById('closeFeedbackModal').addEventListener('click', closeFeedbackModalFn);
+document.getElementById('cancelFeedback').addEventListener('click', closeFeedbackModalFn);
+feedbackModal.addEventListener('click', function(e) {
+    if (e.target === feedbackModal) closeFeedbackModalFn();
+});
+
+document.getElementById('saveFeedback').addEventListener('click', function() {
+    const appId = feedbackAppId.value;
+    const text = feedbackText.value.trim();
+    if (!text) {
+        Emploify.showToast('Please enter feedback text', 'error');
+        return;
+    }
+
+    fetch(`/recruiter/api/applications/${appId}/feedback`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback: text })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            Emploify.showToast('Feedback saved', 'success');
+            // Update the button's data attribute
+            const btn = document.querySelector(`.feedback-btn[data-application-id="${appId}"]`);
+            if (btn) btn.dataset.existingFeedback = text;
+            closeFeedbackModalFn();
+        } else {
+            Emploify.showToast(data.error || 'Error saving feedback', 'error');
+        }
+    })
+    .catch(() => Emploify.showToast('Error saving feedback', 'error'));
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFeedbackModalFn();
+});
 </script>
 {% endblock %}

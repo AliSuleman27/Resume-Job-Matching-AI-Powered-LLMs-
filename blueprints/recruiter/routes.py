@@ -2,15 +2,17 @@ import os
 import json
 import logging
 import datetime
+from datetime import timezone
 from collections import defaultdict
-from flask import render_template, request, redirect, url_for, flash, current_app
+from flask import render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from bson.objectid import ObjectId
 from blueprints.recruiter import recruiter_bp
 from blueprints.auth.user_models import Recruiter
 from extensions import (
-    jobs_collection, applications_collection, resumes_collection, matcher
+    jobs_collection, applications_collection, resumes_collection, ai_results_collection, matcher,
+    users_collection
 )
 from services.llm_service import call_job_llm, extract_text_from_file, allowed_file
 
@@ -29,7 +31,22 @@ def recruiter_dashboard():
 
     total_applicants = applications_collection.count_documents({'job_id': {'$in': job_ids}}) if job_ids else 0
 
-    return render_template('recruiter_dashboard.html', jobs=jobs, total_applicants=total_applicants)
+    # Compute real top candidates (score >= 0.7)
+    top_candidates = 0
+    ai_analyses_count = 0
+    if job_ids:
+        ai_results = list(ai_results_collection.find({'job_id': {'$in': job_ids}}))
+        ai_analyses_count = len(ai_results)
+        for result in ai_results:
+            for candidate in result.get('ranked_candidates', []):
+                if candidate.get('overall_score', 0) >= 0.7:
+                    top_candidates += 1
+
+    return render_template('recruiter_dashboard.html',
+                           jobs=jobs,
+                           total_applicants=total_applicants,
+                           top_candidates=top_candidates,
+                           ai_analyses_count=ai_analyses_count)
 
 
 @recruiter_bp.route('/create_job', methods=['GET', 'POST'])
@@ -55,7 +72,7 @@ def create_job():
                 temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                 file.save(temp_path)
 
-                file_type = filename.split('.')[-1].lower()
+                file_type = filename.rsplit('.', 1)[-1].lower()
                 job_text = extract_text_from_file(temp_path, file_type)
 
                 llm_response = call_job_llm(job_text)
@@ -72,8 +89,8 @@ def create_job():
                     'original_filename': filename,
                     'job_description': job_text,
                     'parsed_data': parsed_job,
-                    'created_at': datetime.datetime.utcnow(),
-                    'updated_at': datetime.datetime.utcnow()
+                    'created_at': datetime.datetime.now(timezone.utc),
+                    'updated_at': datetime.datetime.now(timezone.utc)
                 }
                 jobs_collection.insert_one(job_data)
                 matcher.process_job(jsonJob=parsed_job)
@@ -85,8 +102,12 @@ def create_job():
 
                 return redirect(url_for('recruiter.view_job', job_id=str(job_data['_id'])))
 
+            except json.JSONDecodeError:
+                logger.error("LLM returned invalid JSON for job description parsing")
+                flash('Error parsing job description output. Please try again.', 'error')
+                return redirect(request.url)
             except Exception as e:
-                logger.error(f"Error processing job file: {str(e)}")
+                logger.error(f"Error processing job file: {e}")
                 flash('Error processing job description', 'error')
                 return redirect(request.url)
         else:
@@ -185,7 +206,9 @@ def view_job_applicants(job_id):
             'resume_data': '$resume.parsed_data',
             'status': 1,
             'applied_at': 1,
-            'cover_message': 1
+            'cover_message': 1,
+            'feedback': 1,
+            'feedback_at': 1
         }}
     ]))
 
@@ -207,7 +230,7 @@ def view_job_applicants(job_id):
                 try:
                     from datetime import datetime as dt
                     start = dt.strptime(exp['start_date'], "%Y-%m-%d")
-                    end = dt.strptime(exp['end_date'], "%Y-%m-%d") if exp['end_date'] else dt.now()
+                    end = dt.strptime(exp['end_date'], "%Y-%m-%d") if exp['end_date'] else dt.now(timezone.utc)
                     total_exp += (end - start).days / 365.25
                 except Exception:
                     continue
@@ -252,3 +275,173 @@ def recruiter_view_resume(resume_id):
         return redirect(url_for('recruiter.recruiter_dashboard'))
 
     return render_template('recruiter/resume_view.html', resume=resume)
+
+
+@recruiter_bp.route('/api/applications/<application_id>/status', methods=['PUT'])
+@login_required
+def update_application_status(application_id):
+    """Update a single application's status"""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    new_status = data.get('status')
+    valid_statuses = ['submitted', 'reviewed', 'shortlisted', 'rejected', 'hired']
+
+    if new_status not in valid_statuses:
+        return jsonify({'error': 'Invalid status'}), 400
+
+    # Verify the application belongs to one of the recruiter's jobs
+    application = applications_collection.find_one({'_id': ObjectId(application_id)})
+    if not application:
+        return jsonify({'error': 'Application not found'}), 404
+
+    job = jobs_collection.find_one({
+        '_id': application['job_id'],
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        return jsonify({'error': 'Access denied'}), 403
+
+    update_fields = {'status': new_status, 'updated_at': datetime.datetime.now(timezone.utc)}
+
+    feedback = data.get('feedback')
+    if feedback is not None:
+        feedback = str(feedback)[:2000]
+        update_fields['feedback'] = feedback
+        update_fields['feedback_at'] = datetime.datetime.now(timezone.utc)
+
+    applications_collection.update_one(
+        {'_id': ObjectId(application_id)},
+        {'$set': update_fields}
+    )
+
+    return jsonify({'success': True, 'status': new_status})
+
+
+@recruiter_bp.route('/api/applications/<application_id>/feedback', methods=['PUT'])
+@login_required
+def update_application_feedback(application_id):
+    """Update feedback on an application without changing status"""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    feedback = data.get('feedback', '')
+    if not feedback or not feedback.strip():
+        return jsonify({'error': 'Feedback text is required'}), 400
+
+    feedback = str(feedback)[:2000]
+
+    application = applications_collection.find_one({'_id': ObjectId(application_id)})
+    if not application:
+        return jsonify({'error': 'Application not found'}), 404
+
+    job = jobs_collection.find_one({
+        '_id': application['job_id'],
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        return jsonify({'error': 'Access denied'}), 403
+
+    applications_collection.update_one(
+        {'_id': ObjectId(application_id)},
+        {'$set': {
+            'feedback': feedback,
+            'feedback_at': datetime.datetime.now(timezone.utc),
+            'updated_at': datetime.datetime.now(timezone.utc)
+        }}
+    )
+
+    return jsonify({'success': True})
+
+
+@recruiter_bp.route('/api/applications/<application_id>/contact', methods=['GET'])
+@login_required
+def get_application_contact(application_id):
+    """Get applicant contact info for the email modal"""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    application = applications_collection.find_one({'_id': ObjectId(application_id)})
+    if not application:
+        return jsonify({'error': 'Application not found'}), 404
+
+    job = jobs_collection.find_one({
+        '_id': application['job_id'],
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        return jsonify({'error': 'Access denied'}), 403
+
+    user = users_collection.find_one({'_id': application['user_id']})
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'success': True,
+        'email': user.get('email', ''),
+        'job_title': job.get('parsed_data', {}).get('title', ''),
+        'company': job.get('company', '')
+    })
+
+
+@recruiter_bp.route('/api/applications/bulk-status', methods=['PUT'])
+@login_required
+def bulk_update_status():
+    """Bulk update application statuses"""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    application_ids = data.get('application_ids', [])
+    new_status = data.get('status')
+    valid_statuses = ['submitted', 'reviewed', 'shortlisted', 'rejected', 'hired']
+
+    if new_status not in valid_statuses:
+        return jsonify({'error': 'Invalid status'}), 400
+
+    if not application_ids:
+        return jsonify({'error': 'No applications selected'}), 400
+
+    # Get recruiter's job IDs
+    recruiter_job_ids = jobs_collection.find(
+        {'recruiter_id': ObjectId(current_user.id)}, {'_id': 1}
+    ).distinct('_id')
+
+    result = applications_collection.update_many(
+        {
+            '_id': {'$in': [ObjectId(aid) for aid in application_ids]},
+            'job_id': {'$in': recruiter_job_ids}
+        },
+        {'$set': {'status': new_status, 'updated_at': datetime.datetime.now(timezone.utc)}}
+    )
+
+    return jsonify({'success': True, 'updated': result.modified_count})
+
+
+@recruiter_bp.route('/candidate/<resume_id>/details')
+@login_required
+def candidate_details(resume_id):
+    """Get candidate resume details for modal view — authorization enforced"""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        return jsonify({'success': False, 'error': 'Resume not found'}), 404
+
+    # IDOR FIX: verify this resume belongs to an applicant for one of the recruiter's jobs
+    recruiter_job_ids = jobs_collection.find(
+        {'recruiter_id': ObjectId(current_user.id)}, {'_id': 1}
+    ).distinct('_id')
+
+    application = applications_collection.find_one({
+        'resume_id': ObjectId(resume_id),
+        'job_id': {'$in': recruiter_job_ids}
+    })
+
+    if not application:
+        return jsonify({'error': 'Access denied'}), 403
+
+    return jsonify({'success': True, 'candidate': resume.get('parsed_data', {})})

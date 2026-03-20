@@ -1,4 +1,5 @@
 import os
+import hashlib
 import logging
 import numpy as np
 from huggingface_hub import InferenceClient
@@ -9,6 +10,13 @@ MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384
 
 _client = None
+_cache_collection = None
+
+
+def init_cache(collection):
+    """Set the MongoDB collection used for embedding caching."""
+    global _cache_collection
+    _cache_collection = collection
 
 
 def _get_client():
@@ -20,9 +28,20 @@ def _get_client():
 
 
 def get_embedding(text: str) -> list:
-    """Get embedding for a single text using HF Inference API."""
+    """Get embedding for a single text, with MongoDB caching."""
     if not text or not text.strip():
         return [0.0] * EMBEDDING_DIM
+
+    cache_key = hashlib.sha256(text.strip().encode()).hexdigest()
+
+    # Check cache
+    if _cache_collection is not None:
+        try:
+            cached = _cache_collection.find_one({'_k': cache_key})
+            if cached:
+                return cached['emb']
+        except Exception as e:
+            logger.debug(f"Cache read error: {e}")
 
     try:
         result = _get_client().feature_extraction(text, model=MODEL)
@@ -30,7 +49,20 @@ def get_embedding(text: str) -> list:
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec = vec / norm
-        return vec.tolist()
+        embedding = vec.tolist()
+
+        # Store in cache
+        if _cache_collection is not None:
+            try:
+                _cache_collection.update_one(
+                    {'_k': cache_key},
+                    {'$set': {'_k': cache_key, 'emb': embedding}},
+                    upsert=True
+                )
+            except Exception as e:
+                logger.debug(f"Cache write error: {e}")
+
+        return embedding
     except Exception as e:
         logger.error(f"Embedding API error: {e}")
         return [0.0] * EMBEDDING_DIM

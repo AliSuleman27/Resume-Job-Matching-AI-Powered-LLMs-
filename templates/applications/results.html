@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}AI Match Results | Emploify.io{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+        <a href="{{ url_for('jobs.my_applications') }}" class="inline-flex items-center text-primary-600 hover:text-primary-800 dark:text-primary-400 mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Applications
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <i class="fas fa-chart-pie text-primary-600 mr-2"></i> AI Match Results
+        </h1>
+        {% if job %}
+        <p class="text-gray-500 dark:text-gray-400 mt-1">{{ job.parsed_data.title }} at {{ job.company }}</p>
+        {% endif %}
+    </div>
+
+    {% if ai_result %}
+    <!-- Overall Score Gauge -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8 text-center">
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Overall Match Score</h2>
+        <div class="relative inline-flex items-center justify-center w-40 h-40">
+            <svg class="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke-width="8" class="stroke-gray-200 dark:stroke-gray-700"></circle>
+                <circle cx="60" cy="60" r="54" fill="none" stroke-width="8" stroke-linecap="round"
+                    class="{% if ai_result.overall_score >= 0.7 %}stroke-green-500{% elif ai_result.overall_score >= 0.5 %}stroke-yellow-500{% else %}stroke-red-500{% endif %}"
+                    stroke-dasharray="{{ (ai_result.overall_score * 339.292)|round(0) }} 339.292"></circle>
+            </svg>
+            <span class="absolute text-3xl font-bold {% if ai_result.overall_score >= 0.7 %}text-green-600 dark:text-green-400{% elif ai_result.overall_score >= 0.5 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ (ai_result.overall_score * 100)|round(1) }}%
+            </span>
+        </div>
+        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            {% if ai_result.overall_score >= 0.7 %}Strong match - You're a great fit for this role!
+            {% elif ai_result.overall_score >= 0.5 %}Moderate match - You meet several requirements.
+            {% else %}Low match - Consider strengthening some areas.{% endif %}
+        </p>
+    </div>
+
+    <!-- Section Breakdown -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            <i class="fas fa-chart-bar text-primary-600 mr-2"></i> Section Breakdown
+        </h3>
+        <div class="space-y-4">
+            {% set sections = [
+                ('Skills', ai_result.section_scores.skills, 'blue'),
+                ('Education', ai_result.section_scores.education, 'purple'),
+                ('Experience (Domain)', ai_result.section_scores.experience_title, 'green'),
+                ('Experience (Responsibilities)', ai_result.section_scores.experience_responsibilities, 'teal'),
+                ('Projects', ai_result.section_scores.projects, 'orange'),
+                ('Summary', ai_result.section_scores.summary, 'pink')
+            ] %}
+            {% for name, score, color in sections %}
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ name }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ (score * 100)|round(0) }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                    <div class="bg-{{ color }}-500 h-3 rounded-full transition-all duration-500" style="width: {{ (score * 100)|round(0) }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Constraint Analysis -->
+    {% if ai_result.constraint_results %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            <i class="fas fa-clipboard-check text-primary-600 mr-2"></i> Requirement Analysis
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for key, constraint in ai_result.constraint_results.items() %}
+            {% if key != 'overall' %}
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-900 dark:text-white capitalize">{{ key.replace('_', ' ') }}</span>
+                    <span class="px-2 py-1 text-xs font-semibold rounded
+                        {% if constraint.normalized_score >= 0.8 %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+                        {% elif constraint.normalized_score >= 0.6 %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
+                        {% else %}bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300{% endif %}">
+                        {{ (constraint.normalized_score * 100)|round(0) }}%
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">{{ constraint.explanation }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No AI Results -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
+        <div class="mx-auto w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-6">
+            <i class="fas fa-robot text-gray-400 dark:text-gray-500 text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">AI Analysis Not Available Yet</h3>
+        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            The recruiter hasn't run the AI matching engine for this job yet. Check back later for your match results.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

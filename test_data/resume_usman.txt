@@ -1,0 +1,38 @@
+USMAN TARIQ BUTT
+Backend Engineer
+Email: usman.tariq@email.com | Phone: +92-345-6789012
+Address: Johar Town, Lahore, Punjab, Pakistan
+LinkedIn: linkedin.com/in/usmantariq
+
+SUMMARY
+Backend Engineer with 2 years of experience building robust server-side applications and APIs. Strong foundation in Python and Java with growing expertise in distributed systems and message queues.
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Engineering and Technology (UET), Lahore, Pakistan
+Graduation: June 2022 | GPA: 3.3/4.0
+Relevant Courses: Data Structures, Algorithms, Database Systems, Operating Systems, Computer Networks, Object-Oriented Programming
+
+EXPERIENCE
+Backend Engineer | Tkxel, Lahore
+August 2022 - Present
+- Developed RESTful APIs using Django and Django REST Framework for SaaS products
+- Implemented message queue systems using RabbitMQ for async task processing
+- Optimized database queries reducing API response time from 2s to 200ms
+- Wrote comprehensive unit and integration tests achieving 80% coverage
+- Participated in system design discussions for new microservices
+Skills used: Python, Django, Django REST Framework, PostgreSQL, RabbitMQ, Redis, Docker, Git
+
+Intern Software Engineer | Arbisoft, Lahore
+February 2022 - July 2022
+- Built REST APIs for an EdTech platform using Python Flask
+- Wrote database migration scripts and data validation logic
+- Fixed bugs and improved existing API performance
+Skills used: Python, Flask, MySQL, Git, Linux
+
+SKILLS
+Python, Java, Django, Flask, Django REST Framework, PostgreSQL, MySQL, MongoDB, Redis, RabbitMQ, Docker, Git, REST APIs, Unit Testing, Linux, SQL, OOP, Data Structures, Algorithms
+
+PROJECTS
+URL Shortener Service: Built a high-performance URL shortener handling 10K+ requests per minute with caching. Technologies: Python, Flask, Redis, PostgreSQL
+Task Management API: Created a collaborative task management REST API with real-time notifications. Technologies: Django, Django Channels, WebSocket, PostgreSQL, Celery

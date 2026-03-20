@@ -1,0 +1,43 @@
+Job Title: Senior Python Developer
+Company: TechVentures Pakistan
+Location: Lahore, Punjab, Pakistan
+Job Type: Full-time, Onsite
+Job Level: Senior
+
+Description:
+We are looking for an experienced Senior Python Developer to join our engineering team. You will be responsible for designing, developing, and maintaining scalable backend services and APIs that power our fintech platform serving millions of users across Pakistan.
+
+Responsibilities:
+- Design and develop high-performance RESTful APIs using Python frameworks (Flask/FastAPI/Django)
+- Architect and implement microservices-based solutions on AWS cloud
+- Lead code reviews and establish coding standards for the backend team
+- Optimize database queries and implement caching strategies for performance
+- Collaborate with frontend engineers and product managers to deliver features
+- Mentor junior developers and contribute to technical hiring decisions
+- Implement CI/CD pipelines and ensure automated testing coverage above 80%
+
+Requirements:
+- Bachelor's degree in Computer Science or related field
+- 4+ years of professional experience in Python backend development
+- Strong experience with Flask, FastAPI, or Django
+- Proficiency in PostgreSQL, Redis, and message queues (RabbitMQ/Kafka)
+- Experience with Docker, Kubernetes, and AWS services
+- Solid understanding of microservices architecture and design patterns
+- Experience with CI/CD pipelines and automated testing
+
+Nice to Have:
+- Experience with React.js or frontend development
+- Knowledge of machine learning or data engineering
+- Open source contributions
+- Experience in fintech domain
+
+Skills Required:
+Mandatory: Python, Flask or FastAPI, PostgreSQL, Docker, AWS, REST APIs, Git
+Optional: Kubernetes, React.js, Kafka, Machine Learning
+Tools: GitHub, Jira, Slack, AWS Console, DataDog
+
+Qualifications:
+- Education: Bachelor's degree in Computer Science, Software Engineering, or related field
+- Experience: 4-7 years
+
+Salary: PKR 400,000 - 600,000 per month

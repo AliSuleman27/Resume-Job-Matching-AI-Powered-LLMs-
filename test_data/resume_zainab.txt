@@ -1,0 +1,42 @@
+ZAINAB AHMED QURESHI
+Machine Learning Engineer
+Email: zainab.qureshi@email.com | Phone: +92-311-3334444
+Address: Clifton, Karachi, Sindh, Pakistan
+LinkedIn: linkedin.com/in/zainabqureshi
+
+SUMMARY
+Machine Learning Engineer with 4 years of experience deploying production ML systems. Specialized in recommendation systems, NLP, and building end-to-end ML pipelines. Strong software engineering background with focus on scalable ML infrastructure.
+
+EDUCATION
+Master of Science in Artificial Intelligence
+IBA (Institute of Business Administration), Karachi, Pakistan
+Graduation: June 2020 | GPA: 3.9/4.0
+Relevant Courses: Advanced Machine Learning, Deep Learning, Reinforcement Learning, Computer Vision, Information Retrieval
+
+Bachelor of Science in Computer Science
+FAST-NUCES, Karachi, Pakistan
+Graduation: June 2018 | GPA: 3.6/4.0
+
+EXPERIENCE
+Senior ML Engineer | Bazaar Technologies, Karachi
+January 2022 - Present
+- Built recommendation engine serving personalized product suggestions to 500K+ retailers
+- Designed feature store using Apache Feast for real-time ML feature serving
+- Deployed models using TensorFlow Serving and FastAPI achieving sub-100ms inference latency
+- Led team of 3 ML engineers to build fraud detection system reducing fraudulent orders by 60%
+- Implemented A/B testing framework for ML model experimentation
+Skills used: Python, TensorFlow, PyTorch, FastAPI, Apache Kafka, Feast, Docker, Kubernetes, AWS SageMaker
+
+ML Engineer | Telenor Microfinance Bank (Easypaisa), Karachi
+July 2020 - December 2021
+- Developed credit scoring models using gradient boosting achieving 88% AUC
+- Built data pipelines using Apache Airflow processing 5M+ daily transactions
+- Deployed ML models on AWS SageMaker with automated retraining pipelines
+Skills used: Python, Scikit-learn, XGBoost, Apache Airflow, AWS SageMaker, SQL, PySpark
+
+SKILLS
+Python, TensorFlow, PyTorch, Scikit-learn, FastAPI, Apache Kafka, Apache Airflow, Docker, Kubernetes, AWS (SageMaker, EC2, S3), SQL, PySpark, MLOps, Feature Engineering, Recommendation Systems, NLP, A/B Testing, Git
+
+PROJECTS
+Real-time Recommendation Engine: Built a collaborative filtering + content-based hybrid recommender processing 10K+ requests/sec. Technologies: Python, TensorFlow, Redis, FastAPI, Kafka
+Multilingual Text Classifier: Developed a multi-language text classification system supporting Urdu, English, and Arabic. Technologies: Python, HuggingFace, PyTorch, FastAPI

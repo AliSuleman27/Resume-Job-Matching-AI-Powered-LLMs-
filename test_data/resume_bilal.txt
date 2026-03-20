@@ -1,0 +1,39 @@
+BILAL HASSAN SHEIKH
+DevOps Engineer
+Email: bilal.hassan@email.com | Phone: +92-300-1234567
+Address: DHA Phase 5, Karachi, Sindh, Pakistan
+LinkedIn: linkedin.com/in/bilalhassan
+
+SUMMARY
+DevOps Engineer with 5 years of experience in cloud infrastructure, automation, and reliability engineering. Expert in AWS and Kubernetes with a strong focus on infrastructure as code and continuous delivery.
+
+EDUCATION
+Bachelor of Engineering in Software Engineering
+NED University of Engineering & Technology, Karachi, Pakistan
+Graduation: June 2019 | GPA: 3.4/4.0
+Relevant Courses: Operating Systems, Computer Networks, Software Architecture, Cloud Computing, Distributed Systems
+
+EXPERIENCE
+Senior DevOps Engineer | Careem (Uber), Karachi
+March 2022 - Present
+- Managed Kubernetes clusters handling 2M+ daily ride requests across MENA region
+- Reduced infrastructure costs by 35% through right-sizing and spot instance optimization on AWS
+- Implemented GitOps workflow using ArgoCD for 50+ microservices
+- Designed disaster recovery strategy achieving 99.99% uptime SLA
+- Built observability stack using Prometheus, Grafana, and ELK
+Skills used: Kubernetes, AWS, Terraform, ArgoCD, Prometheus, Grafana, Docker, Python, Bash
+
+DevOps Engineer | Folio3, Karachi
+July 2019 - February 2022
+- Automated infrastructure provisioning using Terraform and Ansible
+- Set up CI/CD pipelines using Jenkins and GitLab CI for 20+ projects
+- Managed AWS infrastructure including EC2, RDS, ECS, and Lambda
+- Implemented security best practices and SOC2 compliance measures
+Skills used: AWS, Terraform, Ansible, Jenkins, GitLab CI, Docker, Linux, Shell Scripting
+
+SKILLS
+AWS (EC2, EKS, RDS, S3, Lambda, CloudFormation), Kubernetes, Docker, Terraform, Ansible, Jenkins, GitLab CI, ArgoCD, Prometheus, Grafana, ELK Stack, Python, Bash, Linux, Networking, Security, GitOps, Infrastructure as Code
+
+PROJECTS
+Multi-Region K8s Platform: Designed and deployed multi-region Kubernetes platform serving traffic across 3 AWS regions with automated failover. Technologies: AWS EKS, Terraform, ArgoCD, Istio
+Automated Security Scanner: Built a CI/CD integrated security scanning tool that checks Docker images and IaC templates. Technologies: Python, Trivy, Checkov, GitHub Actions

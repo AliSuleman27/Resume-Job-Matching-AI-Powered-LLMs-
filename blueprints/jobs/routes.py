@@ -1,9 +1,10 @@
 import datetime
+from datetime import timezone
 from flask import render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 from bson.objectid import ObjectId
 from blueprints.jobs import jobs_bp
-from extensions import jobs_collection, applications_collection, resumes_collection
+from extensions import jobs_collection, applications_collection, resumes_collection, ai_results_collection
 
 
 @jobs_bp.route('/jobs')
@@ -76,8 +77,8 @@ def apply_for_job(job_id):
         'resume_id': ObjectId(resume_id),
         'cover_message': cover_message,
         'status': 'submitted',
-        'applied_at': datetime.datetime.utcnow(),
-        'updated_at': datetime.datetime.utcnow()
+        'applied_at': datetime.datetime.now(timezone.utc),
+        'updated_at': datetime.datetime.now(timezone.utc)
     }
     applications_collection.insert_one(application_data)
 
@@ -101,6 +102,8 @@ def my_applications():
             'status': 1,
             'applied_at': 1,
             'cover_message': 1,
+            'feedback': 1,
+            'feedback_at': 1,
             'job_title': '$job_info.parsed_data.title',
             'company': '$job_info.company',
             'resume_name': '$resume_info.original_filename',
@@ -109,3 +112,33 @@ def my_applications():
     ]))
 
     return render_template('applications/list.html', applications=applications)
+
+
+@jobs_bp.route('/applications/<application_id>/results')
+@login_required
+def application_results(application_id):
+    """View AI match results for a specific application"""
+    application = applications_collection.find_one({
+        '_id': ObjectId(application_id),
+        'user_id': ObjectId(current_user.id)
+    })
+
+    if not application:
+        flash('Application not found', 'error')
+        return redirect(url_for('jobs.my_applications'))
+
+    job = jobs_collection.find_one({'_id': application['job_id']})
+
+    # Find AI results for this job and this user's resume
+    ai_result = None
+    ai_results_doc = ai_results_collection.find_one({'job_id': application['job_id']})
+    if ai_results_doc:
+        for candidate in ai_results_doc.get('ranked_candidates', []):
+            if str(candidate.get('resume_id')) == str(application.get('resume_id')):
+                ai_result = candidate
+                break
+
+    return render_template('applications/results.html',
+                           application=application,
+                           job=job,
+                           ai_result=ai_result)

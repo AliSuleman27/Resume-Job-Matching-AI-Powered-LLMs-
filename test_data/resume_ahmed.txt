@@ -1,0 +1,39 @@
+AHMED RAZA KHAN
+Software Engineer
+Email: ahmed.raza@email.com | Phone: +92-321-4567890
+Address: Gulberg III, Lahore, Punjab, Pakistan
+LinkedIn: linkedin.com/in/ahmedraza
+
+SUMMARY
+Experienced Full Stack Software Engineer with 4+ years of expertise in building scalable web applications using Python, JavaScript, and cloud technologies. Passionate about clean code architecture and microservices design patterns.
+
+EDUCATION
+Bachelor of Science in Computer Science
+LUMS (Lahore University of Management Sciences), Lahore, Pakistan
+Graduation: June 2020 | GPA: 3.6/4.0
+Relevant Courses: Data Structures, Algorithms, Database Systems, Machine Learning, Software Engineering
+
+EXPERIENCE
+Senior Software Engineer | Systems Limited, Lahore
+January 2022 - Present
+- Developed and maintained RESTful APIs using Python Flask and FastAPI serving 50,000+ daily active users
+- Implemented CI/CD pipelines using GitHub Actions reducing deployment time by 60%
+- Led migration of monolithic application to microservices architecture on AWS
+- Mentored 3 junior developers and conducted code reviews
+- Technologies: Python, Flask, PostgreSQL, Redis, Docker, AWS, React.js
+Skills used: Python, Flask, FastAPI, AWS, Docker, PostgreSQL, React.js, CI/CD
+
+Software Engineer | Netsol Technologies, Lahore
+July 2020 - December 2021
+- Built customer-facing web applications using React.js and Node.js
+- Designed and optimized SQL queries improving response times by 40%
+- Collaborated with cross-functional teams in an Agile environment
+- Implemented automated testing achieving 85% code coverage
+Skills used: JavaScript, React.js, Node.js, SQL, Jest, Agile
+
+SKILLS
+Python, JavaScript, TypeScript, Flask, FastAPI, React.js, Node.js, PostgreSQL, MongoDB, Redis, Docker, Kubernetes, AWS (EC2, S3, Lambda), Git, CI/CD, REST APIs, Microservices, Agile/Scrum
+
+PROJECTS
+E-Commerce Platform: Built a full-stack e-commerce platform using Flask + React with Stripe payment integration. Technologies: Python, Flask, React, PostgreSQL, Stripe API
+Real-time Chat Application: Developed a WebSocket-based chat app supporting 1000+ concurrent connections. Technologies: Node.js, Socket.io, Redis, MongoDB

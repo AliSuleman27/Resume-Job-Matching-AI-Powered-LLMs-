@@ -1,41 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Ranked Candidates - {{ job.parsed_data.title }} | NerdyParser.com{% endblock %}
+{% block title %}Ranked Candidates - {{ job.parsed_data.title }} | Emploify.io{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header Section -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
                 <nav class="flex mb-4" aria-label="Breadcrumb">
                     <ol class="inline-flex items-center space-x-1 md:space-x-3">
                         <li class="inline-flex items-center">
-                            <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="text-gray-700 hover:text-primary-600">
+                            <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="text-gray-700 dark:text-gray-300 hover:text-primary-600">
                                 <i class="fas fa-home mr-2"></i>Dashboard
                             </a>
                         </li>
                         <li>
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="{{ url_for('recruiter.view_job', job_id=job._id) }}" class="text-gray-700 hover:text-primary-600">
+                                <i class="fas fa-chevron-right text-gray-400 dark:text-gray-400 mx-2"></i>
+                                <a href="{{ url_for('recruiter.view_job', job_id=job._id) }}" class="text-gray-700 dark:text-gray-300 hover:text-primary-600">
                                     {{ job.parsed_data.title }}
                                 </a>
                             </div>
                         </li>
                         <li aria-current="page">
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <span class="text-gray-500">Ranked Candidates</span>
+                                <i class="fas fa-chevron-right text-gray-400 dark:text-gray-400 mx-2"></i>
+                                <span class="text-gray-500 dark:text-gray-400">Ranked Candidates</span>
                             </div>
                         </li>
                     </ol>
                 </nav>
-                <h1 class="text-3xl font-bold text-gray-900">AI-Ranked Candidates</h1>
-                <p class="text-gray-600 mt-1">{{ job.parsed_data.title }} at {{ job.company }}</p>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">AI-Ranked Candidates</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">{{ job.parsed_data.title }} at {{ job.company }}</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
-                <button id="filterToggle" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <button id="filterToggle" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                     <i class="fas fa-filter mr-2"></i> Filters
                 </button>
                 <button id="exportBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
@@ -47,57 +47,57 @@
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-blue-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <i class="fas fa-users text-blue-500 text-2xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Candidates</dt>
-                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.total_candidates }}</dd>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Candidates</dt>
+                        <dd class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.total_candidates }}</dd>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-green-500">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-green-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <i class="fas fa-star text-green-500 text-2xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
-                        <dt class="text-sm font-medium text-gray-500 truncate">High Match (70%+)</dt>
-                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.high_score }}</dd>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">High Match (70%+)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.high_score }}</dd>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <i class="fas fa-star-half-alt text-yellow-500 text-2xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
-                        <dt class="text-sm font-medium text-gray-500 truncate">Medium Match (50-70%)</dt>
-                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.medium_score }}</dd>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Medium Match (50-70%)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.medium_score }}</dd>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-red-500">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-red-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <i class="fas fa-star text-red-500 text-2xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
-                        <dt class="text-sm font-medium text-gray-500 truncate">Low Match (<50%)</dt>
-                        <dd class="text-2xl font-semibold text-gray-900">{{ stats.low_score }}</dd>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Low Match (<50%)</dt>
+                        <dd class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.low_score }}</dd>
                     </div>
                 </div>
             </div>
@@ -105,11 +105,11 @@
     </div>
 
     <!-- Filter Panel (Hidden by default) -->
-    <div id="filterPanel" class="hidden bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div id="filterPanel" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label for="scoreFilter" class="block text-sm font-medium text-gray-700">Minimum Score</label>
-                <select id="scoreFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                <label for="scoreFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Score</label>
+                <select id="scoreFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="0">All Candidates</option>
                     <option value="0.3">30% and above</option>
                     <option value="0.5">50% and above</option>
@@ -118,8 +118,8 @@
                 </select>
             </div>
             <div>
-                <label for="statusFilter" class="block text-sm font-medium text-gray-700">Application Status</label>
-                <select id="statusFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                <label for="statusFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Application Status</label>
+                <select id="statusFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="">All Statuses</option>
                     <option value="submitted">Submitted</option>
                     <option value="reviewed">Reviewed</option>
@@ -128,8 +128,8 @@
                 </select>
             </div>
             <div>
-                <label for="sortBy" class="block text-sm font-medium text-gray-700">Sort By</label>
-                <select id="sortBy" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                <label for="sortBy" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</label>
+                <select id="sortBy" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="overall_score">Overall Score</option>
                     <option value="applied_at">Application Date</option>
                     <option value="applicant_name">Name</option>
@@ -139,21 +139,21 @@
     </div>
 
     <!-- Candidates List -->
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                 <i class="fas fa-ranking-star text-primary-600 mr-2"></i> Candidate Rankings
             </h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Candidates ranked by AI matching algorithm</p>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">Candidates ranked by AI matching algorithm</p>
         </div>
 
-        <div id="candidatesList" class="divide-y divide-gray-200">
+        <div id="candidatesList" class="divide-y divide-gray-200 dark:divide-gray-700">
             {% for candidate in candidates %}
-            <div class="candidate-item px-4 py-6 sm:px-6 hover:bg-gray-50 transition-colors duration-150" 
-                 data-score="{{ candidate.overall_score }}" 
+            <div class="candidate-item px-4 py-6 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                 data-score="{{ candidate.overall_score }}"
                  data-status="{{ candidate.status }}"
                  data-name="{{ candidate.applicant_name }}">
-                
+
                 <!-- Candidate Header with Score -->
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-4">
@@ -165,26 +165,26 @@
                             </div>
                         </div>
                         <div>
-                            <h4 class="text-lg font-semibold text-gray-900">{{ candidate.applicant_name }}</h4>
-                            <p class="text-sm text-gray-500">Applied {{ candidate.applied_at.strftime('%b %d, %Y') }}</p>
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ candidate.applicant_name }}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Applied {{ candidate.applied_at.strftime('%b %d, %Y') }}</p>
                         </div>
                     </div>
-                    
+
                     <!-- Overall Score Badge -->
                     <div class="flex items-center space-x-4">
                         <div class="text-right">
                             <div class="flex items-center space-x-2">
-                                <span class="text-sm text-gray-500">Overall Match</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Overall Match</span>
                                 <div class="px-3 py-1 rounded-full text-sm font-semibold
-                                    {% if candidate.overall_score >= 0.8 %}bg-green-100 text-green-800
-                                    {% elif candidate.overall_score >= 0.7 %}bg-blue-100 text-blue-800
-                                    {% elif candidate.overall_score >= 0.5 %}bg-yellow-100 text-yellow-800
-                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {% if candidate.overall_score >= 0.8 %}bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300
+                                    {% elif candidate.overall_score >= 0.7 %}bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300
+                                    {% elif candidate.overall_score >= 0.5 %}bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300
+                                    {% else %}bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300{% endif %}">
                                     {{ (candidate.overall_score * 100) | round(1) }}%
                                 </div>
                             </div>
                         </div>
-                        <button class="toggle-details text-gray-400 hover:text-primary-600 transition-colors">
+                        <button class="toggle-details text-gray-400 dark:text-gray-400 hover:text-primary-600 transition-colors">
                             <i class="fas fa-chevron-down text-xl transform transition-transform duration-200"></i>
                         </button>
                     </div>
@@ -192,39 +192,39 @@
 
                 <!-- Quick Metrics Row -->
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Skills</div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Skills</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.skills * 100) | round(0) }}%
                         </div>
                     </div>
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Education</div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Education</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.education * 100) | round(0) }}%
                         </div>
                     </div>
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Experience Domain Match</div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Experience Domain Match</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.experience_title * 100) | round(0) }}%
                         </div>
                     </div>
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Experience Responsibilities Match</div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Experience Responsibilities Match</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.experience_responsibilities * 100) | round(0) }}%
                         </div>
                     </div>
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Projects</div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Projects</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.projects * 100) | round(0) }}%
                         </div>
                     </div>
-                    
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <div class="text-sm font-medium text-gray-900">Summary</div>
+
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">Summary</div>
                         <div class="text-lg font-semibold text-primary-600">
                             {{ (candidate.section_scores.summary * 100) | round(0) }}%
                         </div>
@@ -235,26 +235,26 @@
                 <!-- Detailed Analysis (Hidden by default) -->
                 <div class="details-panel hidden">
                     <!-- Constraint Analysis -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h5 class="text-md font-semibold text-gray-900 mb-3">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                        <h5 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
                             <i class="fas fa-clipboard-check text-primary-600 mr-2"></i>Constraint Analysis
                         </h5>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {% for key, constraint in candidate.constraint_results.items() %}
                             {% if key != 'overall' %}
-                            <div class="bg-white p-3 rounded border">
+                            <div class="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="font-medium text-gray-900 capitalize">{{ key.replace('_', ' ') }}</span>
+                                    <span class="font-medium text-gray-900 dark:text-white capitalize">{{ key.replace('_', ' ') }}</span>
                                     <span class="px-2 py-1 text-xs font-semibold rounded
-                                        {% if constraint.normalized_score >= 0.8 %}bg-green-100 text-green-800
-                                        {% elif constraint.normalized_score >= 0.6 %}bg-yellow-100 text-yellow-800
-                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {% if constraint.normalized_score >= 0.8 %}bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300
+                                        {% elif constraint.normalized_score >= 0.6 %}bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300
+                                        {% else %}bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300{% endif %}">
                                         {{ (constraint.normalized_score * 100) | round(0) }}%
                                     </span>
                                 </div>
-                                <p class="text-sm text-gray-600">{{ constraint.explanation }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ constraint.explanation }}</p>
                                 {% if constraint.weight > 0 %}
-                                <div class="mt-2 text-xs text-gray-500">Weight: {{ (constraint.weight * 100) | round(0) }}%</div>
+                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">Weight: {{ (constraint.weight * 100) | round(0) }}%</div>
                                 {% endif %}
                             </div>
                             {% endif %}
@@ -263,20 +263,27 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex space-x-2">
                             <button class="view-resume-btn px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
                                     data-resume-id="{{ candidate.resume_id }}">
                                 <i class="fas fa-file-alt mr-2"></i>View Resume
                             </button>
-                            <button class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
+                            <button class="shortlist-btn px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                                    data-application-id="{{ candidate.application_id }}">
                                 <i class="fas fa-check mr-2"></i>Shortlist
                             </button>
-                            <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                            <button class="mark-reviewed-btn px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded-md hover:bg-yellow-600 transition-colors"
+                                    data-application-id="{{ candidate.application_id }}">
+                                <i class="fas fa-eye mr-2"></i>Mark Reviewed
+                            </button>
+                            <button class="contact-btn px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                                    data-application-id="{{ candidate.application_id }}"
+                                    data-applicant-name="{{ candidate.applicant_name }}">
                                 <i class="fas fa-envelope mr-2"></i>Contact
                             </button>
                         </div>
-                        <div class="text-sm text-gray-500">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
                             Application ID: {{ candidate.application_id }}
                         </div>
                     </div>
@@ -287,20 +294,52 @@
 
         {% if not candidates %}
         <div class="px-4 py-12 sm:px-6 text-center">
-            <i class="fas fa-users text-gray-300 text-4xl mb-4"></i>
-            <h3 class="text-lg font-medium text-gray-900">No candidates found</h3>
-            <p class="mt-1 text-sm text-gray-500">No applications have been submitted for this job yet.</p>
+            <i class="fas fa-users text-gray-300 dark:text-gray-600 text-4xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">No candidates found</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No applications have been submitted for this job yet.</p>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Resume Modal -->
-<div id="resumeModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 shadow-lg rounded-md bg-white">
+<!-- Email Modal -->
+<div id="emailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold">Candidate Resume</h3>
-            <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-envelope mr-2 text-blue-600"></i>Send Interview Email</h3>
+            <button class="close-email-modal text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
+                <input type="email" id="emailTo" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                <input type="text" id="emailSubject" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                <textarea id="emailBody" rows="8" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button class="close-email-modal px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <a id="emailMailtoLink" href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-paper-plane mr-2"></i>Open in Email Client
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resume Modal -->
+<div id="resumeModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-4/5 lg:w-3/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Candidate Resume</h3>
+            <button id="closeModal" class="text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -315,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle filter panel
     const filterToggle = document.getElementById('filterToggle');
     const filterPanel = document.getElementById('filterPanel');
-    
+
     filterToggle.addEventListener('click', function() {
         filterPanel.classList.toggle('hidden');
     });
@@ -326,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const candidateItem = this.closest('.candidate-item');
             const detailsPanel = candidateItem.querySelector('.details-panel');
             const icon = this.querySelector('i');
-            
+
             detailsPanel.classList.toggle('hidden');
             icon.classList.toggle('rotate-180');
         });
@@ -336,30 +375,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const scoreFilter = document.getElementById('scoreFilter');
     const statusFilter = document.getElementById('statusFilter');
     const sortBy = document.getElementById('sortBy');
-    
+
     function filterCandidates() {
         const minScore = parseFloat(scoreFilter.value);
         const statusValue = statusFilter.value;
         const candidates = Array.from(document.querySelectorAll('.candidate-item'));
-        
+
         candidates.forEach(candidate => {
             const score = parseFloat(candidate.dataset.score);
             const status = candidate.dataset.status;
-            
+
             let show = true;
-            
+
             if (score < minScore) show = false;
             if (statusValue && status !== statusValue) show = false;
-            
+
             candidate.style.display = show ? 'block' : 'none';
         });
     }
-    
+
     function sortCandidates() {
         const sortValue = sortBy.value;
         const candidatesList = document.getElementById('candidatesList');
         const candidates = Array.from(candidatesList.querySelectorAll('.candidate-item'));
-        
+
         candidates.sort((a, b) => {
             if (sortValue === 'overall_score') {
                 return parseFloat(b.dataset.score) - parseFloat(a.dataset.score);
@@ -370,12 +409,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return 0;
             }
         });
-        
+
         candidates.forEach(candidate => {
             candidatesList.appendChild(candidate);
         });
     }
-    
+
     scoreFilter.addEventListener('change', filterCandidates);
     statusFilter.addEventListener('change', filterCandidates);
     sortBy.addEventListener('change', sortCandidates);
@@ -384,17 +423,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('resumeModal');
     const closeModal = document.getElementById('closeModal');
     const resumeContent = document.getElementById('resumeContent');
-    
+
     document.querySelectorAll('.view-resume-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const resumeId = this.dataset.resumeId;
-            
+
             // Show loading state
-            resumeContent.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i><p class="mt-2 text-gray-500">Loading resume...</p></div>';
+            resumeContent.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i><p class="mt-2 text-gray-500 dark:text-gray-400">Loading resume...</p></div>';
             modal.classList.remove('hidden');
-            
+
             // Fetch resume details
-            fetch(`/api/candidate/${resumeId}/details`)
+            fetch(`/recruiter/candidate/${resumeId}/details`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -408,66 +447,189 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         });
     });
-    
+
     closeModal.addEventListener('click', function() {
         modal.classList.add('hidden');
     });
-    
+
     // Close modal when clicking outside
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             modal.classList.add('hidden');
         }
     });
-    
+
     function displayResumeContent(candidate) {
         let html = `
             <div class="space-y-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg">${candidate.basic_info?.full_name || 'N/A'}</h4>
-                    <p class="text-gray-600">${candidate.basic_info?.email || 'N/A'}</p>
-                    <p class="text-gray-600">${candidate.basic_info?.phone || 'N/A'}</p>
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg text-gray-900 dark:text-white">${candidate.basic_info?.full_name || 'N/A'}</h4>
+                    <p class="text-gray-600 dark:text-gray-400">${candidate.basic_info?.email || 'N/A'}</p>
+                    <p class="text-gray-600 dark:text-gray-400">${candidate.basic_info?.phone || 'N/A'}</p>
                 </div>
         `;
-        
+
         if (candidate.experience && candidate.experience.length > 0) {
             html += `
                 <div>
-                    <h5 class="font-semibold mb-3">Experience</h5>
+                    <h5 class="font-semibold mb-3 text-gray-900 dark:text-white">Experience</h5>
                     <div class="space-y-3">
             `;
             candidate.experience.forEach(exp => {
                 html += `
-                    <div class="border-l-2 border-primary-200 pl-4">
-                        <h6 class="font-medium">${exp.job_title || 'N/A'}</h6>
-                        <p class="text-sm text-gray-600">${exp.company || 'N/A'}</p>
-                        <p class="text-sm text-gray-500">${exp.start_date || 'N/A'} - ${exp.end_date || 'Present'}</p>
+                    <div class="border-l-2 border-primary-200 dark:border-primary-700 pl-4">
+                        <h6 class="font-medium text-gray-900 dark:text-white">${exp.job_title || 'N/A'}</h6>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${exp.company || 'N/A'}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${exp.start_date || 'N/A'} - ${exp.end_date || 'Present'}</p>
                     </div>
                 `;
             });
             html += `</div></div>`;
         }
-        
+
         if (candidate.skills && candidate.skills.length > 0) {
             html += `
                 <div>
-                    <h5 class="font-semibold mb-3">Skills</h5>
+                    <h5 class="font-semibold mb-3 text-gray-900 dark:text-white">Skills</h5>
                     <div class="flex flex-wrap gap-2">
             `;
             candidate.skills.forEach(skill => {
-                html += `<span class="px-2 py-1 bg-primary-100 text-primary-800 text-sm rounded">${skill.skill_name || skill}</span>`;
+                html += `<span class="px-2 py-1 bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-300 text-sm rounded">${skill.skill_name || skill}</span>`;
             });
             html += `</div></div>`;
         }
-        
+
         html += `</div>`;
         resumeContent.innerHTML = html;
     }
 
+    // Shortlist button handlers
+    document.querySelectorAll('.shortlist-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appId = this.dataset.applicationId;
+            fetch(`/recruiter/api/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'shortlisted' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    Emploify.showToast('Candidate shortlisted', 'success');
+                    const item = this.closest('.candidate-item');
+                    if (item) item.dataset.status = 'shortlisted';
+                } else {
+                    Emploify.showToast(data.error || 'Error', 'error');
+                }
+            })
+            .catch(() => Emploify.showToast('Error updating status', 'error'));
+        });
+    });
+
+    // Mark Reviewed button handlers
+    document.querySelectorAll('.mark-reviewed-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appId = this.dataset.applicationId;
+            fetch(`/recruiter/api/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'reviewed' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    Emploify.showToast('Candidate marked as reviewed', 'success');
+                    const item = this.closest('.candidate-item');
+                    if (item) item.dataset.status = 'reviewed';
+                } else {
+                    Emploify.showToast(data.error || 'Error', 'error');
+                }
+            })
+            .catch(() => Emploify.showToast('Error updating status', 'error'));
+        });
+    });
+
+    // Contact / Email modal handlers
+    const emailModal = document.getElementById('emailModal');
+    const emailTo = document.getElementById('emailTo');
+    const emailSubject = document.getElementById('emailSubject');
+    const emailBody = document.getElementById('emailBody');
+    const emailMailtoLink = document.getElementById('emailMailtoLink');
+
+    function updateMailtoLink() {
+        const subject = encodeURIComponent(emailSubject.value);
+        const body = encodeURIComponent(emailBody.value);
+        emailMailtoLink.href = `mailto:${emailTo.value}?subject=${subject}&body=${body}`;
+    }
+
+    emailSubject.addEventListener('input', updateMailtoLink);
+    emailBody.addEventListener('input', updateMailtoLink);
+
+    document.querySelectorAll('.contact-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appId = this.dataset.applicationId;
+            const name = this.dataset.applicantName;
+
+            emailTo.value = 'Loading...';
+            emailSubject.value = '';
+            emailBody.value = '';
+            emailModal.classList.remove('hidden');
+
+            fetch(`/recruiter/api/applications/${appId}/contact`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        emailTo.value = data.email;
+                        emailSubject.value = `Interview Invitation - ${data.job_title} at ${data.company}`;
+                        emailBody.value = `Dear ${name},\n\nThank you for your application for the ${data.job_title} position at ${data.company}.\n\nWe were impressed by your profile and would like to invite you for an interview. Please let us know your availability for the coming week.\n\nBest regards,\n${data.company} Recruitment Team`;
+                        updateMailtoLink();
+                    } else {
+                        Emploify.showToast('Could not load contact info', 'error');
+                        emailModal.classList.add('hidden');
+                    }
+                })
+                .catch(() => {
+                    Emploify.showToast('Error loading contact info', 'error');
+                    emailModal.classList.add('hidden');
+                });
+        });
+    });
+
+    document.querySelectorAll('.close-email-modal').forEach(btn => {
+        btn.addEventListener('click', () => emailModal.classList.add('hidden'));
+    });
+
+    emailModal.addEventListener('click', function(e) {
+        if (e.target === emailModal) emailModal.classList.add('hidden');
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            emailModal.classList.add('hidden');
+            modal.classList.add('hidden');
+        }
+    });
+
     // Export functionality
     document.getElementById('exportBtn').addEventListener('click', function() {
-        // Implement export functionality
-        alert('Export functionality would be implemented here');
+        const candidates = document.querySelectorAll('.candidate-item');
+        let csv = 'Name,Overall Score,Skills,Education,Experience Domain,Experience Resp,Projects,Summary,Status\n';
+        candidates.forEach(item => {
+            const name = item.dataset.name || '';
+            const score = item.dataset.score || '';
+            const cells = item.querySelectorAll('.text-lg.font-semibold.text-primary-600');
+            const scores = Array.from(cells).map(c => c.textContent.trim());
+            const status = item.dataset.status || '';
+            csv += `"${name}",${score},${scores.join(',')},${status}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'candidates_export.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        Emploify.showToast('CSV exported successfully', 'success');
     });
 });
 </script>

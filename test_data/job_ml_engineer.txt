@@ -1,0 +1,43 @@
+Job Title: Machine Learning Engineer
+Company: DataSpark AI
+Location: Karachi, Sindh, Pakistan
+Job Type: Full-time, Hybrid
+Job Level: Mid-Senior
+
+Description:
+DataSpark AI is seeking a talented Machine Learning Engineer to build and deploy production ML systems. You will work on recommendation engines, NLP models, and predictive analytics solutions for our enterprise clients across banking and e-commerce sectors.
+
+Responsibilities:
+- Design, train, and deploy machine learning models in production environments
+- Build end-to-end ML pipelines from data preprocessing to model serving
+- Develop and maintain feature engineering pipelines for real-time inference
+- Implement A/B testing frameworks for model experimentation and evaluation
+- Collaborate with data engineers to build robust data infrastructure
+- Stay updated with latest ML research and implement state-of-the-art techniques
+- Write clean, maintainable, and well-tested code
+
+Requirements:
+- Master's degree in Computer Science, Data Science, AI, or related field
+- 3+ years of experience in machine learning engineering or data science
+- Strong proficiency in Python, TensorFlow or PyTorch
+- Experience deploying ML models in production (Docker, Kubernetes, cloud)
+- Solid understanding of NLP, recommendation systems, or computer vision
+- Experience with SQL and big data tools (Spark, Kafka)
+- Strong software engineering fundamentals
+
+Nice to Have:
+- Published research papers in ML/AI conferences
+- Experience with MLOps tools (MLflow, Kubeflow, SageMaker)
+- Knowledge of reinforcement learning
+- Experience with real-time ML serving
+
+Skills Required:
+Mandatory: Python, TensorFlow, PyTorch, SQL, Docker, Machine Learning, Deep Learning
+Optional: Kubernetes, Apache Kafka, Apache Spark, MLflow, AWS SageMaker
+Tools: Jupyter, Git, AWS, Weights & Biases, MLflow
+
+Qualifications:
+- Education: Master's degree in Computer Science, Data Science, Artificial Intelligence, or Mathematics
+- Experience: 3-6 years
+
+Salary: PKR 500,000 - 800,000 per month

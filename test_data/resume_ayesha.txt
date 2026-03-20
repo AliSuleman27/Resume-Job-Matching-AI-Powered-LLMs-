@@ -1,0 +1,38 @@
+AYESHA SIDDIQUI
+UI/UX Designer & Frontend Developer
+Email: ayesha.siddiqui@email.com | Phone: +92-312-5551234
+Address: Bahria Town, Rawalpindi, Punjab, Pakistan
+LinkedIn: linkedin.com/in/ayeshasiddiqui
+
+SUMMARY
+Creative UI/UX Designer and Frontend Developer with 3 years of experience crafting user-centered digital experiences. Skilled in design thinking, prototyping, and implementing responsive web interfaces with modern JavaScript frameworks.
+
+EDUCATION
+Bachelor of Science in Information Technology
+COMSATS University, Islamabad, Pakistan
+Graduation: June 2021 | GPA: 3.7/4.0
+Relevant Courses: Human-Computer Interaction, Web Development, Visual Design, Mobile App Development, Database Management
+
+EXPERIENCE
+UI/UX Designer & Frontend Developer | VentureDive, Islamabad
+August 2021 - Present
+- Designed and developed responsive web applications for 5+ enterprise clients
+- Conducted user research and usability testing improving user satisfaction scores by 40%
+- Created design systems and component libraries in Figma reducing design-to-dev handoff time by 50%
+- Built pixel-perfect React components matching Figma designs with 98% accuracy
+- Led redesign of client dashboard increasing user engagement by 25%
+Skills used: Figma, React.js, TypeScript, Tailwind CSS, HTML5, CSS3, JavaScript, User Research, Wireframing
+
+Junior Frontend Developer | Techlogix, Lahore
+January 2021 - July 2021
+- Developed responsive web pages using HTML, CSS, and JavaScript
+- Collaborated with designers to implement UI components in React
+- Participated in sprint planning and daily standups in Agile team
+Skills used: HTML, CSS, JavaScript, React.js, Bootstrap, Git
+
+SKILLS
+Figma, Adobe XD, Sketch, React.js, Next.js, TypeScript, JavaScript, HTML5, CSS3, Tailwind CSS, Bootstrap, SASS, Git, Responsive Design, Wireframing, Prototyping, User Research, Usability Testing, Design Systems, Accessibility
+
+PROJECTS
+FinTech Dashboard: Designed and built an analytics dashboard for a fintech startup with interactive charts and real-time data. Technologies: React, D3.js, Tailwind CSS, Figma
+Food Delivery App Redesign: Complete UX redesign of a food delivery mobile app increasing order completion rate by 30%. Technologies: Figma, React Native, User Testing
