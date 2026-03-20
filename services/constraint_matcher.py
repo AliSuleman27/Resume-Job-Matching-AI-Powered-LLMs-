@@ -2,10 +2,9 @@
 
 from typing import List, Optional, Dict, Tuple
 import re
-from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 from dateutil import parser
-from typing import List, Optional, Dict, Tuple
+from services.embedding_service import get_embedding, cosine_similarity as emb_cosine_similarity
 
 class MatchScore:
     """Class to hold matching scores and explanations"""
@@ -43,11 +42,11 @@ class EducationMatcher:
         'design': ['design', 'graphic design', 'ui/ux', 'visual design', 'product design']
     }
     
-    def __init__(self,model):
-        self.model = model
+    def __init__(self):
+        pass
 
     def embed_text(self, text: str):
-        return self.model.encode(text, normalize_embeddings=True, show_progress_bar=False)
+        return get_embedding(text)
     
     def normalize_degree(self, degree: str) -> str:
         """Normalize degree name for comparison"""
@@ -138,7 +137,7 @@ class EducationMatcher:
         try:
             resume_vec = self.embed_text(resume_field_norm)
             required_vec = self.embed_text(required_field_norm)
-            emb_score = float(cosine_similarity([resume_vec], [required_vec])[0][0])
+            emb_score = emb_cosine_similarity(resume_vec, required_vec)
         except Exception:
             emb_score = 0.0
 
@@ -384,22 +383,16 @@ class LocationMatcher:
 class ExperienceMatcher:
     """Handles experience-based matching between resume and job description"""
     
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
         self.relevance_threshold = 0.5  # Minimum similarity for relevant experience
-    
-    def embed_text(self, text: str):
-        """Generate embeddings for text using the sentence transformer model"""
-        return self.model.encode(text, normalize_embeddings=True, show_progress_bar=False)
     
     def calculate_semantic_similarity(self, text1: str, text2: str) -> float:
         """Calculate cosine similarity between two texts using embeddings"""
         try:
-            vec1 = self.embed_text(text1)
-            vec2 = self.embed_text(text2)
-            # Cosine similarity using normalized embeddings
-            similarity = float(vec1.dot(vec2))
-            return max(0.0, min(1.0, similarity))  # Clamp between 0 and 1
+            vec1 = get_embedding(text1)
+            vec2 = get_embedding(text2)
+            similarity = emb_cosine_similarity(vec1, vec2)
+            return max(0.0, min(1.0, similarity))
         except Exception:
             return 0.0
     
@@ -607,11 +600,10 @@ class ExperienceMatcher:
 class ConstraintMatcher:
     """Main class that combines all matching algorithms"""
     
-    def __init__(self, model):
-        self.model = model
-        self.education_matcher = EducationMatcher(self.model)
+    def __init__(self):
+        self.education_matcher = EducationMatcher()
         self.location_matcher = LocationMatcher()
-        self.experience_matcher = ExperienceMatcher(self.model)
+        self.experience_matcher = ExperienceMatcher()
     
     def calculate_overall_score(self, resume, job_description, weights: Dict[str, float] = None) -> Dict:
         """

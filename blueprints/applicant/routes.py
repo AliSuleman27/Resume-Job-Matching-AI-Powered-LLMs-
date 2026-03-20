@@ -61,13 +61,10 @@ def upload_file():
             matcher.process_resume(jsonResume=parsed_resume)
             resumes_collection.insert_one(resume_data)
 
-            parsed_filename = f"parsed_{filename.split('.')[0]}.json"
-            parsed_path = os.path.join(current_app.config['PARSED_RESUMES_FOLDER'], parsed_filename)
-
-            with open(parsed_path, 'w') as f:
-                json.dump(parsed_resume, f, indent=4)
-
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
             return jsonify({
                 "status": "success",

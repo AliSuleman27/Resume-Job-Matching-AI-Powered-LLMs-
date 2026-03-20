@@ -77,13 +77,10 @@ def create_job():
                 }
                 jobs_collection.insert_one(job_data)
                 matcher.process_job(jsonJob=parsed_job)
-                os.remove(temp_path)
-
-                parsed_filename = f"parsed_{filename.split('.')[0]}.json"
-                parsed_job_path = os.path.join(current_app.config['PARSED_JOB_PATH'], parsed_filename)
-
-                with open(parsed_job_path, 'w') as f:
-                    json.dump(parsed_job, f, indent=4)
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
                 flash('Job created successfully!', 'success')
 
                 return redirect(url_for('recruiter.view_job', job_id=str(job_data['_id'])))

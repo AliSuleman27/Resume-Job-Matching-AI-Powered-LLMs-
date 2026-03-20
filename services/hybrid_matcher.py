@@ -1,17 +1,13 @@
 import numpy as np
-import os
-import pickle
-import faiss
 import traceback
 import logging
 from typing import Dict, List, Any
 from enum import Enum
 from dataclasses import dataclass
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
 from models.job_description_model import JobDescription
 from models.resume_model import Resume
 from services.constraint_matcher import ConstraintMatcher
+from services.embedding_service import get_embedding, cosine_similarity
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,54 +35,19 @@ class SectionWeights:
 
 
 class SemanticMatcher:
-    def __init__(self, faiss_index_path: str = "./faiss_indexes", model=None):
-        self.faiss_index_path = faiss_index_path
-        self.model = model or SentenceTransformer("all-MiniLM-L6-v2")
+    def __init__(self):
         self.section_weights = SectionWeights()
-        os.makedirs(faiss_index_path, exist_ok=True)
-        self.indexes = {}
-        self.id_mappings = {}
-        self.processed_documents = set()
-        self._load_or_create_indexes()
 
-    def _load_or_create_indexes(self):
-        for embedding_type in EmbeddingType:
-            index_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}.index")
-            mapping_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}_mapping.pkl")
-            processed_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}_processed.pkl")
-
-            if os.path.exists(index_file) and os.path.exists(mapping_file):
-                self.indexes[embedding_type.value] = faiss.read_index(index_file)
-                with open(mapping_file, 'rb') as f:
-                    self.id_mappings[embedding_type.value] = pickle.load(f)
-
-                if os.path.exists(processed_file):
-                    with open(processed_file, 'rb') as f:
-                        processed_docs = pickle.load(f)
-                        self.processed_documents.update(processed_docs)
-
-                logger.info(f"Loaded existing index for {embedding_type.value}")
-            else:
-                self.indexes[embedding_type.value] = None
-                self.id_mappings[embedding_type.value] = {}
-                logger.info(f"Will create new index for {embedding_type.value}")
-
-    def _is_document_processed(self, doc_id: str, doc_type: str) -> bool:
-        return f"{doc_type}_{doc_id}" in self.processed_documents
-
-    def _mark_document_processed(self, doc_id: str, doc_type: str):
-        self.processed_documents.add(f"{doc_type}_{doc_id}")
-
-    def _get_embedding(self, text: str, instruction: str = "") -> np.ndarray:
+    def _get_embedding(self, text: str) -> np.ndarray:
         if not text or text.strip() == "":
-            return np.zeros(self.model.get_sentence_embedding_dimension())
+            return np.zeros(384)
 
         try:
-            embedding = self.model.encode(text, normalize_embeddings=True, show_progress_bar=False)
-            return embedding
+            embedding = get_embedding(text)
+            return np.array(embedding, dtype=np.float32)
         except Exception as e:
             logger.error(f"Error generating embedding: {e}")
-            return np.zeros(self.model.get_sentence_embedding_dimension())
+            return np.zeros(384)
 
     def _extract_resume_sections(self, resume) -> Dict[str, str]:
         sections = {}
@@ -171,93 +132,6 @@ class SemanticMatcher:
 
         return sections
 
-    def _add_to_faiss_index(self, embedding_type: str, embedding: np.ndarray, doc_id: str, doc_type: str):
-        if self.indexes[embedding_type] is None:
-            dimension = embedding.shape[0]
-            self.indexes[embedding_type] = faiss.IndexFlatIP(dimension)
-
-        embedding = embedding / np.linalg.norm(embedding)
-        embedding = embedding.reshape(1, -1).astype('float32')
-
-        current_size = self.indexes[embedding_type].ntotal
-        self.indexes[embedding_type].add(embedding)
-
-        self.id_mappings[embedding_type][current_size] = {
-            'id': doc_id,
-            'type': doc_type
-        }
-
-    def _save_indexes(self):
-        for embedding_type in EmbeddingType:
-            if self.indexes[embedding_type.value] is not None:
-                index_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}.index")
-                mapping_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}_mapping.pkl")
-                processed_file = os.path.join(self.faiss_index_path, f"{embedding_type.value}_processed.pkl")
-
-                faiss.write_index(self.indexes[embedding_type.value], index_file)
-                with open(mapping_file, 'wb') as f:
-                    pickle.dump(self.id_mappings[embedding_type.value], f)
-                with open(processed_file, 'wb') as f:
-                    pickle.dump(list(self.processed_documents), f)
-
-    def create_resume_embeddings(self, resume, resume_id: str):
-        if self._is_document_processed(resume_id, 'resume'):
-            logger.info(f"Resume {resume_id} already processed, skipping embedding generation")
-            return
-
-        logger.info(f"Creating embeddings for resume {resume_id}")
-
-        sections = self._extract_resume_sections(resume)
-
-        instructions = {
-            EmbeddingType.SKILLS.value: "Represent the professional skills and competencies",
-            EmbeddingType.EDUCATION.value: "Represent the educational background and qualifications",
-            EmbeddingType.EXPERIENCE_TITLE.value: "Represent the job titles and career progression",
-            EmbeddingType.EXPERIENCE_RESPONSIBILITIES.value: "Represent the work responsibilities and achievements",
-            EmbeddingType.EXPERIENCE_SKILLS.value: "Represent the technical skills used in work experience",
-            EmbeddingType.PROJECTS.value: "Represent the project experience and technical implementations",
-            EmbeddingType.SUMMARY.value: "Represent the professional summary and career overview"
-        }
-
-        for section_type, text in sections.items():
-            if text and text.strip():
-                instruction = instructions[section_type]
-                embedding = self._get_embedding(text, instruction)
-                self._add_to_faiss_index(section_type, embedding, resume_id, 'resume')
-
-        self._mark_document_processed(resume_id, 'resume')
-        self._save_indexes()
-        logger.info(f"Successfully created embeddings for resume {resume_id}")
-
-    def create_job_embeddings(self, job, job_id: str):
-        if self._is_document_processed(job_id, 'job'):
-            logger.info(f"Job {job_id} already processed, skipping embedding generation")
-            return
-
-        logger.info(f"Creating embeddings for job {job_id}")
-
-        sections = self._extract_job_sections(job)
-
-        instructions = {
-            EmbeddingType.SKILLS.value: "Represent the required skills and competencies for the job",
-            EmbeddingType.EDUCATION.value: "Represent the educational requirements for the job",
-            EmbeddingType.EXPERIENCE_TITLE.value: "Represent the job title and role requirements",
-            EmbeddingType.EXPERIENCE_RESPONSIBILITIES.value: "Represent the job responsibilities and expectations",
-            EmbeddingType.EXPERIENCE_SKILLS.value: "Represent the technical skills required for the job",
-            EmbeddingType.PROJECTS.value: "Represent the project requirements and technical expectations",
-            EmbeddingType.SUMMARY.value: "Represent the job summary and role overview"
-        }
-
-        for section_type, text in sections.items():
-            if text and text.strip():
-                instruction = instructions[section_type]
-                embedding = self._get_embedding(text, instruction)
-                self._add_to_faiss_index(section_type, embedding, job_id, 'job')
-
-        self._mark_document_processed(job_id, 'job')
-        self._save_indexes()
-        logger.info(f"Successfully created embeddings for job {job_id}")
-
     def match_resume_and_job(self, resume, resume_id: str, job, job_id: str) -> Dict[str, Any]:
         logger.info(f"Matching resume {resume_id} with job {job_id}")
 
@@ -266,31 +140,15 @@ class SemanticMatcher:
 
         section_scores = {}
 
-        instructions = {
-            EmbeddingType.SKILLS.value: "Represent the professional skills and competencies",
-            EmbeddingType.EDUCATION.value: "Represent the educational background and qualifications",
-            EmbeddingType.EXPERIENCE_TITLE.value: "Represent the job titles and career progression",
-            EmbeddingType.EXPERIENCE_RESPONSIBILITIES.value: "Represent the work responsibilities and achievements",
-            EmbeddingType.EXPERIENCE_SKILLS.value: "Represent the technical skills used in work experience",
-            EmbeddingType.PROJECTS.value: "Represent the project experience and technical implementations",
-            EmbeddingType.SUMMARY.value: "Represent the professional summary and career overview"
-        }
-
         for section_type in EmbeddingType:
             section_name = section_type.value
             resume_text = resume_sections.get(section_name, "")
             job_text = job_sections.get(section_name, "")
 
             if resume_text and job_text:
-                instruction = instructions[section_name]
-                resume_embedding = self._get_embedding(resume_text, instruction)
-                job_embedding = self._get_embedding(job_text, instruction)
-
-                similarity = cosine_similarity(
-                    resume_embedding.reshape(1, -1),
-                    job_embedding.reshape(1, -1)
-                )[0][0]
-
+                resume_embedding = self._get_embedding(resume_text)
+                job_embedding = self._get_embedding(job_text)
+                similarity = cosine_similarity(resume_embedding, job_embedding)
                 section_scores[section_name] = max(0.0, similarity)
             else:
                 section_scores[section_name] = 0.0
@@ -326,40 +184,37 @@ class SemanticMatcher:
 
 
 class HybridMatcher:
-    def __init__(self, constraint_matcher, mongodb_manager, model=None, faiss_index_path: str = "./faiss_indexes"):
+    def __init__(self, constraint_matcher, mongodb_manager):
         self.mongodb_manager = mongodb_manager
-        self.semantic_matcher = SemanticMatcher(faiss_index_path=faiss_index_path, model=model)
+        self.semantic_matcher = SemanticMatcher()
         self.cm = constraint_matcher
 
     def process_resume(self, resume_id=None, jsonResume=None):
+        """Validate resume can be parsed. No pre-computation needed without FAISS."""
         try:
-            pydantic_resume = None
             if jsonResume:
-                pydantic_resume = Resume(**jsonResume)
+                Resume(**jsonResume)
             else:
                 resume_data = self.mongodb_manager.get_resume_by_id(resume_id)['parsed_data']
                 if not resume_data:
                     raise ValueError(f"Resume {resume_id} not found")
-                pydantic_resume = Resume(**resume_data)
-            self.semantic_matcher.create_resume_embeddings(pydantic_resume, resume_id)
+                Resume(**resume_data)
             return True
         except Exception as e:
             logger.error(f"Error processing resume {resume_id}: {e}")
             return False
 
     def process_job(self, job_id=None, jsonJob=None):
+        """Validate job can be parsed. No pre-computation needed without FAISS."""
         try:
-            pydantic_job = None
             if jsonJob:
-                pydantic_job = JobDescription(**jsonJob)
+                JobDescription(**jsonJob)
             else:
                 job_data = self.mongodb_manager.get_job_by_id(job_id)
                 if not job_data:
                     raise ValueError(f"Job {job_id} not found")
                 job_data = job_data['parsed_data']
-                pydantic_job = JobDescription(**job_data)
-
-            self.semantic_matcher.create_job_embeddings(pydantic_job, job_id)
+                JobDescription(**job_data)
             return True
         except Exception as e:
             logger.error(f"Error processing job {job_id}: {e}")
@@ -399,7 +254,6 @@ class HybridMatcher:
 
             job_parsed_data = job_data['parsed_data']
             pydantic_job = JobDescription(**job_parsed_data)
-            self.semantic_matcher.create_job_embeddings(pydantic_job, job_id)
 
             applications = self.mongodb_manager.get_job_applicants(job_id)
             logger.info(f"Found {len(applications)} applicants for job {job_id}")
@@ -422,8 +276,6 @@ class HybridMatcher:
 
                     resume_parsed_data = resume_data['parsed_data']
                     pydantic_resume = Resume(**resume_parsed_data)
-
-                    self.semantic_matcher.create_resume_embeddings(pydantic_resume, resume_id)
 
                     applicant_name = pydantic_resume.basic_info.full_name
 
