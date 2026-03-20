@@ -15,6 +15,7 @@ from extensions import (
     users_collection
 )
 from services.llm_service import call_job_llm, extract_text_from_file, allowed_file
+from services.email_service import dispatch_status_email
 
 logger = logging.getLogger(__name__)
 
@@ -316,7 +317,16 @@ def update_application_status(application_id):
         {'$set': update_fields}
     )
 
-    return jsonify({'success': True, 'status': new_status})
+    # Email notification (non-blocking)
+    notified = False
+    if data.get('notify_applicant', True) and new_status != 'submitted':
+        try:
+            dispatch_status_email(application_id, new_status, feedback)
+            notified = True
+        except Exception as e:
+            logger.error(f"Email dispatch failed for {application_id}: {e}")
+
+    return jsonify({'success': True, 'status': new_status, 'notified': notified})
 
 
 @recruiter_bp.route('/api/applications/<application_id>/feedback', methods=['PUT'])
@@ -409,13 +419,23 @@ def bulk_update_status():
         {'recruiter_id': ObjectId(current_user.id)}, {'_id': 1}
     ).distinct('_id')
 
+    obj_ids = [ObjectId(aid) for aid in application_ids]
+
     result = applications_collection.update_many(
         {
-            '_id': {'$in': [ObjectId(aid) for aid in application_ids]},
+            '_id': {'$in': obj_ids},
             'job_id': {'$in': recruiter_job_ids}
         },
         {'$set': {'status': new_status, 'updated_at': datetime.datetime.now(timezone.utc)}}
     )
+
+    # Email notifications (non-blocking)
+    if data.get('notify_applicant', True) and new_status != 'submitted':
+        for aid in application_ids:
+            try:
+                dispatch_status_email(aid, new_status)
+            except Exception as e:
+                logger.error(f"Email dispatch failed for {aid}: {e}")
 
     return jsonify({'success': True, 'updated': result.modified_count})
 

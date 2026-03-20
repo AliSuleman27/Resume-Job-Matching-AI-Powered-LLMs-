@@ -7,6 +7,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 from pymongo import MongoClient, ASCENDING
 from services.hybrid_matcher import HybridMatcher
 from services.mongo_service import MongoDBManager
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 login_manager = LoginManager()
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address, default_limits=["200 per hour"])
+mail = Mail()
 
 # MongoDB collections (set during init)
 db = None
@@ -89,6 +91,11 @@ def init_extensions(app):
 
     # Rate limiter
     limiter.init_app(app)
+
+    # Flask-Mail
+    mail.init_app(app)
+    if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+        logger.warning("MAIL_USERNAME/MAIL_PASSWORD not set — email notifications disabled")
 
     # MongoDB (single shared client)
     mongo_uri = os.environ.get('MONGO_URI')

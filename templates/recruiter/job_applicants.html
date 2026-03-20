@@ -82,7 +82,11 @@
     <!-- Bulk Actions Toolbar -->
     <div id="bulkActions" class="hidden bg-primary-50 dark:bg-primary-900/30 p-4 rounded-lg mb-4 flex items-center justify-between">
         <span id="selectedCount" class="text-sm font-medium text-primary-700 dark:text-primary-300">0 selected</span>
-        <div class="flex space-x-2">
+        <div class="flex items-center space-x-3">
+            <label class="inline-flex items-center cursor-pointer text-sm text-primary-700 dark:text-primary-300" title="Send email notifications to selected applicants">
+                <input type="checkbox" id="bulkNotify" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500 mr-1" checked>
+                <i class="fas fa-envelope mr-1"></i> Notify applicants
+            </label>
             <button onclick="bulkUpdateStatus('reviewed')" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Mark Reviewed</button>
             <button onclick="bulkUpdateStatus('shortlisted')" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700">Shortlist</button>
             <button onclick="bulkUpdateStatus('rejected')" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
@@ -155,15 +159,21 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-sm"
-                                    data-application-id="{{ app._id }}"
-                                    onchange="updateStatus(this)">
-                                <option value="submitted" {% if app.status == 'submitted' %}selected{% endif %}>Submitted</option>
-                                <option value="reviewed" {% if app.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
-                                <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                                <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                                <option value="hired" {% if app.status == 'hired' %}selected{% endif %}>Hired</option>
-                            </select>
+                            <div class="flex items-center space-x-2">
+                                <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-sm"
+                                        data-application-id="{{ app._id }}"
+                                        onchange="updateStatus(this)">
+                                    <option value="submitted" {% if app.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                                    <option value="reviewed" {% if app.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                                    <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                                    <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    <option value="hired" {% if app.status == 'hired' %}selected{% endif %}>Hired</option>
+                                </select>
+                                <label class="inline-flex items-center cursor-pointer" title="Notify applicant by email">
+                                    <input type="checkbox" class="notify-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500" data-application-id="{{ app._id }}" checked>
+                                    <i class="fas fa-envelope text-xs text-gray-400 ml-1"></i>
+                                </label>
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3">
@@ -216,18 +226,21 @@
 function updateStatus(selectElement) {
     const applicationId = selectElement.dataset.applicationId;
     const newStatus = selectElement.value;
+    const notifyCheckbox = document.querySelector(`.notify-checkbox[data-application-id="${applicationId}"]`);
+    const notifyApplicant = notifyCheckbox ? notifyCheckbox.checked : true;
 
     fetch(`/recruiter/api/applications/${applicationId}/status`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, notify_applicant: notifyApplicant })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            Emploify.showToast('Status updated', 'success');
+            const msg = data.notified ? 'Status updated & notification sent' : 'Status updated';
+            Emploify.showToast(msg, 'success');
         }
     })
     .catch(error => {
@@ -270,15 +283,20 @@ function bulkUpdateStatus(status) {
     const ids = Array.from(checked).map(cb => cb.dataset.applicationId);
     if (!ids.length) return;
 
+    const notifyApplicant = document.getElementById('bulkNotify').checked;
+
     fetch('/recruiter/api/applications/bulk-status', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ application_ids: ids, status: status })
+        body: JSON.stringify({ application_ids: ids, status: status, notify_applicant: notifyApplicant })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            Emploify.showToast(`Updated ${data.updated} applications`, 'success');
+            const msg = notifyApplicant && status !== 'submitted'
+                ? `Updated ${data.updated} applications & notifications sent`
+                : `Updated ${data.updated} applications`;
+            Emploify.showToast(msg, 'success');
             setTimeout(() => location.reload(), 1000);
         }
     })

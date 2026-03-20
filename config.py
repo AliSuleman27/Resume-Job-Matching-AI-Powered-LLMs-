@@ -21,3 +21,11 @@ class Config:
 
     RATELIMIT_STORAGE_URI = "memory://"
     RATELIMIT_DEFAULT = "200/hour"
+
+    # Mail (Gmail SMTP)
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME')

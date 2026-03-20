@@ -510,12 +510,13 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/recruiter/api/applications/${appId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'shortlisted' })
+                body: JSON.stringify({ status: 'shortlisted', notify_applicant: true })
             })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    Emploify.showToast('Candidate shortlisted', 'success');
+                    const msg = data.notified ? 'Candidate shortlisted & notified' : 'Candidate shortlisted';
+                    Emploify.showToast(msg, 'success');
                     const item = this.closest('.candidate-item');
                     if (item) item.dataset.status = 'shortlisted';
                 } else {
@@ -533,12 +534,13 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/recruiter/api/applications/${appId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'reviewed' })
+                body: JSON.stringify({ status: 'reviewed', notify_applicant: true })
             })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    Emploify.showToast('Candidate marked as reviewed', 'success');
+                    const msg = data.notified ? 'Candidate marked as reviewed & notified' : 'Candidate marked as reviewed';
+                    Emploify.showToast(msg, 'success');
                     const item = this.closest('.candidate-item');
                     if (item) item.dataset.status = 'reviewed';
                 } else {
