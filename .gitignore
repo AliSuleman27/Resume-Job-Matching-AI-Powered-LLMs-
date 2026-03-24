@@ -14,3 +14,4 @@ research/
 *.pkl
 *.index
 .vercel
+client_secret*.json

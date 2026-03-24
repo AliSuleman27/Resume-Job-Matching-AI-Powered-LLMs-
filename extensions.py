@@ -31,11 +31,18 @@ jobs_collection = None
 applications_collection = None
 ai_results_collection = None
 embedding_cache_collection = None
+candidate_insights_collection = None
+insight_chats_collection = None
+talent_pool_collection = None
 
 # AI/ML components (set during init)
 cm = None
 manager = None
 matcher = None
+
+# Candidate insight services (set during init)
+insight_service = None
+chat_service = None
 
 # Background task runner
 task_runner = None
@@ -79,8 +86,9 @@ class TaskRunner:
 def init_extensions(app):
     global db, users_collection, resumes_collection, recruiters_collection
     global jobs_collection, applications_collection, ai_results_collection
-    global embedding_cache_collection
-    global cm, manager, matcher, task_runner
+    global embedding_cache_collection, candidate_insights_collection, insight_chats_collection
+    global talent_pool_collection
+    global cm, manager, matcher, task_runner, insight_service, chat_service
 
     # Flask-Login
     login_manager.init_app(app)
@@ -97,6 +105,9 @@ def init_extensions(app):
     if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
         logger.warning("MAIL_USERNAME/MAIL_PASSWORD not set — email notifications disabled")
 
+    if not app.config.get('GOOGLE_CLIENT_ID') or not app.config.get('GOOGLE_CLIENT_SECRET'):
+        logger.warning("GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET not set — Google Calendar integration disabled")
+
     # MongoDB (single shared client)
     mongo_uri = os.environ.get('MONGO_URI')
     if not mongo_uri:
@@ -111,6 +122,9 @@ def init_extensions(app):
     applications_collection = db['application_collections']
     ai_results_collection = db['ai_results_collection']
     embedding_cache_collection = db['embedding_cache']
+    candidate_insights_collection = db['candidate_insights']
+    insight_chats_collection = db['insight_chats']
+    talent_pool_collection = db['talent_pool']
 
     # Create indexes for query performance
     _create_indexes()
@@ -127,6 +141,12 @@ def init_extensions(app):
     cm = ConstraintMatcher()
     manager = MongoDBManager(db)
     matcher = HybridMatcher(constraint_matcher=cm, mongodb_manager=manager)
+
+    # Candidate insight services
+    from services.candidate_insight_service import CandidateInsightService
+    from services.chat_service import CandidateInsightChat
+    insight_service = CandidateInsightService(candidate_insights_collection)
+    chat_service = CandidateInsightChat(insight_chats_collection)
 
     # Background task runner for async AI engine
     task_runner = TaskRunner()
@@ -148,6 +168,19 @@ def _create_indexes():
         )
         ai_results_collection.create_index([('job_id', ASCENDING)])
         embedding_cache_collection.create_index([('_k', ASCENDING)], unique=True)
+        candidate_insights_collection.create_index(
+            [('job_id', ASCENDING), ('resume_id', ASCENDING)], unique=True
+        )
+        insight_chats_collection.create_index(
+            [('job_id', ASCENDING), ('resume_id', ASCENDING), ('recruiter_id', ASCENDING)],
+            unique=True
+        )
+        talent_pool_collection.create_index(
+            [('recruiter_id', ASCENDING), ('resume_id', ASCENDING)], unique=True
+        )
+        talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('tags', ASCENDING)])
+        talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('star_rating', ASCENDING)])
+        talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('candidate_skills', ASCENDING)])
         logger.info("MongoDB indexes created successfully")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")

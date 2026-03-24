@@ -268,6 +268,63 @@
                             class="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
                             placeholder="Briefly explain why you're a good fit..."></textarea>
                     </div>
+
+                    {% if screening_questions %}
+                    <!-- Screening Questions -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-clipboard-list text-primary-600 mr-2"></i>Screening Questions
+                        </h3>
+                        <div class="space-y-4" id="screeningQuestions">
+                            {% for q in screening_questions %}
+                            <div class="screening-q border border-gray-200 dark:border-gray-700 rounded-md p-4" data-qid="{{ q.id }}">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ q.question }}
+                                    {% if q.required %}<span class="text-red-500">*</span>{% endif %}
+                                </label>
+
+                                {% if q.type == 'yes_no' %}
+                                <div class="flex gap-4">
+                                    {% for opt in (q.options or ['Yes', 'No']) %}
+                                    <label class="inline-flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                        <input type="radio" name="sq_{{ q.id }}" value="{{ opt }}" class="sq-input mr-1.5 text-primary-600 focus:ring-primary-500">
+                                        {{ opt }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+
+                                {% elif q.type == 'multiple_choice' %}
+                                <div class="space-y-2">
+                                    {% for opt in (q.options or []) %}
+                                    <label class="inline-flex items-center text-sm text-gray-700 dark:text-gray-300 mr-4">
+                                        <input type="radio" name="sq_{{ q.id }}" value="{{ opt }}" class="sq-input mr-1.5 text-primary-600 focus:ring-primary-500">
+                                        {{ opt }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+
+                                {% elif q.type == 'scale' %}
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-gray-500">{{ q.scale_min|default(1) }}</span>
+                                    <input type="range" name="sq_{{ q.id }}"
+                                        min="{{ q.scale_min|default(1) }}" max="{{ q.scale_max|default(10) }}" value="{{ ((q.scale_min|default(1)) + (q.scale_max|default(10))) // 2 }}"
+                                        class="sq-input flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                                        oninput="this.nextElementSibling.textContent=this.value">
+                                    <span class="text-sm font-medium text-primary-600 w-8 text-center">{{ ((q.scale_min|default(1)) + (q.scale_max|default(10))) // 2 }}</span>
+                                    <span class="text-xs text-gray-500">{{ q.scale_max|default(10) }}</span>
+                                </div>
+
+                                {% elif q.type == 'text' %}
+                                <textarea name="sq_{{ q.id }}" rows="2"
+                                    class="sq-input w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm"
+                                    placeholder="Your answer..."></textarea>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="flex justify-end">
                         <button type="submit" id="applyBtn"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
@@ -312,10 +369,23 @@ document.addEventListener('DOMContentLoaded', function() {
         applyForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('applyBtn');
+            // Collect screening answers
+            const screeningAnswers = {};
+            document.querySelectorAll('.screening-q').forEach(card => {
+                const qid = card.dataset.qid;
+                const radio = card.querySelector('input[type="radio"]:checked');
+                const range = card.querySelector('input[type="range"]');
+                const textarea = card.querySelector('textarea.sq-input');
+                if (radio) screeningAnswers[qid] = radio.value;
+                else if (range) screeningAnswers[qid] = range.value;
+                else if (textarea) screeningAnswers[qid] = textarea.value;
+            });
+
             const formData = {
                 job_id: document.querySelector('input[name="job_id"]').value,
                 resume_id: document.getElementById('resume_id').value,
-                cover_message: document.getElementById('cover_message').value
+                cover_message: document.getElementById('cover_message').value,
+                screening_answers: screeningAnswers
             };
 
             if (!formData.resume_id) {

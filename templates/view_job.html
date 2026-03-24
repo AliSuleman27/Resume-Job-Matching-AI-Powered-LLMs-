@@ -349,11 +349,17 @@
                     </button>
                 </div>
             </div>
+            {% if job.parsed_data.get('metadata') %}
             <div class="mt-2 text-xs text-gray-400">
                 Created: {{ job.parsed_data.metadata.created_at }} |
                 Updated: {{ job.parsed_data.metadata.updated_at }} |
                 Source: {{ job.parsed_data.metadata.source|replace('_', ' ')|title }}
             </div>
+            {% else %}
+            <div class="mt-2 text-xs text-gray-400">
+                Created: {{ job.created_at.strftime('%Y-%m-%d') if job.created_at else 'N/A' }}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

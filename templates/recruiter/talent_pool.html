@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block title %}Talent Pool | Emploify.io{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="fas fa-database mr-2 text-primary-600"></i> Talent Pool
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">{{ entries|length }} saved candidate{{ 's' if entries|length != 1 else '' }}</p>
+            </div>
+            <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="mt-4 sm:mt-0 inline-flex items-center text-primary-600 hover:text-primary-800 dark:text-primary-400">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Row -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+        <form method="GET" action="{{ url_for('recruiter.talent_pool') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
+                <div class="relative">
+                    <input type="text" name="q" value="{{ search }}" placeholder="Name, skill, email..."
+                           class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm focus:ring-primary-500 focus:border-primary-500">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tag</label>
+                <select name="tag" class="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm">
+                    <option value="">All tags</option>
+                    {% for t in all_tags %}
+                    <option value="{{ t }}" {% if active_tag == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Min Rating</label>
+                <select name="min_rating" class="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md text-sm">
+                    <option value="">Any</option>
+                    {% for r in range(1, 6) %}
+                    <option value="{{ r }}" {% if active_rating == r|string %}selected{% endif %}>{{ r }}+ stars</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Candidate Cards -->
+    {% if entries %}
+    <div class="space-y-4">
+        {% for entry in entries %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow" id="pool-entry-{{ entry._id }}">
+            <div class="flex items-start justify-between">
+                <!-- Left: Avatar + Info -->
+                <div class="flex items-start space-x-4 flex-1 min-w-0">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center">
+                        <span class="text-white font-semibold text-lg">{{ entry.candidate_name[0].upper() if entry.candidate_name else '?' }}</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">{{ entry.candidate_name }}</h3>
+                        {% if entry.candidate_title %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ entry.candidate_title }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            From: {{ entry.source_job_title }}
+                            {% if entry.source_score is not none %}
+                             &middot; AI Score: {{ (entry.source_score * 100)|round(1) }}%
+                            {% endif %}
+                            &middot; Added {{ entry.added_at.strftime('%b %d, %Y') }}
+                        </p>
+
+                        <!-- Stars -->
+                        <div class="flex items-center mt-1 pool-stars" data-entry-id="{{ entry._id }}">
+                            {% for i in range(1, 6) %}
+                            <button class="star-btn text-lg {% if entry.star_rating and i <= entry.star_rating %}text-yellow-400{% else %}text-gray-300 dark:text-gray-600{% endif %} hover:text-yellow-400 transition-colors"
+                                    data-value="{{ i }}">
+                                <i class="fas fa-star"></i>
+                            </button>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            {% for t in entry.tags %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-300">{{ t }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Actions -->
+                <div class="flex items-center space-x-2 ml-4 flex-shrink-0">
+                    <button class="edit-pool-btn px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 border border-primary-300 dark:border-primary-700 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                            data-entry-id="{{ entry._id }}"
+                            data-tags="{{ entry.tags|join(',') }}"
+                            data-notes="{{ entry.notes or '' }}"
+                            data-rating="{{ entry.star_rating or '' }}">
+                        <i class="fas fa-edit mr-1"></i> Edit
+                    </button>
+                    <button class="remove-pool-btn px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                            data-entry-id="{{ entry._id }}"
+                            data-name="{{ entry.candidate_name }}">
+                        <i class="fas fa-trash-alt mr-1"></i> Remove
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expandable: Notes + Skills -->
+            <div class="mt-3">
+                <button class="toggle-pool-details text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-colors">
+                    <i class="fas fa-chevron-down mr-1 transform transition-transform"></i> Show details
+                </button>
+                <div class="pool-details hidden mt-2 space-y-2">
+                    {% if entry.notes %}
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded p-3">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ entry.notes }}</p>
+                    </div>
+                    {% endif %}
+                    {% if entry.candidate_skills %}
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Skills</p>
+                        <div class="flex flex-wrap gap-1">
+                            {% for skill in entry.candidate_skills %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if entry.candidate_email %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-envelope mr-1"></i> {{ entry.candidate_email }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
+        <i class="fas fa-database text-gray-300 dark:text-gray-600 text-5xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Your talent pool is empty</h3>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Save promising candidates from your AI-ranked results or job applicant lists to build your talent pipeline.
+        </p>
+        <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="mt-6 inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
+            <i class="fas fa-briefcase mr-2"></i> Go to Dashboard
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Edit Modal -->
+<div id="editPoolModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-edit mr-2 text-primary-600"></i>Edit Pool Entry</h3>
+            <button id="closeEditModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma-separated)</label>
+                <input type="text" id="editTags" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="e.g. strong-backend, python, follow-up">
+                <div id="tagSuggestions" class="flex flex-wrap gap-1 mt-1"></div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea id="editNotes" rows="4" maxlength="2000" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Notes about this candidate..."></textarea>
+                <div class="text-right text-xs text-gray-400 mt-1"><span id="editNotesCount">0</span>/2000</div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating</label>
+                <div class="flex items-center space-x-1" id="editStars">
+                    {% for i in range(1, 6) %}
+                    <button type="button" class="edit-star-btn text-2xl text-gray-300 dark:text-gray-600 hover:text-yellow-400 transition-colors" data-value="{{ i }}"><i class="fas fa-star"></i></button>
+                    {% endfor %}
+                    <button type="button" id="clearRating" class="ml-2 text-xs text-gray-400 hover:text-red-500">Clear</button>
+                </div>
+            </div>
+            <input type="hidden" id="editEntryId">
+            <input type="hidden" id="editRatingValue" value="">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelEdit" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="saveEdit" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
+                    <i class="fas fa-save mr-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Confirmation Modal -->
+<div id="removePoolModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+                <i class="fas fa-trash-alt text-red-600 dark:text-red-400 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-4">Remove from Talent Pool?</h3>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400" id="removeConfirmText">Are you sure?</p>
+            <input type="hidden" id="removeEntryId">
+            <div class="mt-4 flex justify-center space-x-3">
+                <button id="cancelRemove" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                <button id="confirmRemove" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const headers = {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken};
+
+    // Toggle details
+    document.querySelectorAll('.toggle-pool-details').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const details = this.nextElementSibling;
+            const icon = this.querySelector('i');
+            details.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+            this.innerHTML = details.classList.contains('hidden')
+                ? '<i class="fas fa-chevron-down mr-1"></i> Show details'
+                : '<i class="fas fa-chevron-up mr-1"></i> Hide details';
+        });
+    });
+
+    // Inline star rating
+    document.querySelectorAll('.pool-stars').forEach(container => {
+        const entryId = container.dataset.entryId;
+        container.querySelectorAll('.star-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const val = parseInt(this.dataset.value);
+                fetch(`/recruiter/api/talent-pool/${entryId}`, {
+                    method: 'PUT', headers,
+                    body: JSON.stringify({star_rating: val})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        container.querySelectorAll('.star-btn').forEach((s, i) => {
+                            s.classList.toggle('text-yellow-400', i < val);
+                            s.classList.toggle('text-gray-300', i >= val);
+                            s.classList.toggle('dark:text-gray-600', i >= val);
+                        });
+                    }
+                });
+            });
+        });
+    });
+
+    // Edit modal
+    const editModal = document.getElementById('editPoolModal');
+    const editEntryId = document.getElementById('editEntryId');
+    const editTags = document.getElementById('editTags');
+    const editNotes = document.getElementById('editNotes');
+    const editNotesCount = document.getElementById('editNotesCount');
+    const editRatingValue = document.getElementById('editRatingValue');
+
+    editNotes.addEventListener('input', function() {
+        editNotesCount.textContent = this.value.length;
+    });
+
+    // Edit star buttons
+    document.querySelectorAll('.edit-star-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const val = parseInt(this.dataset.value);
+            editRatingValue.value = val;
+            document.querySelectorAll('.edit-star-btn').forEach((s, i) => {
+                s.classList.toggle('text-yellow-400', i < val);
+                s.classList.toggle('text-gray-300', i >= val);
+            });
+        });
+    });
+
+    document.getElementById('clearRating').addEventListener('click', function() {
+        editRatingValue.value = '';
+        document.querySelectorAll('.edit-star-btn').forEach(s => {
+            s.classList.remove('text-yellow-400');
+            s.classList.add('text-gray-300');
+        });
+    });
+
+    document.querySelectorAll('.edit-pool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            editEntryId.value = this.dataset.entryId;
+            editTags.value = this.dataset.tags || '';
+            editNotes.value = this.dataset.notes || '';
+            editNotesCount.textContent = editNotes.value.length;
+            const rating = this.dataset.rating ? parseInt(this.dataset.rating) : 0;
+            editRatingValue.value = rating || '';
+            document.querySelectorAll('.edit-star-btn').forEach((s, i) => {
+                s.classList.toggle('text-yellow-400', i < rating);
+                s.classList.toggle('text-gray-300', i >= rating);
+            });
+            loadTagSuggestions();
+            editModal.classList.remove('hidden');
+        });
+    });
+
+    function loadTagSuggestions() {
+        fetch('/recruiter/api/talent-pool/tags')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('tagSuggestions');
+                container.innerHTML = '';
+                (data.tags || []).forEach(tag => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:text-primary-700 transition-colors';
+                    btn.textContent = tag;
+                    btn.addEventListener('click', function() {
+                        const current = editTags.value.split(',').map(t => t.trim()).filter(Boolean);
+                        if (!current.includes(tag)) {
+                            current.push(tag);
+                            editTags.value = current.join(', ');
+                        }
+                    });
+                    container.appendChild(btn);
+                });
+            });
+    }
+
+    function closeEditModalFn() { editModal.classList.add('hidden'); }
+    document.getElementById('closeEditModal').addEventListener('click', closeEditModalFn);
+    document.getElementById('cancelEdit').addEventListener('click', closeEditModalFn);
+    editModal.addEventListener('click', function(e) { if (e.target === editModal) closeEditModalFn(); });
+
+    document.getElementById('saveEdit').addEventListener('click', function() {
+        const entryId = editEntryId.value;
+        const tags = editTags.value.split(',').map(t => t.trim()).filter(Boolean);
+        const notes = editNotes.value;
+        const rating = editRatingValue.value ? parseInt(editRatingValue.value) : null;
+
+        fetch(`/recruiter/api/talent-pool/${entryId}`, {
+            method: 'PUT', headers,
+            body: JSON.stringify({tags, notes, star_rating: rating})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                Emploify.showToast('Entry updated', 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                Emploify.showToast(data.error || 'Error updating', 'error');
+            }
+        })
+        .catch(() => Emploify.showToast('Error updating entry', 'error'));
+    });
+
+    // Remove modal
+    const removeModal = document.getElementById('removePoolModal');
+    const removeEntryId = document.getElementById('removeEntryId');
+
+    document.querySelectorAll('.remove-pool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            removeEntryId.value = this.dataset.entryId;
+            document.getElementById('removeConfirmText').textContent = `Remove ${this.dataset.name} from your talent pool?`;
+            removeModal.classList.remove('hidden');
+        });
+    });
+
+    function closeRemoveModalFn() { removeModal.classList.add('hidden'); }
+    document.getElementById('cancelRemove').addEventListener('click', closeRemoveModalFn);
+    removeModal.addEventListener('click', function(e) { if (e.target === removeModal) closeRemoveModalFn(); });
+
+    document.getElementById('confirmRemove').addEventListener('click', function() {
+        const entryId = removeEntryId.value;
+        fetch(`/recruiter/api/talent-pool/${entryId}`, {method: 'DELETE', headers: {'X-CSRFToken': csrfToken}})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                Emploify.showToast('Removed from talent pool', 'success');
+                const el = document.getElementById(`pool-entry-${entryId}`);
+                if (el) el.remove();
+                closeRemoveModalFn();
+            } else {
+                Emploify.showToast(data.error || 'Error removing', 'error');
+            }
+        })
+        .catch(() => Emploify.showToast('Error removing entry', 'error'));
+    });
+
+    // Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeEditModalFn(); closeRemoveModalFn(); }
+    });
+});
+</script>
+
+<style>
+.rotate-180 { transform: rotate(180deg); }
+</style>
+{% endblock %}

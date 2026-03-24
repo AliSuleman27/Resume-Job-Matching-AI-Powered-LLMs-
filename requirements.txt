@@ -30,3 +30,13 @@ huggingface-hub>=0.30,<1.0
 
 # Date parsing
 python-dateutil>=2.9,<3.0
+
+# LangChain (for candidate insight chat)
+langchain>=0.3,<1.0
+langchain-groq>=0.2,<1.0
+langchain-core>=0.3,<1.0
+
+# Google Calendar API
+google-api-python-client>=2.100,<3.0
+google-auth-oauthlib>=1.2,<2.0
+google-auth>=2.23,<3.0

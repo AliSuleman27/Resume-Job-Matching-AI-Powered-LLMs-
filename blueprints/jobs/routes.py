@@ -37,10 +37,13 @@ def job_detail(job_id):
 
     user_resumes = list(resumes_collection.find({'user_id': ObjectId(current_user.id)}))
 
+    screening_questions = job.get('screening_questions', [])
+
     return render_template('jobs/detail.html',
                            job=job,
                            has_applied=bool(has_applied),
-                           resumes=user_resumes)
+                           resumes=user_resumes,
+                           screening_questions=screening_questions)
 
 
 @jobs_bp.route('/jobs/<job_id>/apply', methods=['POST'])
@@ -52,10 +55,16 @@ def apply_for_job(job_id):
     data = request.get_json()
     resume_id = data.get('resume_id')
     cover_message = data.get('cover_message', '')
+    screening_answers = data.get('screening_answers', {})
 
     job = jobs_collection.find_one({'_id': ObjectId(job_id)})
     if not job:
         return jsonify({"error": "Job not found"}), 404
+
+    # Validate required screening questions are answered
+    for q in job.get('screening_questions', []):
+        if q.get('required') and q.get('id') not in screening_answers:
+            return jsonify({"error": f"Please answer required question: {q.get('question', '')}"}), 400
 
     resume = resumes_collection.find_one({
         '_id': ObjectId(resume_id),
@@ -80,6 +89,10 @@ def apply_for_job(job_id):
         'applied_at': datetime.datetime.now(timezone.utc),
         'updated_at': datetime.datetime.now(timezone.utc)
     }
+
+    if screening_answers:
+        application_data['screening_answers'] = screening_answers
+
     applications_collection.insert_one(application_data)
 
     return jsonify({

@@ -8,6 +8,7 @@ from models.job_description_model import JobDescription
 from models.resume_model import Resume
 from services.constraint_matcher import ConstraintMatcher
 from services.embedding_service import get_embedding, cosine_similarity
+from services.questionnaire_scorer import score_answers
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -255,6 +256,10 @@ class HybridMatcher:
             job_parsed_data = job_data['parsed_data']
             pydantic_job = JobDescription(**job_parsed_data)
 
+            # Check if job has screening questions for scoring
+            screening_questions = job_data.get('screening_questions', [])
+            has_questions = bool(screening_questions)
+
             applications = self.mongodb_manager.get_job_applicants(job_id)
             logger.info(f"Found {len(applications)} applicants for job {job_id}")
 
@@ -284,6 +289,18 @@ class HybridMatcher:
                     )
                     c_results = self.cm.calculate_overall_score(resume=pydantic_resume, job_description=pydantic_job)
 
+                    semantic_score = match_result['overall_score']
+                    constraint_score = c_results['overall']['score'] / 100
+
+                    # Questionnaire scoring: 50/30/20 when questions exist, 60/40 otherwise
+                    q_score = 0.0
+                    screening_answers = application.get('screening_answers', {})
+                    if has_questions and screening_answers:
+                        q_score = score_answers(screening_questions, screening_answers)
+                        overall = 0.50 * semantic_score + 0.30 * constraint_score + 0.20 * q_score
+                    else:
+                        overall = 0.60 * semantic_score + 0.40 * constraint_score
+
                     applicant_result = {
                         'applicant_name': applicant_name,
                         'user_id': user_id,
@@ -291,7 +308,7 @@ class HybridMatcher:
                         'application_id': str(application['_id']),
                         'applied_at': application.get('applied_at'),
                         'status': application.get('status', 'submitted'),
-                        'overall_score': 0.6 * match_result['overall_score'] + 0.4 * (c_results['overall']['score'] / 100),
+                        'overall_score': overall,
                         'section_scores': {
                             'skills': match_result['section_scores'].get('skills', 0.0),
                             'education': match_result['section_scores'].get('education', 0.0),
@@ -303,7 +320,9 @@ class HybridMatcher:
                         },
                         'constraint_results': c_results,
                         'cover_message': application.get('cover_message', ''),
-                        'weights_used': match_result['weights_used']
+                        'weights_used': match_result['weights_used'],
+                        'questionnaire_score': q_score if has_questions else None,
+                        'screening_answers': screening_answers if has_questions else None,
                     }
 
                     results.append(applicant_result)

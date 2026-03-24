@@ -174,6 +174,11 @@
                     <div class="flex items-center space-x-4">
                         <div class="text-right">
                             <div class="flex items-center space-x-2">
+                                {% if candidate.get('questionnaire_score') is not none %}
+                                <span class="text-xs text-gray-400 dark:text-gray-500" title="Screening questionnaire score">
+                                    <i class="fas fa-clipboard-list mr-0.5"></i>{{ (candidate.get('questionnaire_score', 0) * 100) | round(0) }}%
+                                </span>
+                                {% endif %}
                                 <span class="text-sm text-gray-500 dark:text-gray-400">Overall Match</span>
                                 <div class="px-3 py-1 rounded-full text-sm font-semibold
                                     {% if candidate.overall_score >= 0.8 %}bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300
@@ -232,6 +237,31 @@
 
                 </div>
 
+                {% if candidate.get('questionnaire_score') is not none %}
+                <!-- Questionnaire Score Detail -->
+                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h5 class="text-sm font-semibold text-purple-800 dark:text-purple-300">
+                            <i class="fas fa-clipboard-list mr-2"></i>Screening Questionnaire Score
+                        </h5>
+                        <span class="text-lg font-bold text-purple-600">{{ (candidate.get('questionnaire_score', 0) * 100) | round(1) }}%</span>
+                    </div>
+                    {% if candidate.get('screening_answers') %}
+                    <div class="space-y-1 text-xs text-purple-700 dark:text-purple-300">
+                        {% for qid, answer in candidate.get('screening_answers', {}).items() %}
+                        <div class="flex justify-between">
+                            <span class="truncate mr-2">Q: {{ qid }}</span>
+                            <span class="font-medium">{{ answer }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <p class="mt-2 text-xs text-purple-500 dark:text-purple-400">
+                        Score formula: 50% Semantic + 30% Constraint + 20% Questionnaire
+                    </p>
+                </div>
+                {% endif %}
+
                 <!-- Detailed Analysis (Hidden by default) -->
                 <div class="details-panel hidden">
                     <!-- Constraint Analysis -->
@@ -265,6 +295,10 @@
                     <!-- Action Buttons -->
                     <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex space-x-2">
+                            <a href="{{ url_for('ai_engine.candidate_insight', job_id=job._id, resume_id=candidate.resume_id) }}"
+                               class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors inline-flex items-center">
+                                <i class="fas fa-microscope mr-2"></i>Deep Insight
+                            </a>
                             <button class="view-resume-btn px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
                                     data-resume-id="{{ candidate.resume_id }}">
                                 <i class="fas fa-file-alt mr-2"></i>View Resume
@@ -281,6 +315,18 @@
                                     data-application-id="{{ candidate.application_id }}"
                                     data-applicant-name="{{ candidate.applicant_name }}">
                                 <i class="fas fa-envelope mr-2"></i>Contact
+                            </button>
+                            <button class="schedule-btn px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors"
+                                    data-application-id="{{ candidate.application_id }}"
+                                    data-applicant-name="{{ candidate.applicant_name }}">
+                                <i class="fas fa-calendar-plus mr-2"></i>Schedule
+                            </button>
+                            <button class="save-pool-btn px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors"
+                                    data-resume-id="{{ candidate.resume_id }}"
+                                    data-job-id="{{ job._id }}"
+                                    data-score="{{ candidate.overall_score }}"
+                                    data-name="{{ candidate.applicant_name }}">
+                                <i class="fas fa-database mr-2"></i>Save to Pool
                             </button>
                         </div>
                         <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -345,6 +391,85 @@
         </div>
         <div id="resumeContent" class="max-h-96 overflow-y-auto">
             <!-- Resume content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Interview Modal -->
+<div id="scheduleModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-calendar-plus mr-2 text-teal-500"></i>Schedule Interview</h3>
+            <button id="closeScheduleModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="scheduleGoogleWarning" class="hidden bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 mb-4">
+            <p class="text-sm text-yellow-800 dark:text-yellow-300"><i class="fas fa-exclamation-triangle mr-1"></i> Google Calendar not connected. Interview will be scheduled without a Meet link.</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate</label>
+                <input type="text" id="scheduleCandidateName" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date & Time</label>
+                <input type="datetime-local" id="scheduleDatetime" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration</label>
+                <select id="scheduleDuration" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                    <option value="15">15 minutes</option>
+                    <option value="30" selected>30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                    <option value="90">90 minutes</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+                <textarea id="scheduleNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Any additional details for the candidate..."></textarea>
+            </div>
+            <input type="hidden" id="scheduleAppId">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelSchedule" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="confirmSchedule" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors">
+                    <i class="fas fa-calendar-check mr-1"></i>Confirm Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save to Pool Modal -->
+<div id="savePoolModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-database mr-2 text-cyan-600"></i>Save to Talent Pool</h3>
+            <button id="closeSavePoolModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate</label>
+                <input type="text" id="poolCandidateName" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma-separated, optional)</label>
+                <input type="text" id="poolTags" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="e.g. strong-frontend, react">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+                <textarea id="poolNotes" rows="3" maxlength="2000" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Why save this candidate?"></textarea>
+            </div>
+            <input type="hidden" id="poolResumeId">
+            <input type="hidden" id="poolJobId">
+            <input type="hidden" id="poolScore">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelSavePool" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="confirmSavePool" class="px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors">
+                    <i class="fas fa-save mr-1"></i>Save
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -609,7 +734,150 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             emailModal.classList.add('hidden');
             modal.classList.add('hidden');
+            closeScheduleModalFn();
         }
+    });
+
+    // Schedule Interview modal
+    const scheduleModal = document.getElementById('scheduleModal');
+    const scheduleAppId = document.getElementById('scheduleAppId');
+    const scheduleCandidateName = document.getElementById('scheduleCandidateName');
+    const scheduleDatetime = document.getElementById('scheduleDatetime');
+    const scheduleWarning = document.getElementById('scheduleGoogleWarning');
+
+    // Set min datetime to now
+    const nowDt = new Date();
+    nowDt.setMinutes(nowDt.getMinutes() - nowDt.getTimezoneOffset());
+    scheduleDatetime.min = nowDt.toISOString().slice(0, 16);
+
+    // Check Google status on page load
+    fetch('/recruiter/google/status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.connected) scheduleWarning.classList.remove('hidden');
+        })
+        .catch(() => scheduleWarning.classList.remove('hidden'));
+
+    document.querySelectorAll('.schedule-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            scheduleAppId.value = this.dataset.applicationId;
+            scheduleCandidateName.value = this.dataset.applicantName;
+            scheduleDatetime.value = '';
+            document.getElementById('scheduleDuration').value = '30';
+            document.getElementById('scheduleNotes').value = '';
+            scheduleModal.classList.remove('hidden');
+        });
+    });
+
+    function closeScheduleModalFn() {
+        scheduleModal.classList.add('hidden');
+    }
+
+    document.getElementById('closeScheduleModal').addEventListener('click', closeScheduleModalFn);
+    document.getElementById('cancelSchedule').addEventListener('click', closeScheduleModalFn);
+    scheduleModal.addEventListener('click', function(e) {
+        if (e.target === scheduleModal) closeScheduleModalFn();
+    });
+
+    document.getElementById('confirmSchedule').addEventListener('click', function() {
+        const appId = scheduleAppId.value;
+        const dt = scheduleDatetime.value;
+        const duration = document.getElementById('scheduleDuration').value;
+        const notes = document.getElementById('scheduleNotes').value;
+
+        if (!dt) {
+            Emploify.showToast('Please select a date and time', 'error');
+            return;
+        }
+
+        const btn = this;
+        Emploify.lockButton(btn, 'Scheduling...');
+
+        fetch(`/recruiter/api/applications/${appId}/schedule-interview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                datetime: dt,
+                duration: parseInt(duration),
+                notes: notes,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            Emploify.unlockButton(btn);
+            if (data.success) {
+                const msg = data.meet_link
+                    ? 'Interview scheduled with Google Meet link!'
+                    : 'Interview scheduled (email notification sent)';
+                Emploify.showToast(msg, 'success');
+                closeScheduleModalFn();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                Emploify.showToast(data.error || 'Error scheduling interview', 'error');
+            }
+        })
+        .catch(() => {
+            Emploify.unlockButton(btn);
+            Emploify.showToast('Error scheduling interview', 'error');
+        });
+    });
+
+    // Save to Pool modal
+    const savePoolModal = document.getElementById('savePoolModal');
+    const poolResumeId = document.getElementById('poolResumeId');
+    const poolJobId = document.getElementById('poolJobId');
+    const poolScore = document.getElementById('poolScore');
+    const poolCandidateName = document.getElementById('poolCandidateName');
+
+    document.querySelectorAll('.save-pool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            poolResumeId.value = this.dataset.resumeId;
+            poolJobId.value = this.dataset.jobId;
+            poolScore.value = this.dataset.score;
+            poolCandidateName.value = this.dataset.name;
+            document.getElementById('poolTags').value = '';
+            document.getElementById('poolNotes').value = '';
+            savePoolModal.classList.remove('hidden');
+        });
+    });
+
+    function closeSavePoolFn() { savePoolModal.classList.add('hidden'); }
+    document.getElementById('closeSavePoolModal').addEventListener('click', closeSavePoolFn);
+    document.getElementById('cancelSavePool').addEventListener('click', closeSavePoolFn);
+    savePoolModal.addEventListener('click', function(e) { if (e.target === savePoolModal) closeSavePoolFn(); });
+
+    document.getElementById('confirmSavePool').addEventListener('click', function() {
+        const btn = this;
+        Emploify.lockButton(btn, 'Saving...');
+        const tags = document.getElementById('poolTags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const notes = document.getElementById('poolNotes').value;
+
+        fetch('/recruiter/api/talent-pool/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                resume_id: poolResumeId.value,
+                job_id: poolJobId.value,
+                score: parseFloat(poolScore.value) || null,
+                tags: tags,
+                notes: notes
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            Emploify.unlockButton(btn);
+            if (data.success) {
+                Emploify.showToast('Candidate saved to talent pool!', 'success');
+                closeSavePoolFn();
+            } else {
+                Emploify.showToast(data.error || 'Error saving', 'error');
+            }
+        })
+        .catch(() => {
+            Emploify.unlockButton(btn);
+            Emploify.showToast('Error saving to talent pool', 'error');
+        });
     });
 
     // Export functionality

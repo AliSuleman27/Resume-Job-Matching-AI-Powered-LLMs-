@@ -1,0 +1,1563 @@
+I have now thoroughly explored every relevant file in this codebase. I have a complete understanding of the architecture, data models, routing patterns, service layer conventions, template patterns, background task system, LLM integration, and scoring engine. Here is the full implementation plan.
+
+---
+
+# Candidate Insight & Comparison Feature -- Implementation Plan
+
+## 1. Architecture Overview and Design Decisions
+
+### Entry Point
+
+The feature is accessed from the existing `ranked_candidates.html` page. Each candidate card will get a new **"Deep Insight"** button alongside the existing View Resume / Shortlist / Contact buttons. Clicking it navigates to a dedicated full-page comparison view at `/recruiter/job/<job_id>/candidate/<resume_id>/insight`.
+
+### Routing Strategy
+
+Both the `ai_engine_bp` and `recruiter_bp` share the URL prefix `/recruiter`. The new routes belong under `ai_engine_bp` because they are AI-driven analysis features, consistent with where the existing scoring results route lives. The chat API endpoints also go under `ai_engine_bp`.
+
+### Service Layer
+
+Two new service files under `D:/Resume-Job-Matching-AI-Powered-LLMs-/services/`:
+
+- `candidate_insight_service.py` -- Pure analysis logic (diff computation, LLM insight generation, interview question generation, career trajectory analysis)
+- `chat_service.py` -- LangChain-based conversational interface with Groq
+
+### Data Storage
+
+Two new MongoDB collections for persistence:
+
+- `candidate_insights` -- Caches generated insights per (job_id, resume_id) pair
+- `insight_chats` -- Stores chat sessions and message history
+
+### Token Minimization Strategy
+
+The Groq API charges by token and has rate limits. The entire design uses:
+1. Structured JSON context instead of raw text dumps
+2. Terse system prompts (under 200 tokens each)
+3. Pre-computed diff data passed as structured context so the LLM reasons over summaries rather than raw documents
+4. Caching of all LLM outputs in MongoDB so re-visits do not re-call the API
+5. Chat context window trimming (last 10 messages only)
+
+---
+
+## 2. New Dependencies -- `requirements.txt` Additions
+
+Add these lines after the existing `groq` entry:
+
+```
+# LangChain (chat interface)
+langchain>=0.3,<1.0
+langchain-groq>=0.2,<1.0
+langchain-core>=0.3,<1.0
+```
+
+LangChain is used exclusively for the chat interface. The insight generation and question generation use the raw Groq client directly (already in the project) to avoid unnecessary abstraction overhead and token costs.
+
+---
+
+## 3. Database Schema -- New Collections
+
+### Collection: `candidate_insights`
+
+```python
+{
+    "_id": ObjectId,
+    "job_id": ObjectId,
+    "resume_id": ObjectId,
+    "recruiter_id": ObjectId,
+    
+    # Pre-computed diff data (no LLM needed)
+    "skills_diff": {
+        "matched": [{"skill": str, "proficiency": str, "category": str}],
+        "missing": [str],           # JD required but candidate lacks
+        "extra": [str],             # Candidate has but JD does not require
+        "tools_matched": [str],
+        "tools_missing": [str],
+        "match_rate": float         # len(matched) / len(all_required)
+    },
+    "education_diff": {
+        "required": [{"degree": str, "field": str, "level": str}],
+        "actual": [{"degree": str, "field": str, "institution": str, "grade": str}],
+        "meets_requirement": bool,
+        "explanation": str          # from ConstraintMatcher
+    },
+    "experience_diff": {
+        "required_years_min": float,
+        "required_years_max": float,
+        "actual_relevant_years": float,
+        "relevant_roles": [{"title": str, "company": str, "years": float, "similarity": float}],
+        "irrelevant_roles": [{"title": str, "company": str, "years": float}],
+        "meets_requirement": bool,
+        "explanation": str
+    },
+    "certification_diff": {
+        "required": [str],
+        "actual": [{"title": str, "issuer": str}],
+        "matched": [str],
+        "missing": [str]
+    },
+    
+    # Scoring data (from existing engine, copied here for self-contained access)
+    "scores": {
+        "overall": float,
+        "section_scores": dict,
+        "constraint_results": dict
+    },
+    
+    # LLM-generated insights (generated on demand, then cached)
+    "llm_insights": {
+        "strengths": [str],             # 3-5 bullet points
+        "weaknesses": [str],            # 3-5 bullet points
+        "red_flags": [str],             # 0-3 bullet points
+        "cultural_fit_signals": [str],  # Inferred from resume data
+        "career_trajectory": str,       # 2-3 sentence analysis
+        "growth_potential": str,        # 2-3 sentence analysis  
+        "skill_gap_analysis": str,      # 2-3 sentence analysis
+        "hiring_recommendation": str,   # 1-2 sentence summary
+        "confidence": str,              # "high" | "medium" | "low"
+        "tokens_used": int
+    },
+    
+    # Interview questions (generated on demand, then cached)
+    "interview_questions": {
+        "skill_gap_questions": [{"question": str, "purpose": str}],
+        "behavioral_questions": [{"question": str, "purpose": str}],
+        "technical_questions": [{"question": str, "purpose": str}],
+        "red_flag_probes": [{"question": str, "purpose": str}],
+        "tokens_used": int
+    },
+    
+    "created_at": datetime,
+    "updated_at": datetime
+}
+```
+
+### Collection: `insight_chats`
+
+```python
+{
+    "_id": ObjectId,
+    "job_id": ObjectId,
+    "resume_id": ObjectId,
+    "recruiter_id": ObjectId,
+    "messages": [
+        {
+            "role": "user" | "assistant",
+            "content": str,
+            "timestamp": datetime,
+            "tokens_used": int
+        }
+    ],
+    "total_tokens_used": int,
+    "created_at": datetime,
+    "updated_at": datetime
+}
+```
+
+---
+
+## 4. File: `services/candidate_insight_service.py`
+
+This is the core analysis engine. It has no LangChain dependency -- it uses the existing Groq client directly for LLM calls and the existing scoring infrastructure for diff computation.
+
+### Class: `CandidateInsightService`
+
+```python
+import os
+import logging
+from datetime import datetime, timezone
+from typing import Dict, List, Any, Optional
+from bson import ObjectId
+from groq import Groq
+from models.resume_model import Resume
+from models.job_description_model import JobDescription
+from services.constraint_matcher import ConstraintMatcher, ExperienceMatcher
+from services.embedding_service import get_embedding, cosine_similarity
+
+logger = logging.getLogger(__name__)
+
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+
+class CandidateInsightService:
+    def __init__(self, db, constraint_matcher: ConstraintMatcher):
+        self.db = db
+        self.insights_collection = db['candidate_insights']
+        self.cm = constraint_matcher
+        self.experience_matcher = ExperienceMatcher()
+        self._groq_client = None
+
+    @property
+    def groq_client(self):
+        if self._groq_client is None:
+            self._groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+        return self._groq_client
+
+    # ── Diff computation (no LLM, pure logic) ──
+
+    def compute_skills_diff(self, resume: Resume, job: JobDescription) -> Dict:
+        ...
+
+    def compute_education_diff(self, resume: Resume, job: JobDescription) -> Dict:
+        ...
+
+    def compute_experience_diff(self, resume: Resume, job: JobDescription) -> Dict:
+        ...
+
+    def compute_certification_diff(self, resume: Resume, job: JobDescription) -> Dict:
+        ...
+
+    def compute_full_diff(self, resume: Resume, job: JobDescription) -> Dict:
+        ...
+
+    # ── LLM insight generation ──
+
+    def generate_insights(self, diff_data: Dict, scores: Dict) -> Dict:
+        ...
+
+    def generate_interview_questions(self, diff_data: Dict, scores: Dict) -> Dict:
+        ...
+
+    # ── Orchestration ──
+
+    def get_or_create_insight(self, job_id: str, resume_id: str,
+                              recruiter_id: str, scores: Dict) -> Dict:
+        ...
+
+    def regenerate_llm_insights(self, job_id: str, resume_id: str) -> Dict:
+        ...
+
+    def regenerate_interview_questions(self, job_id: str, resume_id: str) -> Dict:
+        ...
+```
+
+### Method Details
+
+**`compute_skills_diff(resume, job)`**
+
+This is the most important diff. It compares the JD `skills.mandatory`, `skills.optional`, and `skills.tools` against the candidate's `skills` list.
+
+```python
+def compute_skills_diff(self, resume: Resume, job: JobDescription) -> Dict:
+    """Compute skill-by-skill diff between candidate and JD."""
+    # Normalize all skill names to lowercase for comparison
+    candidate_skills = {}
+    for s in (resume.skills or []):
+        candidate_skills[s.skill_name.lower().strip()] = {
+            'skill_name': s.skill_name,
+            'proficiency': s.proficiency,
+            'category': s.category,
+            'years_of_experience': s.years_of_experience
+        }
+
+    mandatory = [s.lower().strip() for s in (job.skills.mandatory or [])] if job.skills else []
+    optional = [s.lower().strip() for s in (job.skills.optional or [])] if job.skills else []
+    tools = [s.lower().strip() for s in (job.skills.tools or [])] if job.skills else []
+    all_required = mandatory + optional
+
+    matched = []
+    missing_mandatory = []
+    missing_optional = []
+    tools_matched = []
+    tools_missing = []
+
+    # For each required skill, check if candidate has it
+    # Use embedding similarity for fuzzy matching (threshold 0.85)
+    for req_skill in mandatory:
+        found = self._find_skill_match(req_skill, candidate_skills)
+        if found:
+            matched.append({**candidate_skills[found], 'required_as': 'mandatory'})
+        else:
+            missing_mandatory.append(req_skill)
+
+    for req_skill in optional:
+        found = self._find_skill_match(req_skill, candidate_skills)
+        if found:
+            matched.append({**candidate_skills[found], 'required_as': 'optional'})
+        else:
+            missing_optional.append(req_skill)
+
+    for tool in tools:
+        found = self._find_skill_match(tool, candidate_skills)
+        if found:
+            tools_matched.append(tool)
+        else:
+            tools_missing.append(tool)
+
+    # Extra skills: candidate has but JD does not mention
+    matched_names = {m['skill_name'].lower().strip() for m in matched}
+    extra = [s.skill_name for s in (resume.skills or [])
+             if s.skill_name.lower().strip() not in matched_names
+             and s.skill_name.lower().strip() not in [t.lower() for t in tools_matched]]
+
+    total_required = len(mandatory) + len(optional)
+    match_rate = len(matched) / total_required if total_required > 0 else 1.0
+
+    return {
+        'matched': matched,
+        'missing_mandatory': missing_mandatory,
+        'missing_optional': missing_optional,
+        'extra': extra,
+        'tools_matched': tools_matched,
+        'tools_missing': tools_missing,
+        'match_rate': match_rate
+    }
+
+def _find_skill_match(self, required_skill: str, candidate_skills: Dict,
+                       threshold: float = 0.85) -> Optional[str]:
+    """Find a matching skill using exact match first, then embedding similarity."""
+    # Exact match
+    if required_skill in candidate_skills:
+        return required_skill
+
+    # Substring match (e.g., "python" matches "python3")
+    for cand_name in candidate_skills:
+        if required_skill in cand_name or cand_name in required_skill:
+            return cand_name
+
+    # Embedding similarity fallback
+    req_emb = get_embedding(required_skill)
+    best_match = None
+    best_score = 0.0
+    for cand_name in candidate_skills:
+        cand_emb = get_embedding(cand_name)
+        sim = cosine_similarity(req_emb, cand_emb)
+        if sim > best_score:
+            best_score = sim
+            best_match = cand_name
+
+    if best_score >= threshold:
+        return best_match
+    return None
+```
+
+**`compute_education_diff(resume, job)`**
+
+Reuses the existing `ConstraintMatcher.education_matcher.match_education()` result and reformats it into the diff structure.
+
+```python
+def compute_education_diff(self, resume: Resume, job: JobDescription) -> Dict:
+    required = []
+    if job.qualifications and job.qualifications.education:
+        for edu_req in job.qualifications.education:
+            required.append({
+                'degree': edu_req.degree,
+                'field': edu_req.field_of_study,
+                'level': edu_req.level.value if edu_req.level else None
+            })
+
+    actual = []
+    for edu in (resume.education or []):
+        actual.append({
+            'degree': edu.degree,
+            'field': edu.field,
+            'institution': edu.institution,
+            'grade': edu.grade
+        })
+
+    # Reuse constraint matcher for the score and explanation
+    match_result = self.cm.education_matcher.match_education(
+        resume.education or [],
+        (job.qualifications.education if job.qualifications else []) or []
+    )
+
+    return {
+        'required': required,
+        'actual': actual,
+        'meets_requirement': match_result.normalized_score >= 0.6,
+        'score': match_result.score,
+        'explanation': match_result.explanation
+    }
+```
+
+**`compute_experience_diff(resume, job)`**
+
+Reuses `ExperienceMatcher` internals to get the per-role similarity and relevance classification.
+
+```python
+def compute_experience_diff(self, resume: Resume, job: JobDescription) -> Dict:
+    required_min = 0.0
+    required_max = None
+    if job.qualifications and job.qualifications.experience_years:
+        required_min = job.qualifications.experience_years.min or 0.0
+        required_max = job.qualifications.experience_years.max
+
+    # Calculate per-role similarities
+    similarities = self.experience_matcher.calculate_job_title_similarity(
+        job.title, resume.experience or []
+    )
+
+    relevant_roles = []
+    irrelevant_roles = []
+    for exp_idx, similarity, years in similarities:
+        exp = resume.experience[exp_idx]
+        role_info = {
+            'title': exp.job_title,
+            'company': exp.company,
+            'years': round(years, 1),
+            'similarity': round(similarity, 2),
+            'start_date': exp.start_date,
+            'end_date': exp.end_date
+        }
+        if similarity >= 0.5:
+            relevant_roles.append(role_info)
+        else:
+            irrelevant_roles.append(role_info)
+
+    relevant_years = sum(r['years'] for r in relevant_roles)
+
+    match_result = self.cm.experience_matcher.match_experience(
+        resume.experience or [], job
+    )
+
+    return {
+        'required_years_min': required_min,
+        'required_years_max': required_max,
+        'actual_relevant_years': round(relevant_years, 1),
+        'relevant_roles': sorted(relevant_roles, key=lambda x: x['similarity'], reverse=True),
+        'irrelevant_roles': irrelevant_roles,
+        'meets_requirement': match_result.normalized_score >= 0.6,
+        'score': match_result.score,
+        'explanation': match_result.explanation
+    }
+```
+
+**`compute_certification_diff(resume, job)`**
+
+```python
+def compute_certification_diff(self, resume: Resume, job: JobDescription) -> Dict:
+    required = []
+    if job.qualifications and job.qualifications.certifications:
+        required = [c.lower().strip() for c in job.qualifications.certifications]
+
+    actual = []
+    for cert in (resume.certifications or []):
+        actual.append({'title': cert.title, 'issuer': cert.issuer})
+
+    actual_names = [c['title'].lower().strip() for c in actual]
+
+    matched = [r for r in required if any(r in a or a in r for a in actual_names)]
+    missing = [r for r in required if r not in matched]
+
+    return {
+        'required': required,
+        'actual': actual,
+        'matched': matched,
+        'missing': missing
+    }
+```
+
+**`compute_full_diff(resume, job)`** -- orchestrates all four diffs into one dict.
+
+**`generate_insights(diff_data, scores)`** -- The LLM call for insights.
+
+```python
+def generate_insights(self, diff_data: Dict, scores: Dict,
+                      resume_summary: str, job_title: str) -> Dict:
+    """Generate LLM-based insights. Designed for minimum token usage."""
+
+    # Build structured context (much cheaper than dumping raw resume text)
+    context = self._build_insight_context(diff_data, scores, resume_summary, job_title)
+
+    system_prompt = (
+        "You are a senior technical recruiter. Analyze the candidate-vs-job comparison data. "
+        "Respond ONLY in valid JSON. Be concise. Each bullet point max 15 words."
+    )
+
+    user_prompt = f"""Comparison data:
+{context}
+
+Return JSON:
+{{
+  "strengths": ["..."],
+  "weaknesses": ["..."],
+  "red_flags": ["..."],
+  "cultural_fit_signals": ["..."],
+  "career_trajectory": "2-3 sentences",
+  "growth_potential": "2-3 sentences",
+  "skill_gap_analysis": "2-3 sentences",
+  "hiring_recommendation": "1-2 sentences",
+  "confidence": "high|medium|low"
+}}"""
+
+    try:
+        response = self.groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,
+            max_tokens=800
+        )
+        content = response.choices[0].message.content
+        tokens = response.usage.total_tokens if response.usage else 0
+
+        # Parse JSON from response (reuse existing extract_json_from_response)
+        from services.llm_service import extract_json_from_response
+        import json
+        json_str = extract_json_from_response(content)
+        parsed = json.loads(json_str)
+        parsed['tokens_used'] = tokens
+        return parsed
+    except Exception as e:
+        logger.error(f"Insight generation failed: {e}")
+        return self._fallback_insights(diff_data, scores)
+```
+
+**`_build_insight_context(diff_data, scores, resume_summary, job_title)`** -- Converts the diff_data dict into a compact text representation for the LLM. Example output:
+
+```
+Job: Senior Backend Engineer
+Overall Score: 72.3%
+Skills: 8/12 matched, missing: Kubernetes, Terraform, Go, Redis
+Education: BS Computer Science (meets requirement)
+Experience: 4.2 relevant years (required: 5-8), 2 relevant roles
+Strengths: Strong Python (5yr), AWS experience, ML background
+Gaps: Missing container orchestration, below experience minimum
+Summary: "Experienced Python developer with ML focus..."
+```
+
+This compact format uses approximately 150 tokens of context instead of the 2000+ tokens that dumping the full resume and JD would cost.
+
+**`generate_interview_questions(diff_data, scores)`**
+
+```python
+def generate_interview_questions(self, diff_data: Dict, scores: Dict,
+                                  job_title: str) -> Dict:
+    context = self._build_question_context(diff_data, scores, job_title)
+
+    system_prompt = (
+        "You are a hiring manager preparing interview questions. "
+        "Generate targeted questions based on the candidate's gaps and strengths. "
+        "Respond ONLY in valid JSON."
+    )
+
+    user_prompt = f"""Candidate comparison:
+{context}
+
+Return JSON with exactly 3 questions per category:
+{{
+  "skill_gap_questions": [{{"question": "...", "purpose": "..."}}],
+  "behavioral_questions": [{{"question": "...", "purpose": "..."}}],
+  "technical_questions": [{{"question": "...", "purpose": "..."}}],
+  "red_flag_probes": [{{"question": "...", "purpose": "..."}}]
+}}"""
+
+    try:
+        response = self.groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.4,
+            max_tokens=700
+        )
+        content = response.choices[0].message.content
+        tokens = response.usage.total_tokens if response.usage else 0
+        from services.llm_service import extract_json_from_response
+        import json
+        json_str = extract_json_from_response(content)
+        parsed = json.loads(json_str)
+        parsed['tokens_used'] = tokens
+        return parsed
+    except Exception as e:
+        logger.error(f"Question generation failed: {e}")
+        return {'skill_gap_questions': [], 'behavioral_questions': [],
+                'technical_questions': [], 'red_flag_probes': [], 'tokens_used': 0}
+```
+
+**`get_or_create_insight(job_id, resume_id, recruiter_id, scores)`** -- The main orchestrator:
+
+```python
+def get_or_create_insight(self, job_id: str, resume_id: str,
+                          recruiter_id: str, scores: Dict,
+                          resume_data: Dict, job_data: Dict) -> Dict:
+    """Get cached insight or compute fresh. Diff is always computed; LLM is lazy."""
+    # Check cache
+    existing = self.insights_collection.find_one({
+        'job_id': ObjectId(job_id),
+        'resume_id': ObjectId(resume_id)
+    })
+    if existing:
+        return existing
+
+    # Parse into Pydantic models
+    resume = Resume(**resume_data)
+    job = JobDescription(**job_data)
+
+    # Compute diffs (no LLM, fast)
+    diff_data = self.compute_full_diff(resume, job)
+
+    # Build document (LLM insights NOT generated yet -- lazy loading)
+    doc = {
+        'job_id': ObjectId(job_id),
+        'resume_id': ObjectId(resume_id),
+        'recruiter_id': ObjectId(recruiter_id),
+        'skills_diff': diff_data['skills'],
+        'education_diff': diff_data['education'],
+        'experience_diff': diff_data['experience'],
+        'certification_diff': diff_data['certifications'],
+        'scores': scores,
+        'llm_insights': None,        # Generated on demand via separate endpoint
+        'interview_questions': None,  # Generated on demand via separate endpoint
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc)
+    }
+
+    from services.type_convertor import prepare_document_for_mongodb
+    doc = prepare_document_for_mongodb(doc)
+    self.insights_collection.insert_one(doc)
+    return doc
+```
+
+The LLM insights and interview questions are generated lazily -- only when the user clicks the respective tab or button on the comparison page. This avoids wasting tokens if the recruiter only wants to see the diff view.
+
+**`_fallback_insights(diff_data, scores)`** -- Returns a rule-based fallback if Groq is unavailable (strengths/weaknesses derived from the diff match rates).
+
+---
+
+## 5. File: `services/chat_service.py`
+
+This file uses LangChain with Groq for the conversational interface.
+
+```python
+import os
+import logging
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
+from bson import ObjectId
+
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+logger = logging.getLogger(__name__)
+
+MAX_HISTORY_MESSAGES = 10  # Keep last 10 messages for context window management
+MAX_RESPONSE_TOKENS = 400
+
+
+class CandidateInsightChat:
+    """LangChain-based chat for recruiter questions about a candidate vs JD."""
+
+    def __init__(self, db):
+        self.db = db
+        self.chats_collection = db['insight_chats']
+        self._llm = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = ChatGroq(
+                groq_api_key=os.getenv('GROQ_API_KEY'),
+                model_name="llama-3.3-70b-versatile",
+                temperature=0.3,
+                max_tokens=MAX_RESPONSE_TOKENS
+            )
+        return self._llm
+
+    def _build_system_message(self, insight_data: Dict) -> str:
+        """Build a compact system message from the insight data."""
+        skills = insight_data.get('skills_diff', {})
+        exp = insight_data.get('experience_diff', {})
+        edu = insight_data.get('education_diff', {})
+        scores = insight_data.get('scores', {})
+
+        matched_skills = [s.get('skill_name', s) if isinstance(s, dict) else s
+                         for s in skills.get('matched', [])]
+        missing_skills = skills.get('missing_mandatory', []) + skills.get('missing_optional', [])
+
+        relevant_roles = [f"{r['title']} at {r['company']} ({r['years']}yr)"
+                         for r in exp.get('relevant_roles', [])[:3]]
+
+        context = (
+            f"You are a recruitment analyst. Answer questions about this candidate.\n"
+            f"Overall match: {scores.get('overall', 0)*100:.0f}%\n"
+            f"Skills matched: {', '.join(matched_skills[:10])}\n"
+            f"Skills missing: {', '.join(missing_skills[:10])}\n"
+            f"Relevant experience: {exp.get('actual_relevant_years', 0)} years. "
+            f"Roles: {'; '.join(relevant_roles)}\n"
+            f"Education: {edu.get('explanation', 'N/A')}\n"
+            f"Be concise. Max 3 sentences per answer unless asked for detail."
+        )
+        return context
+
+    def _get_or_create_session(self, job_id: str, resume_id: str,
+                                recruiter_id: str) -> Dict:
+        """Get existing chat session or create new one."""
+        session = self.chats_collection.find_one({
+            'job_id': ObjectId(job_id),
+            'resume_id': ObjectId(resume_id),
+            'recruiter_id': ObjectId(recruiter_id)
+        })
+        if not session:
+            session = {
+                'job_id': ObjectId(job_id),
+                'resume_id': ObjectId(resume_id),
+                'recruiter_id': ObjectId(recruiter_id),
+                'messages': [],
+                'total_tokens_used': 0,
+                'created_at': datetime.now(timezone.utc),
+                'updated_at': datetime.now(timezone.utc)
+            }
+            self.chats_collection.insert_one(session)
+        return session
+
+    def send_message(self, job_id: str, resume_id: str, recruiter_id: str,
+                     user_message: str, insight_data: Dict) -> Dict:
+        """Process a user message and return the AI response."""
+        session = self._get_or_create_session(job_id, resume_id, recruiter_id)
+
+        # Build message history (trimmed to last N messages)
+        history = session.get('messages', [])[-MAX_HISTORY_MESSAGES:]
+
+        # Construct LangChain messages
+        system_msg = SystemMessage(content=self._build_system_message(insight_data))
+        messages = [system_msg]
+
+        for msg in history:
+            if msg['role'] == 'user':
+                messages.append(HumanMessage(content=msg['content']))
+            else:
+                messages.append(AIMessage(content=msg['content']))
+
+        messages.append(HumanMessage(content=user_message))
+
+        try:
+            response = self.llm.invoke(messages)
+            ai_content = response.content
+            tokens_used = 0
+            if hasattr(response, 'response_metadata'):
+                usage = response.response_metadata.get('token_usage', {})
+                tokens_used = usage.get('total_tokens', 0)
+        except Exception as e:
+            logger.error(f"Chat LLM error: {e}")
+            ai_content = "I'm sorry, I encountered an error processing your question. Please try again."
+            tokens_used = 0
+
+        # Store both messages
+        now = datetime.now(timezone.utc)
+        new_messages = [
+            {'role': 'user', 'content': user_message, 'timestamp': now, 'tokens_used': 0},
+            {'role': 'assistant', 'content': ai_content, 'timestamp': now, 'tokens_used': tokens_used}
+        ]
+
+        self.chats_collection.update_one(
+            {'_id': session['_id']},
+            {
+                '$push': {'messages': {'$each': new_messages}},
+                '$inc': {'total_tokens_used': tokens_used},
+                '$set': {'updated_at': now}
+            }
+        )
+
+        return {
+            'response': ai_content,
+            'tokens_used': tokens_used,
+            'total_messages': len(history) + 2
+        }
+
+    def get_chat_history(self, job_id: str, resume_id: str,
+                         recruiter_id: str) -> List[Dict]:
+        """Get full chat history for display."""
+        session = self.chats_collection.find_one({
+            'job_id': ObjectId(job_id),
+            'resume_id': ObjectId(resume_id),
+            'recruiter_id': ObjectId(recruiter_id)
+        })
+        if not session:
+            return []
+        return session.get('messages', [])
+
+    def clear_chat(self, job_id: str, resume_id: str, recruiter_id: str) -> bool:
+        """Clear chat history for a session."""
+        result = self.chats_collection.update_one(
+            {
+                'job_id': ObjectId(job_id),
+                'resume_id': ObjectId(resume_id),
+                'recruiter_id': ObjectId(recruiter_id)
+            },
+            {'$set': {'messages': [], 'total_tokens_used': 0,
+                      'updated_at': datetime.now(timezone.utc)}}
+        )
+        return result.modified_count > 0
+```
+
+---
+
+## 6. File: `extensions.py` Modifications
+
+Add new collection globals and service instances.
+
+In the global declarations section (around line 32), add:
+
+```python
+candidate_insights_collection = None
+insight_chats_collection = None
+
+# New AI services
+insight_service = None
+chat_service = None
+```
+
+In `init_extensions()`, after the existing collection assignments (around line 116), add:
+
+```python
+candidate_insights_collection = db['candidate_insights']
+insight_chats_collection = db['insight_chats']
+```
+
+In the index creation function `_create_indexes()`, add:
+
+```python
+candidate_insights_collection.create_index(
+    [('job_id', ASCENDING), ('resume_id', ASCENDING)],
+    unique=True
+)
+insight_chats_collection.create_index(
+    [('job_id', ASCENDING), ('resume_id', ASCENDING), ('recruiter_id', ASCENDING)]
+)
+```
+
+After the `matcher` initialization (around line 132), add:
+
+```python
+from services.candidate_insight_service import CandidateInsightService
+from services.chat_service import CandidateInsightChat
+
+insight_service = CandidateInsightService(db, cm)
+chat_service = CandidateInsightChat(db)
+```
+
+---
+
+## 7. File: `blueprints/ai_engine/routes.py` -- New Routes
+
+Add these routes to the existing file, below the current routes.
+
+### Route: Comparison Page (Full Page View)
+
+```python
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/insight')
+@login_required
+def candidate_insight(job_id, resume_id):
+    """Full-page candidate insight & comparison view."""
+    if not isinstance(current_user, Recruiter):
+        flash('Access denied', 'error')
+        return redirect(url_for('applicant.landing'))
+
+    # Verify job ownership
+    job = jobs_collection.find_one({
+        '_id': ObjectId(job_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        flash('Job not found', 'error')
+        return redirect(url_for('recruiter.recruiter_dashboard'))
+
+    # Verify candidate applied to this job
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        flash('Candidate not found', 'error')
+        return redirect(url_for('ai_engine.view_ai_results', job_id=job_id))
+
+    application = applications_collection.find_one({
+        'resume_id': ObjectId(resume_id),
+        'job_id': ObjectId(job_id)
+    })
+    if not application:
+        flash('Access denied', 'error')
+        return redirect(url_for('ai_engine.view_ai_results', job_id=job_id))
+
+    # Get existing AI scores for this candidate from ai_results
+    ai_results = ai_results_collection.find_one({'job_id': ObjectId(job_id)})
+    candidate_scores = {}
+    if ai_results:
+        for c in ai_results.get('ranked_candidates', []):
+            if c.get('resume_id') == resume_id:
+                candidate_scores = {
+                    'overall': c.get('overall_score', 0),
+                    'section_scores': c.get('section_scores', {}),
+                    'constraint_results': c.get('constraint_results', {})
+                }
+                break
+
+    # Get or compute insight (diffs are computed, LLM insights are lazy)
+    from extensions import insight_service
+    insight = insight_service.get_or_create_insight(
+        job_id=job_id,
+        resume_id=resume_id,
+        recruiter_id=current_user.id,
+        scores=candidate_scores,
+        resume_data=resume['parsed_data'],
+        job_data=job['parsed_data']
+    )
+
+    return render_template('recruiter/candidate_comparison.html',
+                           job=job,
+                           resume=resume,
+                           insight=insight,
+                           scores=candidate_scores,
+                           application=application)
+```
+
+### Route: Generate LLM Insights (AJAX, lazy-loaded)
+
+```python
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/generate-insights', methods=['POST'])
+@login_required
+def generate_candidate_insights(job_id, resume_id):
+    """Generate LLM insights for a candidate (lazy, on demand)."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    # Authorization checks (same pattern as above, abbreviated)
+    from extensions import insight_service, candidate_insights_collection
+
+    insight = candidate_insights_collection.find_one({
+        'job_id': ObjectId(job_id), 'resume_id': ObjectId(resume_id)
+    })
+    if not insight:
+        return jsonify({'error': 'Insight not found. Visit the comparison page first.'}), 404
+
+    if insight.get('llm_insights'):
+        return jsonify({'success': True, 'insights': insight['llm_insights']})
+
+    # Generate via background task for non-blocking UX
+    def _generate():
+        resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+        result = insight_service.generate_insights(
+            diff_data={
+                'skills': insight['skills_diff'],
+                'education': insight['education_diff'],
+                'experience': insight['experience_diff'],
+                'certifications': insight['certification_diff']
+            },
+            scores=insight['scores'],
+            resume_summary=resume['parsed_data'].get('summary', ''),
+            job_title=insight['scores'].get('job_title', '')
+        )
+        candidate_insights_collection.update_one(
+            {'_id': insight['_id']},
+            {'$set': {'llm_insights': result, 'updated_at': datetime.datetime.now(timezone.utc)}}
+        )
+        return result
+
+    bg_task_id = task_runner.submit(_generate)
+    return jsonify({'success': True, 'task_id': bg_task_id})
+```
+
+### Route: Generate Interview Questions (AJAX, lazy-loaded)
+
+```python
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/generate-questions', methods=['POST'])
+@login_required
+def generate_interview_questions(job_id, resume_id):
+    """Generate interview questions (lazy, on demand)."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    from extensions import insight_service, candidate_insights_collection
+
+    insight = candidate_insights_collection.find_one({
+        'job_id': ObjectId(job_id), 'resume_id': ObjectId(resume_id)
+    })
+    if not insight:
+        return jsonify({'error': 'Insight not found'}), 404
+
+    if insight.get('interview_questions'):
+        return jsonify({'success': True, 'questions': insight['interview_questions']})
+
+    def _generate():
+        job = jobs_collection.find_one({'_id': ObjectId(job_id)})
+        job_title = job['parsed_data'].get('title', '') if job else ''
+        result = insight_service.generate_interview_questions(
+            diff_data={
+                'skills': insight['skills_diff'],
+                'education': insight['education_diff'],
+                'experience': insight['experience_diff'],
+                'certifications': insight['certification_diff']
+            },
+            scores=insight['scores'],
+            job_title=job_title
+        )
+        candidate_insights_collection.update_one(
+            {'_id': insight['_id']},
+            {'$set': {'interview_questions': result,
+                      'updated_at': datetime.datetime.now(timezone.utc)}}
+        )
+        return result
+
+    bg_task_id = task_runner.submit(_generate)
+    return jsonify({'success': True, 'task_id': bg_task_id})
+```
+
+### Route: Chat Message (AJAX)
+
+```python
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/chat', methods=['POST'])
+@login_required
+def chat_with_insight(job_id, resume_id):
+    """Send a chat message about this candidate."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    message = data.get('message', '').strip()
+    if not message:
+        return jsonify({'error': 'Message is required'}), 400
+    if len(message) > 1000:
+        return jsonify({'error': 'Message too long (max 1000 chars)'}), 400
+
+    from extensions import chat_service, candidate_insights_collection
+
+    insight = candidate_insights_collection.find_one({
+        'job_id': ObjectId(job_id), 'resume_id': ObjectId(resume_id)
+    })
+    if not insight:
+        return jsonify({'error': 'Insight not found'}), 404
+
+    result = chat_service.send_message(
+        job_id=job_id,
+        resume_id=resume_id,
+        recruiter_id=current_user.id,
+        user_message=message,
+        insight_data=insight
+    )
+
+    return jsonify({'success': True, **result})
+```
+
+### Route: Get Chat History (AJAX)
+
+```python
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/chat/history')
+@login_required
+def get_chat_history(job_id, resume_id):
+    """Get chat history for this candidate insight session."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    from extensions import chat_service
+    history = chat_service.get_chat_history(job_id, resume_id, current_user.id)
+
+    # Convert datetime objects for JSON serialization
+    for msg in history:
+        if 'timestamp' in msg:
+            msg['timestamp'] = msg['timestamp'].isoformat()
+
+    return jsonify({'success': True, 'messages': history})
+```
+
+### Route: Check Background Task Status (reuses existing TaskRunner)
+
+```python
+@ai_engine_bp.route('/task/<task_id>/status')
+@login_required
+def check_task_status(task_id):
+    """Check status of a background task (insight generation, etc.)."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    status = task_runner.get_status(task_id)
+    if not status:
+        return jsonify({'error': 'Task not found'}), 404
+
+    return jsonify(status)
+```
+
+---
+
+## 8. File: `templates/recruiter/candidate_comparison.html`
+
+This is the largest new file. It extends `base.html` and is structured as a tabbed interface.
+
+### Layout Structure
+
+```
++--------------------------------------------------+
+| Breadcrumb: Dashboard > Job Title > Candidate     |
++--------------------------------------------------+
+| Candidate Header: Name, Title, Score Badge        |
++--------------------------------------------------+
+| Tab Bar: [Diff View] [AI Insights] [Interview Qs] [Chat] |
++--------------------------------------------------+
+|                                                    |
+|               Tab Content Area                     |
+|                                                    |
++--------------------------------------------------+
+```
+
+### Tab 1: Diff View (Default, No LLM)
+
+Side-by-side layout with three columns on large screens:
+
+**Skills Section** -- Two columns:
+- Left column: "Required Skills" listing each JD skill with color-coded indicators
+  - Green check icon + green background: Matched (candidate has it)
+  - Red X icon + red background: Missing (candidate lacks it)
+  - Yellow dot for optional missing skills
+- Right column: "Candidate Skills" listing each candidate skill
+  - Green: Matched to a requirement
+  - Blue: Extra (not required but candidate has it)
+  - Shows proficiency and years if available
+
+**Experience Section** -- Timeline visualization:
+- Left: JD requirements (years range, level)
+- Right: Candidate timeline with role cards
+  - Each role shows a "relevance" badge (high/medium/low based on similarity score)
+  - Green border for relevant roles, gray for irrelevant
+
+**Education Section** -- Simple comparison cards:
+- Left: Required education
+- Right: Actual education
+- Match indicator with explanation
+
+**Certifications** -- Tag-based comparison similar to skills
+
+### Tab 2: AI Insights (Lazy-loaded via AJAX)
+
+When the user clicks this tab:
+1. If `insight.llm_insights` is null, show a "Generate AI Insights" button
+2. Button click calls `POST /recruiter/job/<id>/candidate/<id>/generate-insights`
+3. Show a spinner, poll `GET /recruiter/task/<task_id>/status` every 2 seconds
+4. When complete, render the insights:
+   - Strengths (green list)
+   - Weaknesses (yellow list)
+   - Red Flags (red list, only if present)
+   - Career Trajectory Analysis (card with icon)
+   - Growth Potential (card with icon)
+   - Skill Gap Analysis (card with icon)
+   - Cultural Fit Signals (card with icon)
+   - Hiring Recommendation (highlighted box)
+   - Confidence indicator (badge)
+
+### Tab 3: Interview Questions (Lazy-loaded via AJAX)
+
+Same lazy-load pattern as insights:
+1. If `insight.interview_questions` is null, show "Generate Questions" button
+2. When generated, display in categorized accordion sections:
+   - Skill Gap Questions
+   - Behavioral Questions
+   - Technical Questions
+   - Red Flag Probes
+3. Each question shows the question text and a "Purpose" explanation in smaller text
+4. "Copy All" button to copy questions to clipboard
+
+### Tab 4: Chat Interface
+
+A chat panel built with vanilla JS:
+- Chat history area (scrollable, auto-scrolls to bottom)
+- Input field with send button
+- Quick-start prompts: "Does this candidate have leadership experience?", "What are the hiring risks?", "Compare their skills to requirements"
+- Markdown rendering for responses (simple regex-based bold/italic/list rendering)
+- Token usage indicator (small text showing total tokens used)
+
+### Template Skeleton (Key Sections)
+
+```html
+{% extends "base.html" %}
+
+{% block title %}Candidate Insight - {{ resume.parsed_data.basic_info.full_name }} | Emploify.io{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <!-- Dashboard > Job Title > Ranked Candidates > Candidate Name -->
+    </nav>
+
+    <!-- Candidate Header Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="h-16 w-16 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center">
+                    <span class="text-white font-bold text-2xl">
+                        {{ resume.parsed_data.basic_info.full_name[0].upper() }}
+                    </span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        {{ resume.parsed_data.basic_info.full_name }}
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        {{ resume.parsed_data.basic_info.current_title or 'N/A' }}
+                    </p>
+                </div>
+            </div>
+            <!-- Overall Score Badge -->
+            <div class="text-center">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Overall Match</div>
+                <div class="text-4xl font-bold text-primary-600">
+                    {{ (scores.overall * 100) | round(1) }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav class="-mb-px flex space-x-8">
+            <button class="tab-btn active ..." data-tab="diff">
+                <i class="fas fa-columns mr-2"></i>Comparison
+            </button>
+            <button class="tab-btn ..." data-tab="insights">
+                <i class="fas fa-lightbulb mr-2"></i>AI Insights
+            </button>
+            <button class="tab-btn ..." data-tab="questions">
+                <i class="fas fa-question-circle mr-2"></i>Interview Questions
+            </button>
+            <button class="tab-btn ..." data-tab="chat">
+                <i class="fas fa-comments mr-2"></i>Ask AI
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab: Diff View -->
+    <div id="tab-diff" class="tab-content">
+        <!-- Skills Diff -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-code text-primary-600 mr-2"></i>Skills Comparison
+                <span class="text-sm font-normal text-gray-500 ml-2">
+                    {{ insight.skills_diff.matched | length }} / 
+                    {{ (insight.skills_diff.matched | length) + (insight.skills_diff.missing_mandatory | length) + (insight.skills_diff.missing_optional | length) }} matched
+                </span>
+            </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left: Required Skills Status -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Required by Job</h4>
+                    <!-- Green for matched, red for missing mandatory, yellow for missing optional -->
+                    {% for skill in insight.skills_diff.matched %}
+                    <div class="flex items-center px-3 py-2 mb-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        <span class="text-gray-900 dark:text-white">{{ skill.skill_name }}</span>
+                        {% if skill.proficiency %}
+                        <span class="ml-auto text-xs text-green-600 dark:text-green-400">{{ skill.proficiency }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% for skill in insight.skills_diff.missing_mandatory %}
+                    <div class="flex items-center px-3 py-2 mb-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                        <i class="fas fa-times-circle text-red-500 mr-3"></i>
+                        <span class="text-gray-900 dark:text-white">{{ skill }}</span>
+                        <span class="ml-auto text-xs text-red-600 dark:text-red-400">Required</span>
+                    </div>
+                    {% endfor %}
+                    {% for skill in insight.skills_diff.missing_optional %}
+                    <div class="flex items-center px-3 py-2 mb-2 rounded bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                        <i class="fas fa-minus-circle text-yellow-500 mr-3"></i>
+                        <span class="text-gray-900 dark:text-white">{{ skill }}</span>
+                        <span class="ml-auto text-xs text-yellow-600 dark:text-yellow-400">Nice to have</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Right: Extra Candidate Skills -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Additional Candidate Skills</h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for skill in insight.skills_diff.extra %}
+                        <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm rounded-full">
+                            {{ skill }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experience Diff -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+            <!-- Similar structure with relevant/irrelevant role cards -->
+        </div>
+
+        <!-- Education Diff -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+            <!-- Required vs actual side by side -->
+        </div>
+    </div>
+
+    <!-- Tab: AI Insights (lazy loaded) -->
+    <div id="tab-insights" class="tab-content hidden">
+        {% if insight.llm_insights %}
+            <!-- Render cached insights -->
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-lightbulb text-gray-300 dark:text-gray-600 text-5xl mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">AI Insights Not Generated Yet</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">Click below to generate AI-powered analysis.</p>
+                <button id="generateInsightsBtn" class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                    <i class="fas fa-magic mr-2"></i>Generate AI Insights
+                </button>
+            </div>
+        {% endif %}
+        <div id="insightsLoadingSpinner" class="hidden text-center py-12">
+            <i class="fas fa-spinner fa-spin text-primary-600 text-3xl"></i>
+            <p class="mt-3 text-gray-500">Generating insights...</p>
+        </div>
+        <div id="insightsContent" class="hidden">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Tab: Interview Questions (lazy loaded) -->
+    <div id="tab-questions" class="tab-content hidden">
+        <!-- Same lazy-load pattern as insights -->
+    </div>
+
+    <!-- Tab: Chat -->
+    <div id="tab-chat" class="tab-content hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden" style="height: 600px;">
+            <div class="flex flex-col h-full">
+                <!-- Chat Header -->
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-robot text-primary-600 mr-2"></i>Ask About This Candidate
+                    </h3>
+                </div>
+                <!-- Messages Area -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <!-- Quick start prompts shown when empty -->
+                    <div id="quickPrompts" class="space-y-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Try asking:</p>
+                        <button class="quick-prompt w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors">
+                            Does this candidate have leadership experience?
+                        </button>
+                        <button class="quick-prompt w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors">
+                            What are the risks of hiring this candidate?
+                        </button>
+                        <button class="quick-prompt w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-600 transition-colors">
+                            Compare their Python skills to the requirements
+                        </button>
+                    </div>
+                </div>
+                <!-- Input Area -->
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex space-x-3">
+                        <input type="text" id="chatInput" placeholder="Ask about this candidate..."
+                               class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-primary-500 focus:border-primary-500"
+                               maxlength="1000">
+                        <button id="chatSendBtn" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const JOB_ID = '{{ job._id }}';
+    const RESUME_ID = '{{ resume._id }}';
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'border-primary-500', 'text-primary-600'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            this.classList.add('active', 'border-primary-500', 'text-primary-600');
+            document.getElementById('tab-' + this.dataset.tab).classList.remove('hidden');
+        });
+    });
+
+    // Generate Insights (lazy)
+    const genInsightsBtn = document.getElementById('generateInsightsBtn');
+    if (genInsightsBtn) {
+        genInsightsBtn.addEventListener('click', function() {
+            Emploify.lockButton(this, 'Generating...');
+            document.getElementById('insightsLoadingSpinner').classList.remove('hidden');
+
+            fetch(`/recruiter/job/${JOB_ID}/candidate/${RESUME_ID}/generate-insights`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.task_id) {
+                    pollTask(data.task_id, function() {
+                        // Reload insights content
+                        location.reload();
+                    });
+                } else if (data.insights) {
+                    renderInsights(data.insights);
+                }
+            })
+            .catch(err => {
+                Emploify.showToast('Error generating insights', 'error');
+                Emploify.unlockButton(genInsightsBtn);
+            });
+        });
+    }
+
+    // Poll background task
+    function pollTask(taskId, onComplete) {
+        const interval = setInterval(() => {
+            fetch(`/recruiter/task/${taskId}/status`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        onComplete(data.result);
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        Emploify.showToast('Generation failed: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                });
+        }, 2000);
+    }
+
+    // Chat functionality
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    const chatMessages = document.getElementById('chatMessages');
+
+    function sendChatMessage(message) {
+        if (!message.trim()) return;
+
+        // Hide quick prompts
+        const quickPrompts = document.getElementById('quickPrompts');
+        if (quickPrompts) quickPrompts.classList.add('hidden');
+
+        // Add user message to UI
+        appendChatMessage('user', message);
+        chatInput.value = '';
+
+        // Show typing indicator
+        const typingId = appendTypingIndicator();
+
+        fetch(`/recruiter/job/${JOB_ID}/candidate/${RESUME_ID}/chat`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: message})
+        })
+        .then(r => r.json())
+        .then(data => {
+            removeTypingIndicator(typingId);
+            if (data.success) {
+                appendChatMessage('assistant', data.response);
+            } else {
+                appendChatMessage('assistant', 'Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(() => {
+            removeTypingIndicator(typingId);
+            appendChatMessage('assistant', 'Connection error. Please try again.');
+        });
+    }
+
+    chatSendBtn.addEventListener('click', () => sendChatMessage(chatInput.value));
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage(chatInput.value);
+        }
+    });
+
+    // Quick prompts
+    document.querySelectorAll('.quick-prompt').forEach(btn => {
+        btn.addEventListener('click', function() {
+            sendChatMessage(this.textContent.trim());
+        });
+    });
+
+    function appendChatMessage(role, content) {
+        const div = document.createElement('div');
+        div.className = role === 'user'
+            ? 'flex justify-end'
+            : 'flex justify-start';
+        div.innerHTML = `
+            <div class="max-w-[80%] px-4 py-3 rounded-lg text-sm ${
+                role === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
+            }">
+                ${escapeHtml(content)}
+            </div>
+        `;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Load chat history on tab switch
+    // ... (fetch /chat/history and render)
+});
+</script>
+{% endblock %}
+```
+
+---
+
+## 9. Integration Point: Existing `ranked_candidates.html` Modification
+
+Add a "Deep Insight" button to the action buttons row in each candidate card (around line 268 of the existing template). Insert it between the "View Resume" and "Shortlist" buttons:
+
+```html
+<a href="{{ url_for('ai_engine.candidate_insight', job_id=job._id, resume_id=candidate.resume_id) }}"
+   class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors">
+    <i class="fas fa-microscope mr-2"></i>Deep Insight
+</a>
+```
+
+This is the only modification to existing templates. Everything else is additive.
+
+---
+
+## 10. Implementation Sequence
+
+The implementation should proceed in this order due to dependencies:
+
+**Phase 1: Foundation (no LLM, no LangChain)**
+1. Add `langchain`, `langchain-groq`, `langchain-core` to `requirements.txt`
+2. Create `services/candidate_insight_service.py` with diff computation methods only (no LLM methods yet)
+3. Modify `extensions.py` to add new collections, indexes, and service instances
+4. Create the `candidate_insight` page route in `blueprints/ai_engine/routes.py`
+5. Create `templates/recruiter/candidate_comparison.html` with the Diff View tab only
+6. Add the "Deep Insight" button to `ranked_candidates.html`
+
+**Phase 2: LLM Insights**
+7. Implement `generate_insights()` and `generate_interview_questions()` in `candidate_insight_service.py`
+8. Add the `/generate-insights` and `/generate-questions` API routes
+9. Add the `/task/<task_id>/status` route
+10. Build the AI Insights and Interview Questions tabs in the template with lazy-loading JS
+
+**Phase 3: Chat Interface**
+11. Create `services/chat_service.py`
+12. Add the `/chat` and `/chat/history` API routes
+13. Build the Chat tab in the template with JS
+
+**Phase 4: Polish**
+14. Add `.env.example` note that no new env vars are required (uses existing GROQ_API_KEY)
+15. Test dark mode across all new UI
+16. Add rate limiting to the LLM endpoints (using existing `limiter`)
+
+---
+
+## 11. Key Design Trade-offs and Rationale
+
+**Why lazy-load LLM content instead of generating on page visit?**
+The diff view is the most useful view and costs zero tokens. Many recruiters will use only the diff view. Generating LLM insights preemptively would waste tokens and slow down the initial page load. The lazy approach means a recruiter who visits 50 candidate comparison pages but only generates insights for 5 pays for only 5 LLM calls.
+
+**Why use raw Groq client for insights instead of LangChain?**
+LangChain adds overhead (both latency and token usage from prompt templates). The insight generation and question generation are single-shot calls with no conversation state. Raw Groq client calls are simpler, faster, and use fewer tokens. LangChain is used only for the chat interface where its message history management adds genuine value.
+
+**Why store diffs in MongoDB instead of computing on every page load?**
+The diff computation calls the embedding service (via `_find_skill_match`), which itself makes HuggingFace API calls (cached in MongoDB, but still). Storing the computed diff means subsequent page visits are instant with no external API calls.
+
+**Why not use FAISS for skill matching?**
+The project already removed FAISS (per git history). The embedding cache in MongoDB combined with the small number of skills per resume (typically 10-30) makes a linear scan with cached embeddings fast enough. FAISS would be over-engineering for this scale.
+
+**Why a task polling approach instead of SSE/WebSockets for LLM generation?**
+The existing project uses the `TaskRunner` with polling (see how `run_ai_engine` works). Adding SSE or WebSockets would introduce new infrastructure concerns. Polling every 2 seconds for a task that takes 3-5 seconds is simple and consistent with the existing pattern.
+
+---
+
+### Critical Files for Implementation
+- `D:/Resume-Job-Matching-AI-Powered-LLMs-/services/candidate_insight_service.py` - New file: core diff computation and LLM insight generation logic
+- `D:/Resume-Job-Matching-AI-Powered-LLMs-/services/chat_service.py` - New file: LangChain-based chat interface with Groq
+- `D:/Resume-Job-Matching-AI-Powered-LLMs-/blueprints/ai_engine/routes.py` - Existing file: add 6 new routes for comparison page, insights, questions, chat, chat history, and task status
+- `D:/Resume-Job-Matching-AI-Powered-LLMs-/extensions.py` - Existing file: register new MongoDB collections, indexes, and service singletons
+- `D:/Resume-Job-Matching-AI-Powered-LLMs-/templates/recruiter/candidate_comparison.html` - New file: full-page tabbed comparison UI with vanilla JS for lazy-loading and chat

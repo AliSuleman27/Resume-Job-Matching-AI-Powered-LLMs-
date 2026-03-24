@@ -79,126 +79,278 @@
         </div>
     </div>
 
+    <!-- Talent Pool Match Banner -->
+    <div id="poolMatchBanner" class="hidden bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center">
+            <i class="fas fa-database text-cyan-600 dark:text-cyan-400 text-xl mr-3"></i>
+            <div>
+                <p class="text-sm font-medium text-cyan-800 dark:text-cyan-300">
+                    <span id="poolMatchCount">0</span> candidate(s) in your talent pool may match this job
+                </p>
+                <p class="text-xs text-cyan-600 dark:text-cyan-400">Based on skill overlap with this job's requirements</p>
+            </div>
+        </div>
+        <a href="{{ url_for('recruiter.talent_pool') }}" class="inline-flex items-center px-3 py-1.5 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors flex-shrink-0">
+            <i class="fas fa-external-link-alt mr-1"></i> View Pool
+        </a>
+    </div>
+
     <!-- Bulk Actions Toolbar -->
-    <div id="bulkActions" class="hidden bg-primary-50 dark:bg-primary-900/30 p-4 rounded-lg mb-4 flex items-center justify-between">
+    <div id="bulkActions" class="hidden bg-primary-50 dark:bg-primary-900/30 p-4 rounded-lg mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <span id="selectedCount" class="text-sm font-medium text-primary-700 dark:text-primary-300">0 selected</span>
-        <div class="flex items-center space-x-3">
+        <div class="flex flex-wrap items-center gap-2">
             <label class="inline-flex items-center cursor-pointer text-sm text-primary-700 dark:text-primary-300" title="Send email notifications to selected applicants">
                 <input type="checkbox" id="bulkNotify" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500 mr-1" checked>
-                <i class="fas fa-envelope mr-1"></i> Notify applicants
+                <i class="fas fa-envelope mr-1"></i> Notify
             </label>
-            <button onclick="bulkUpdateStatus('reviewed')" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Mark Reviewed</button>
-            <button onclick="bulkUpdateStatus('shortlisted')" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700">Shortlist</button>
-            <button onclick="bulkUpdateStatus('rejected')" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700">Reject</button>
+            {% for stage in pipeline_stages %}
+            {% if stage != 'submitted' %}
+            <button onclick="bulkUpdateStatus('{{ stage }}')" class="px-3 py-1.5 text-sm {{ 'bg-green-600 hover:bg-green-700' if stage == 'hired' else 'bg-red-600 hover:bg-red-700' if stage == 'rejected' else 'bg-blue-600 hover:bg-blue-700' }} text-white rounded">{{ stage|replace('_', ' ')|title }}</button>
+            {% endif %}
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Applicants Table -->
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500">
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Applicant
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Experience
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Skills
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {% for app in applications %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="checkbox" class="app-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500" data-application-id="{{ app._id }}">
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
-                                    <i class="fas fa-user text-primary-600"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ app.resume_data.basic_info.full_name }}
-                                    </div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ app.user_email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900 dark:text-white">
-                                {{ app.total_experience }} years
+    <!-- Status Filter -->
+    <div class="mb-4 flex items-center gap-3">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300"><i class="fas fa-filter mr-1"></i>Filter by status:</label>
+        <select id="statusFilter" onchange="filterByStatus(this.value)" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1.5 text-sm">
+            <option value="all">All Statuses</option>
+            {% for stage in pipeline_stages %}
+            <option value="{{ stage }}">{{ stage|replace('_', ' ')|title }}</option>
+            {% endfor %}
+        </select>
+        {% if job.get('screening_questions') %}
+        <span class="ml-auto text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-clipboard-list mr-1"></i>This job has screening questions</span>
+        {% endif %}
+    </div>
 
+    <!-- ===== DESKTOP TABLE (hidden on mobile) ===== -->
+    <div class="hidden md:block bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
+                        <input type="checkbox" id="selectAll" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500">
+                    </th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Applicant
+                    </th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Experience
+                    </th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Skills
+                    </th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for app in applications %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" data-status="{{ app.status }}">
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <input type="checkbox" class="app-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500" data-application-id="{{ app._id }}">
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-9 w-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                                <span class="text-white font-semibold text-sm">{{ app.resume_data.basic_info.full_name[0].upper() }}</span>
                             </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex flex-wrap gap-1">
-                                {% for skill in app.resume_data.get('skills', [])[:3] %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                                    {{ skill.skill_name }}
-                                </span>
-                                {% endfor %}
-                                {% if app.resume_data.get('skills', [])|length > 3 %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                                    +{{ app.resume_data.get('skills', [])|length - 3 }} more
-                                </span>
-                                {% endif %}
+                            <div class="ml-3">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ app.resume_data.basic_info.full_name }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ app.user_email }}</div>
                             </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center space-x-2">
-                                <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-sm"
-                                        data-application-id="{{ app._id }}"
-                                        onchange="updateStatus(this)">
-                                    <option value="submitted" {% if app.status == 'submitted' %}selected{% endif %}>Submitted</option>
-                                    <option value="reviewed" {% if app.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
-                                    <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                                    <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                                    <option value="hired" {% if app.status == 'hired' %}selected{% endif %}>Hired</option>
-                                </select>
-                                <label class="inline-flex items-center cursor-pointer" title="Notify applicant by email">
-                                    <input type="checkbox" class="notify-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500" data-application-id="{{ app._id }}" checked>
-                                    <i class="fas fa-envelope text-xs text-gray-400 ml-1"></i>
-                                </label>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}" class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 mr-3">
-                                <i class="fas fa-eye mr-1"></i> View
-                            </a>
-                            <button class="feedback-btn text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 mr-3"
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900 dark:text-white">{{ app.total_experience }} yrs</div>
+                    </td>
+                    <td class="px-4 py-4">
+                        <div class="flex flex-wrap gap-1 max-w-[200px]">
+                            {% for skill in app.resume_data.get('skills', [])[:3] %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                {{ skill.skill_name }}
+                            </span>
+                            {% endfor %}
+                            {% if app.resume_data.get('skills', [])|length > 3 %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                +{{ app.resume_data.get('skills', [])|length - 3 }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-2">
+                            <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-xs py-1 pl-2 pr-7"
                                     data-application-id="{{ app._id }}"
-                                    data-existing-feedback="{{ app.feedback or '' }}">
-                                <i class="fas fa-comment-dots mr-1"></i> Feedback
-                            </button>
-                            <a href="mailto:{{ app.user_email }}?subject=Regarding your application for {{ job.parsed_data.title }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                <i class="fas fa-envelope mr-1"></i> Contact
+                                    onchange="updateStatus(this)">
+                                {% for stage in pipeline_stages %}
+                                <option value="{{ stage }}" {% if app.status == stage %}selected{% endif %}>{{ stage|replace('_', ' ')|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <label class="inline-flex items-center cursor-pointer" title="Notify applicant by email">
+                                <input type="checkbox" class="notify-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500 h-3.5 w-3.5" data-application-id="{{ app._id }}" checked>
+                                <i class="fas fa-envelope text-[10px] text-gray-400 ml-1"></i>
+                            </label>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            <!-- Primary: View -->
+                            <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}"
+                               class="inline-flex items-center justify-center w-8 h-8 rounded-md text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                               title="View Resume">
+                                <i class="fas fa-eye text-sm"></i>
                             </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <!-- Primary: Schedule -->
+                            <button class="schedule-btn inline-flex items-center justify-center w-8 h-8 rounded-md text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
+                                    data-application-id="{{ app._id }}"
+                                    data-applicant-name="{{ app.resume_data.basic_info.full_name }}"
+                                    title="Schedule Interview">
+                                <i class="fas fa-calendar-plus text-sm"></i>
+                            </button>
+                            <!-- Three-dot menu -->
+                            <div class="relative actions-dropdown">
+                                <button class="actions-toggle inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                        title="More actions">
+                                    <i class="fas fa-ellipsis-v text-sm"></i>
+                                </button>
+                                <div class="actions-menu hidden absolute right-0 mt-1 w-44 rounded-lg shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-30 py-1">
+                                    <button class="feedback-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+                                            data-application-id="{{ app._id }}"
+                                            data-existing-feedback="{{ app.feedback or '' }}">
+                                        <i class="fas fa-comment-dots w-4 mr-2.5 text-amber-500"></i> Feedback
+                                    </button>
+                                    <a href="mailto:{{ app.user_email }}?subject=Regarding your application for {{ job.parsed_data.title }}"
+                                       class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center">
+                                        <i class="fas fa-envelope w-4 mr-2.5 text-indigo-500"></i> Contact
+                                    </a>
+                                    <button class="save-pool-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+                                            data-resume-id="{{ app.resume_id }}"
+                                            data-job-id="{{ job._id }}"
+                                            data-name="{{ app.resume_data.basic_info.full_name }}">
+                                        <i class="fas fa-database w-4 mr-2.5 text-cyan-500"></i> Save to Pool
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <!-- ===== MOBILE CARD LIST (hidden on desktop) ===== -->
+    <div class="md:hidden space-y-3">
+        {% for app in applications %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mobile-app-card" data-status="{{ app.status }}">
+            <!-- Top row: checkbox + applicant info + three-dot -->
+            <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                    <input type="checkbox" class="app-checkbox-mobile rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500 mt-1 flex-shrink-0" data-application-id="{{ app._id }}">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                        <span class="text-white font-semibold text-sm">{{ app.resume_data.basic_info.full_name[0].upper() }}</span>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ app.resume_data.basic_info.full_name }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ app.user_email }}</p>
+                    </div>
+                </div>
+                <!-- Mobile three-dot -->
+                <div class="relative actions-dropdown flex-shrink-0 ml-2">
+                    <button class="actions-toggle inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="actions-menu hidden absolute right-0 mt-1 w-48 rounded-lg shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-30 py-1">
+                        <button class="feedback-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+                                data-application-id="{{ app._id }}"
+                                data-existing-feedback="{{ app.feedback or '' }}">
+                            <i class="fas fa-comment-dots w-4 mr-2.5 text-amber-500"></i> Feedback
+                        </button>
+                        <a href="mailto:{{ app.user_email }}?subject=Regarding your application for {{ job.parsed_data.title }}"
+                           class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center">
+                            <i class="fas fa-envelope w-4 mr-2.5 text-indigo-500"></i> Contact
+                        </a>
+                        <button class="save-pool-btn w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center"
+                                data-resume-id="{{ app.resume_id }}"
+                                data-job-id="{{ job._id }}"
+                                data-name="{{ app.resume_data.basic_info.full_name }}">
+                            <i class="fas fa-database w-4 mr-2.5 text-cyan-500"></i> Save to Pool
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meta row: experience + skills -->
+            <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <span class="inline-flex items-center px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    <i class="fas fa-briefcase mr-1 text-gray-400"></i> {{ app.total_experience }} yrs
+                </span>
+                {% for skill in app.resume_data.get('skills', [])[:2] %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
+                    {{ skill.skill_name }}
+                </span>
+                {% endfor %}
+                {% if app.resume_data.get('skills', [])|length > 2 %}
+                <span class="text-gray-400 dark:text-gray-500">+{{ app.resume_data.get('skills', [])|length - 2 }} more</span>
+                {% endif %}
+            </div>
+
+            <!-- Bottom row: status + quick actions -->
+            <div class="mt-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <select class="status-select border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm text-xs py-1.5 pl-2 pr-7"
+                            data-application-id="{{ app._id }}"
+                            onchange="updateStatus(this)">
+                        <option value="submitted" {% if app.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                        <option value="reviewed" {% if app.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                        <option value="shortlisted" {% if app.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                        <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="hired" {% if app.status == 'hired' %}selected{% endif %}>Hired</option>
+                    </select>
+                    <label class="inline-flex items-center cursor-pointer" title="Notify applicant">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-primary-600 focus:ring-primary-500 h-3.5 w-3.5" data-application-id="{{ app._id }}" checked>
+                        <i class="fas fa-envelope text-[10px] text-gray-400 ml-1"></i>
+                    </label>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <a href="{{ url_for('recruiter.recruiter_view_resume', resume_id=app.resume_id) }}"
+                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                       title="View Resume">
+                        <i class="fas fa-eye mr-1"></i> View
+                    </a>
+                    <button class="schedule-btn inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
+                            data-application-id="{{ app._id }}"
+                            data-applicant-name="{{ app.resume_data.basic_info.full_name }}"
+                            title="Schedule Interview">
+                        <i class="fas fa-calendar-plus mr-1"></i> Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not applications %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+        <i class="fas fa-users text-gray-300 dark:text-gray-600 text-4xl mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">No applicants yet</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No one has applied to this job posting yet.</p>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Feedback Modal -->
 <div id="feedbackModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-10 sm:top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 sm:w-4/5 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-comment-dots mr-2 text-amber-500"></i>Applicant Feedback</h3>
             <button id="closeFeedbackModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -222,18 +374,222 @@
     </div>
 </div>
 
+<!-- Schedule Interview Modal -->
+<div id="scheduleModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 sm:top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 sm:w-4/5 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-calendar-plus mr-2 text-teal-500"></i>Schedule Interview</h3>
+            <button id="closeScheduleModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="scheduleGoogleWarning" class="hidden bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 mb-4">
+            <p class="text-sm text-yellow-800 dark:text-yellow-300"><i class="fas fa-exclamation-triangle mr-1"></i> Google Calendar not connected. Interview will be scheduled without a Meet link.</p>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate</label>
+                <input type="text" id="scheduleCandidateName" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date & Time</label>
+                <input type="datetime-local" id="scheduleDatetime" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration</label>
+                <select id="scheduleDuration" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                    <option value="15">15 minutes</option>
+                    <option value="30" selected>30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                    <option value="90">90 minutes</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+                <textarea id="scheduleNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Any additional details for the candidate..."></textarea>
+            </div>
+            <input type="hidden" id="scheduleAppId">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelSchedule" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="confirmSchedule" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors">
+                    <i class="fas fa-calendar-check mr-1"></i>Confirm Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save to Pool Modal -->
+<div id="savePoolModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 sm:top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 sm:w-4/5 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-database mr-2 text-cyan-600"></i>Save to Talent Pool</h3>
+            <button id="closeSavePoolModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Candidate</label>
+                <input type="text" id="poolCandidateName" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma-separated, optional)</label>
+                <input type="text" id="poolTags" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="e.g. strong-frontend, react">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+                <textarea id="poolNotes" rows="3" maxlength="2000" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="Why save this candidate?"></textarea>
+            </div>
+            <input type="hidden" id="poolResumeId">
+            <input type="hidden" id="poolJobId">
+            <div class="flex justify-end space-x-3">
+                <button id="cancelSavePool" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                <button id="confirmSavePool" class="px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors">
+                    <i class="fas fa-save mr-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+(function() {
+    // ── Three-dot dropdown logic ──
+    document.querySelectorAll('.actions-dropdown').forEach(dropdown => {
+        const toggle = dropdown.querySelector('.actions-toggle');
+        const menu = dropdown.querySelector('.actions-menu');
+
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all other open menus first
+            document.querySelectorAll('.actions-menu').forEach(m => {
+                if (m !== menu) m.classList.add('hidden');
+            });
+            menu.classList.toggle('hidden');
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.actions-menu').forEach(m => m.classList.add('hidden'));
+    });
+
+    // Prevent menu clicks from closing the menu (let individual items handle it)
+    document.querySelectorAll('.actions-menu').forEach(menu => {
+        menu.addEventListener('click', function(e) {
+            // Close after clicking an item
+            setTimeout(() => menu.classList.add('hidden'), 50);
+        });
+    });
+
+    // ── Pool match banner ──
+    const jobId = '{{ job._id }}';
+    fetch(`/recruiter/api/talent-pool/match/${jobId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.count > 0) {
+                document.getElementById('poolMatchCount').textContent = data.count;
+                document.getElementById('poolMatchBanner').classList.remove('hidden');
+            }
+        })
+        .catch(() => {});
+
+    // ── Save to Pool modal ──
+    const savePoolModal = document.getElementById('savePoolModal');
+    const poolResumeId = document.getElementById('poolResumeId');
+    const poolJobId = document.getElementById('poolJobId');
+    const poolCandidateName = document.getElementById('poolCandidateName');
+
+    document.querySelectorAll('.save-pool-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            poolResumeId.value = this.dataset.resumeId;
+            poolJobId.value = this.dataset.jobId;
+            poolCandidateName.value = this.dataset.name;
+            document.getElementById('poolTags').value = '';
+            document.getElementById('poolNotes').value = '';
+            savePoolModal.classList.remove('hidden');
+        });
+    });
+
+    function closeSavePoolFn() { savePoolModal.classList.add('hidden'); }
+    document.getElementById('closeSavePoolModal').addEventListener('click', closeSavePoolFn);
+    document.getElementById('cancelSavePool').addEventListener('click', closeSavePoolFn);
+    savePoolModal.addEventListener('click', function(e) { if (e.target === savePoolModal) closeSavePoolFn(); });
+
+    document.getElementById('confirmSavePool').addEventListener('click', function() {
+        const btn = this;
+        Emploify.lockButton(btn, 'Saving...');
+        const tags = document.getElementById('poolTags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const notes = document.getElementById('poolNotes').value;
+
+        fetch('/recruiter/api/talent-pool/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                resume_id: poolResumeId.value,
+                job_id: poolJobId.value,
+                tags: tags,
+                notes: notes
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            Emploify.unlockButton(btn);
+            if (data.success) {
+                Emploify.showToast('Candidate saved to talent pool!', 'success');
+                closeSavePoolFn();
+            } else {
+                Emploify.showToast(data.error || 'Error saving', 'error');
+            }
+        })
+        .catch(() => {
+            Emploify.unlockButton(btn);
+            Emploify.showToast('Error saving to talent pool', 'error');
+        });
+    });
+
+    // ── Sync mobile + desktop checkboxes ──
+    function syncCheckboxes() {
+        // Sync mobile checkboxes to mirror desktop state and vice versa
+        const desktopBoxes = document.querySelectorAll('.app-checkbox');
+        const mobileBoxes = document.querySelectorAll('.app-checkbox-mobile');
+
+        desktopBoxes.forEach((cb, i) => {
+            if (mobileBoxes[i]) {
+                cb.addEventListener('change', function() { mobileBoxes[i].checked = this.checked; updateBulkActions(); });
+                mobileBoxes[i].addEventListener('change', function() { cb.checked = this.checked; updateBulkActions(); });
+            }
+        });
+    }
+    syncCheckboxes();
+})();
+
+// ── Status filter ──
+function filterByStatus(status) {
+    // Filter both desktop rows and mobile cards
+    document.querySelectorAll('tbody tr[data-status]').forEach(row => {
+        row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+    document.querySelectorAll('.mobile-app-card[data-status]').forEach(card => {
+        card.style.display = (status === 'all' || card.dataset.status === status) ? '' : 'none';
+    });
+}
+
+// ── Status update ──
 function updateStatus(selectElement) {
     const applicationId = selectElement.dataset.applicationId;
     const newStatus = selectElement.value;
     const notifyCheckbox = document.querySelector(`.notify-checkbox[data-application-id="${applicationId}"]`);
     const notifyApplicant = notifyCheckbox ? notifyCheckbox.checked : true;
 
+    // Sync the other select (desktop/mobile) if present
+    document.querySelectorAll(`.status-select[data-application-id="${applicationId}"]`).forEach(sel => {
+        if (sel !== selectElement) sel.value = newStatus;
+    });
+
     fetch(`/recruiter/api/applications/${applicationId}/status`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, notify_applicant: notifyApplicant })
     })
     .then(response => response.json())
@@ -243,43 +599,50 @@ function updateStatus(selectElement) {
             Emploify.showToast(msg, 'success');
         }
     })
-    .catch(error => {
-        Emploify.showToast('Error updating status', 'error');
-    });
+    .catch(() => Emploify.showToast('Error updating status', 'error'));
 }
 
-// Select All checkbox functionality
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.app-checkbox');
-    checkboxes.forEach(cb => cb.checked = this.checked);
+// ── Select All (desktop only) ──
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    document.querySelectorAll('.app-checkbox').forEach(cb => cb.checked = this.checked);
+    document.querySelectorAll('.app-checkbox-mobile').forEach(cb => cb.checked = this.checked);
     updateBulkActions();
 });
 
-// Individual checkbox change
-document.querySelectorAll('.app-checkbox').forEach(cb => {
-    cb.addEventListener('change', function() {
-        const allCheckboxes = document.querySelectorAll('.app-checkbox');
-        const checkedCheckboxes = document.querySelectorAll('.app-checkbox:checked');
-        document.getElementById('selectAll').checked = allCheckboxes.length === checkedCheckboxes.length;
-        updateBulkActions();
-    });
+// ── Individual checkbox changes ──
+document.querySelectorAll('.app-checkbox, .app-checkbox-mobile').forEach(cb => {
+    cb.addEventListener('change', updateBulkActions);
 });
 
 function updateBulkActions() {
     const checked = document.querySelectorAll('.app-checkbox:checked');
+    const checkedMobile = document.querySelectorAll('.app-checkbox-mobile:checked');
+    const total = checked.length + checkedMobile.length;
+    // On md+ screens desktop is visible; on smaller screens mobile is visible.
+    // Avoid double-counting: use the set that is visible.
+    const visibleCount = window.innerWidth >= 768 ? checked.length : checkedMobile.length;
     const bulkActions = document.getElementById('bulkActions');
     const selectedCount = document.getElementById('selectedCount');
 
-    if (checked.length > 0) {
+    if (visibleCount > 0) {
         bulkActions.classList.remove('hidden');
-        selectedCount.textContent = checked.length + ' selected';
+        selectedCount.textContent = visibleCount + ' selected';
     } else {
         bulkActions.classList.add('hidden');
+    }
+
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        const allBoxes = document.querySelectorAll('.app-checkbox');
+        selectAll.checked = allBoxes.length > 0 && allBoxes.length === checked.length;
     }
 }
 
 function bulkUpdateStatus(status) {
-    const checked = document.querySelectorAll('.app-checkbox:checked');
+    // Gather IDs from whichever view is visible
+    const isDesktop = window.innerWidth >= 768;
+    const selector = isDesktop ? '.app-checkbox:checked' : '.app-checkbox-mobile:checked';
+    const checked = document.querySelectorAll(selector);
     const ids = Array.from(checked).map(cb => cb.dataset.applicationId);
     if (!ids.length) return;
 
@@ -303,7 +666,7 @@ function bulkUpdateStatus(status) {
     .catch(() => Emploify.showToast('Error updating statuses', 'error'));
 }
 
-// Feedback modal
+// ── Feedback modal ──
 const feedbackModal = document.getElementById('feedbackModal');
 const feedbackText = document.getElementById('feedbackText');
 const feedbackCharCount = document.getElementById('feedbackCharCount');
@@ -322,23 +685,15 @@ document.querySelectorAll('.feedback-btn').forEach(btn => {
     });
 });
 
-function closeFeedbackModalFn() {
-    feedbackModal.classList.add('hidden');
-}
-
+function closeFeedbackModalFn() { feedbackModal.classList.add('hidden'); }
 document.getElementById('closeFeedbackModal').addEventListener('click', closeFeedbackModalFn);
 document.getElementById('cancelFeedback').addEventListener('click', closeFeedbackModalFn);
-feedbackModal.addEventListener('click', function(e) {
-    if (e.target === feedbackModal) closeFeedbackModalFn();
-});
+feedbackModal.addEventListener('click', function(e) { if (e.target === feedbackModal) closeFeedbackModalFn(); });
 
 document.getElementById('saveFeedback').addEventListener('click', function() {
     const appId = feedbackAppId.value;
     const text = feedbackText.value.trim();
-    if (!text) {
-        Emploify.showToast('Please enter feedback text', 'error');
-        return;
-    }
+    if (!text) { Emploify.showToast('Please enter feedback text', 'error'); return; }
 
     fetch(`/recruiter/api/applications/${appId}/feedback`, {
         method: 'PUT',
@@ -349,9 +704,7 @@ document.getElementById('saveFeedback').addEventListener('click', function() {
     .then(data => {
         if (data.success) {
             Emploify.showToast('Feedback saved', 'success');
-            // Update the button's data attribute
-            const btn = document.querySelector(`.feedback-btn[data-application-id="${appId}"]`);
-            if (btn) btn.dataset.existingFeedback = text;
+            document.querySelectorAll(`.feedback-btn[data-application-id="${appId}"]`).forEach(b => b.dataset.existingFeedback = text);
             closeFeedbackModalFn();
         } else {
             Emploify.showToast(data.error || 'Error saving feedback', 'error');
@@ -360,8 +713,82 @@ document.getElementById('saveFeedback').addEventListener('click', function() {
     .catch(() => Emploify.showToast('Error saving feedback', 'error'));
 });
 
+// ── Schedule Interview modal ──
+const scheduleModal = document.getElementById('scheduleModal');
+const scheduleAppId = document.getElementById('scheduleAppId');
+const scheduleCandidateName = document.getElementById('scheduleCandidateName');
+const scheduleDatetime = document.getElementById('scheduleDatetime');
+const scheduleWarning = document.getElementById('scheduleGoogleWarning');
+
+const now = new Date();
+now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+scheduleDatetime.min = now.toISOString().slice(0, 16);
+
+fetch('/recruiter/google/status')
+    .then(r => r.json())
+    .then(data => { if (!data.connected) scheduleWarning.classList.remove('hidden'); })
+    .catch(() => scheduleWarning.classList.remove('hidden'));
+
+document.querySelectorAll('.schedule-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        scheduleAppId.value = this.dataset.applicationId;
+        scheduleCandidateName.value = this.dataset.applicantName;
+        scheduleDatetime.value = '';
+        document.getElementById('scheduleDuration').value = '30';
+        document.getElementById('scheduleNotes').value = '';
+        scheduleModal.classList.remove('hidden');
+    });
+});
+
+function closeScheduleModalFn() { scheduleModal.classList.add('hidden'); }
+document.getElementById('closeScheduleModal').addEventListener('click', closeScheduleModalFn);
+document.getElementById('cancelSchedule').addEventListener('click', closeScheduleModalFn);
+scheduleModal.addEventListener('click', function(e) { if (e.target === scheduleModal) closeScheduleModalFn(); });
+
+document.getElementById('confirmSchedule').addEventListener('click', function() {
+    const appId = scheduleAppId.value;
+    const dt = scheduleDatetime.value;
+    const duration = document.getElementById('scheduleDuration').value;
+    const notes = document.getElementById('scheduleNotes').value;
+
+    if (!dt) { Emploify.showToast('Please select a date and time', 'error'); return; }
+
+    const btn = this;
+    Emploify.lockButton(btn, 'Scheduling...');
+
+    fetch(`/recruiter/api/applications/${appId}/schedule-interview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            datetime: dt,
+            duration: parseInt(duration),
+            notes: notes,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        Emploify.unlockButton(btn);
+        if (data.success) {
+            const msg = data.meet_link ? 'Interview scheduled with Google Meet link!' : 'Interview scheduled (email notification sent)';
+            Emploify.showToast(msg, 'success');
+            closeScheduleModalFn();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            Emploify.showToast(data.error || 'Error scheduling interview', 'error');
+        }
+    })
+    .catch(() => { Emploify.unlockButton(btn); Emploify.showToast('Error scheduling interview', 'error'); });
+});
+
+// ── Escape key closes all modals ──
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeFeedbackModalFn();
+    if (e.key === 'Escape') {
+        closeFeedbackModalFn();
+        closeScheduleModalFn();
+        document.getElementById('savePoolModal').classList.add('hidden');
+        document.querySelectorAll('.actions-menu').forEach(m => m.classList.add('hidden'));
+    }
 });
 </script>
 {% endblock %}

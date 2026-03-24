@@ -1,168 +1,718 @@
 {% extends "base.html" %}
-
 {% block title %}Create Job Posting | Emploify.io{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <!-- Header -->
-        <div class="bg-primary-600 px-6 py-4">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-bold text-white">
-                    <i class="fas fa-file-upload mr-2"></i> Create New Job Posting
-                </h2>
-                <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="text-primary-100 hover:text-white transition-colors">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
-                </a>
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-primary-600 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-white"><i class="fas fa-plus-circle mr-2"></i> Create New Job Posting</h2>
+            <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="text-primary-100 hover:text-white transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="px-6 pt-6">
+        <div class="flex items-center justify-between mb-8" id="stepIndicator">
+            <div class="step-dot active flex flex-col items-center cursor-pointer" data-step="1" onclick="goToStep(1)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary-600 text-white transition-colors">1</div>
+                <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Mode</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-2 step-line" data-after="1"></div>
+            <div class="step-dot flex flex-col items-center cursor-pointer" data-step="2" onclick="goToStep(2)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 transition-colors">2</div>
+                <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Job Details</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-2 step-line" data-after="2"></div>
+            <div class="step-dot flex flex-col items-center cursor-pointer" data-step="3" onclick="goToStep(3)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 transition-colors">3</div>
+                <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Screening</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-2 step-line" data-after="3"></div>
+            <div class="step-dot flex flex-col items-center cursor-pointer" data-step="4" onclick="goToStep(4)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 transition-colors">4</div>
+                <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Pipeline</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-2 step-line" data-after="4"></div>
+            <div class="step-dot flex flex-col items-center cursor-pointer" data-step="5" onclick="goToStep(5)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 transition-colors">5</div>
+                <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Review</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-6 pb-6">
+        <!-- ==================== STEP 1: Mode Selector ==================== -->
+        <div id="step1" class="step-panel">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">How would you like to create this job?</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="border-2 border-gray-200 dark:border-gray-600 rounded-lg p-6 cursor-pointer hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all mode-card" data-mode="ai_parse" onclick="selectMode('ai_parse')">
+                    <div class="text-center">
+                        <i class="fas fa-robot text-4xl text-primary-500 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Upload & AI Parse</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Upload a PDF, DOCX, or TXT file and let AI extract the job details automatically.</p>
+                    </div>
+                </div>
+                <div class="border-2 border-gray-200 dark:border-gray-600 rounded-lg p-6 cursor-pointer hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all mode-card" data-mode="manual" onclick="selectMode('manual')">
+                    <div class="text-center">
+                        <i class="fas fa-edit text-4xl text-primary-500 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Create Manually</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Fill in all job details using a structured form.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Form -->
-        <div class="px-6 py-6">
-            <form method="POST" enctype="multipart/form-data" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <!-- File Upload -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                        <i class="fas fa-file-alt mr-1 text-primary-600"></i> Upload Job Description
+        <!-- ==================== STEP 2a: AI Parse ==================== -->
+        <div id="step2a" class="step-panel hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upload Job Description</h3>
+            <div id="upload-area" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-12 text-center hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+                <i class="fas fa-file-upload text-5xl text-primary-500 mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">Drag & drop or click to select (PDF, DOCX, TXT)</p>
+                <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.txt">
+                <button type="button" onclick="document.getElementById('file-upload').click()" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors">Select File</button>
+                <p id="file-name-display" class="mt-3 text-sm text-gray-600 dark:text-gray-400 hidden"></p>
+            </div>
+            <div id="parse-progress" class="mt-4 hidden">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-medium text-primary-700 dark:text-primary-300">Parsing with AI...</span>
+                    <span id="parse-percent" class="text-sm font-medium text-primary-700 dark:text-primary-300">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="parse-bar" class="bg-primary-600 h-2.5 rounded-full transition-all" style="width:0%"></div>
+                </div>
+            </div>
+            <!-- Parsed data review form (shown after parsing) -->
+            <div id="parsed-review" class="mt-6 hidden">
+                <div class="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-400 p-3 mb-4">
+                    <p class="text-sm text-green-700 dark:text-green-300"><i class="fas fa-check-circle mr-1"></i> AI parsed successfully! Review and edit below.</p>
+                </div>
+                <!-- We'll inject the manual form fields here, pre-filled -->
+            </div>
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goToStep(1)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+                <button type="button" id="parseBtn" onclick="parseFile()" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"><i class="fas fa-magic mr-1"></i> Parse File</button>
+                <button type="button" id="parsedNextBtn" onclick="collectJobDetails(); goToStep(3)" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 hidden">Next <i class="fas fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+
+        <!-- ==================== STEP 2b: Manual Form ==================== -->
+        <div id="step2b" class="step-panel hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Job Details</h3>
+            <div class="space-y-4" id="manualForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Title <span class="text-red-500">*</span></label>
+                        <input type="text" id="jf-title" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Senior Software Engineer">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
+                        <input type="text" id="jf-company" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" value="{{ current_user.company or '' }}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                        <input type="text" id="jf-location" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. New York, NY">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employment Type</label>
+                        <select id="jf-employment-type" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm">
+                            <option value="full_time">Full Time</option>
+                            <option value="part_time">Part Time</option>
+                            <option value="contract">Contract</option>
+                            <option value="internship">Internship</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Level</label>
+                        <select id="jf-level" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm">
+                            <option value="entry">Entry</option>
+                            <option value="mid">Mid</option>
+                            <option value="senior">Senior</option>
+                            <option value="lead">Lead</option>
+                            <option value="executive">Executive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Experience (years)</label>
+                        <input type="number" id="jf-exp-min" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" value="0" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Experience (years)</label>
+                        <input type="number" id="jf-exp-max" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" value="5" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                        <input type="text" id="jf-department" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Engineering">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Description <span class="text-red-500">*</span></label>
+                    <textarea id="jf-description" rows="5" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="Describe the role..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Summary</label>
+                    <textarea id="jf-summary" rows="2" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="Brief summary..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mandatory Skills (comma-separated)</label>
+                    <input type="text" id="jf-skills-mandatory" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Python, React, AWS">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Optional Skills (comma-separated)</label>
+                    <input type="text" id="jf-skills-optional" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Docker, Kubernetes">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Responsibilities (one per line)</label>
+                    <textarea id="jf-responsibilities" rows="4" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="One responsibility per line..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Requirements (one per line)</label>
+                    <textarea id="jf-requirements" rows="4" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="One requirement per line..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Education (degree)</label>
+                    <input type="text" id="jf-education" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Bachelor's in Computer Science">
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goToStep(1)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+                <button type="button" onclick="collectJobDetails(); goToStep(3)" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">Next <i class="fas fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+
+        <!-- ==================== STEP 3: Screening Questions ==================== -->
+        <div id="step3" class="step-panel hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Screening Questions</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Optional. Candidates will answer these when applying. Questions with preferred answers contribute to the AI matching score.</p>
+
+            <div id="questions-list" class="space-y-4"></div>
+
+            <button type="button" onclick="addQuestion()" class="mt-4 inline-flex items-center px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                <i class="fas fa-plus mr-2"></i> Add Question
+            </button>
+
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goToStep(jobState.mode === 'ai_parse' ? '2a' : '2b')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+                <button type="button" onclick="collectQuestions(); goToStep(4)" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">Next <i class="fas fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+
+        <!-- ==================== STEP 4: Pipeline & Notifications ==================== -->
+        <div id="step4" class="step-panel hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Hiring Pipeline</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Customize stages candidates move through. Fixed stages cannot be removed.</p>
+
+            <div class="space-y-2" id="pipeline-stages">
+                <!-- Fixed prefix -->
+                <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <i class="fas fa-lock text-gray-400 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">Submitted</span>
+                    <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="submitted" disabled>
+                        Notify
                     </label>
-
-                    <div id="upload-container" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-12 text-center transition-all duration-300 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-                        <i class="fas fa-file-upload text-5xl text-primary-500 mb-4"></i>
-                        <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Upload Job Description</h2>
-                        <p class="text-gray-500 dark:text-gray-400 mb-6">Supports PDF, DOCX, and TXT files</p>
-                        <input type="file" id="file-upload" name="file" class="hidden" accept=".pdf,.docx,.txt">
-                        <button id="upload-btn" type="button" class="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-300">
-                            Select File
-                        </button>
-                        <p id="file-name" class="mt-4 text-sm text-gray-500 dark:text-gray-400 hidden"></p>
-                    </div>
-
-                    <div id="progress-container" class="mt-6 hidden">
-                        <div class="flex justify-between mb-2">
-                            <span class="text-sm font-medium text-primary-700 dark:text-primary-300">Processing...</span>
-                            <span id="progress-percent" class="text-sm font-medium text-primary-700 dark:text-primary-300">0%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div id="progress-bar" class="bg-primary-600 h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <div id="error-message" class="mt-4 text-red-500 hidden"></div>
+                </div>
+                <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <i class="fas fa-lock text-gray-400 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">Reviewed</span>
+                    <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="reviewed" checked>
+                        Notify
+                    </label>
+                </div>
+                <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <i class="fas fa-lock text-gray-400 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">Shortlisted</span>
+                    <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="shortlisted" checked>
+                        Notify
+                    </label>
                 </div>
 
-                <!-- AI Info -->
-                <div class="bg-primary-50 dark:bg-primary-900/50 border-l-4 border-primary-400 dark:border-primary-600 p-4 rounded">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-robot text-primary-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-primary-700 dark:text-primary-300">
-                                Our AI will automatically extract and structure the job details from your document.
-                            </p>
-                        </div>
-                    </div>
+                <!-- Custom stages container -->
+                <div id="custom-stages" class="space-y-2"></div>
+
+                <!-- Add custom stage -->
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="text" id="new-stage-input" class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="e.g. Technical Interview">
+                    <button type="button" onclick="addCustomStage()" class="px-3 py-2 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700"><i class="fas fa-plus mr-1"></i> Add Stage</button>
                 </div>
 
-                <!-- Actions -->
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        <i class="fas fa-times mr-2"></i> Cancel
-                    </button>
-                    <button type="submit" id="submit-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        <i class="fas fa-magic mr-2"></i> Parse & Create Job
-                    </button>
+                <!-- Fixed suffix -->
+                <div class="flex items-center p-3 bg-green-50 dark:bg-green-900/30 rounded-md mt-2">
+                    <i class="fas fa-lock text-green-400 mr-3"></i>
+                    <span class="text-sm font-medium text-green-700 dark:text-green-300 flex-1">Hired</span>
+                    <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="hired" checked>
+                        Notify
+                    </label>
                 </div>
-            </form>
+                <div class="flex items-center p-3 bg-red-50 dark:bg-red-900/30 rounded-md">
+                    <i class="fas fa-lock text-red-400 mr-3"></i>
+                    <span class="text-sm font-medium text-red-700 dark:text-red-300 flex-1">Rejected</span>
+                    <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="rejected" checked>
+                        Notify
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goToStep(3)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+                <button type="button" onclick="collectPipeline(); goToStep(5)" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">Next <i class="fas fa-arrow-right ml-1"></i></button>
+            </div>
+        </div>
+
+        <!-- ==================== STEP 5: Review & Submit ==================== -->
+        <div id="step5" class="step-panel hidden">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Review & Submit</h3>
+
+            <!-- Job Details Summary -->
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-t-lg">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300"><i class="fas fa-briefcase mr-2"></i>Job Details</h4>
+                    <button type="button" onclick="goToStep(jobState.mode === 'ai_parse' ? '2a' : '2b')" class="text-xs text-primary-600 hover:text-primary-800"><i class="fas fa-edit mr-1"></i>Edit</button>
+                </div>
+                <div id="review-job" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 space-y-1"></div>
+            </div>
+
+            <!-- Screening Questions Summary -->
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-t-lg">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300"><i class="fas fa-question-circle mr-2"></i>Screening Questions</h4>
+                    <button type="button" onclick="goToStep(3)" class="text-xs text-primary-600 hover:text-primary-800"><i class="fas fa-edit mr-1"></i>Edit</button>
+                </div>
+                <div id="review-questions" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300"></div>
+            </div>
+
+            <!-- Pipeline Summary -->
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-t-lg">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300"><i class="fas fa-project-diagram mr-2"></i>Hiring Pipeline</h4>
+                    <button type="button" onclick="goToStep(4)" class="text-xs text-primary-600 hover:text-primary-800"><i class="fas fa-edit mr-1"></i>Edit</button>
+                </div>
+                <div id="review-pipeline" class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300"></div>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goToStep(4)" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"><i class="fas fa-arrow-left mr-1"></i> Back</button>
+                <button type="button" id="submitJobBtn" onclick="submitJob()" class="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium"><i class="fas fa-check mr-2"></i> Create Job</button>
+            </div>
         </div>
     </div>
 </div>
+</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadBtn = document.getElementById('upload-btn');
-    const fileInput = document.getElementById('file-upload');
-    const fileNameDisplay = document.getElementById('file-name');
-    const uploadContainer = document.getElementById('upload-container');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('progress-bar');
-    const progressPercent = document.getElementById('progress-percent');
-    const errorMessage = document.getElementById('error-message');
-    const submitBtn = document.getElementById('submit-btn');
+const CSRF = '{{ csrf_token() }}';
 
-    // Trigger file input when button is clicked
-    uploadBtn.addEventListener('click', function() {
-        fileInput.click();
-    });
+// ---- Global wizard state ----
+const jobState = {
+    mode: null,              // 'ai_parse' or 'manual'
+    parsedData: null,        // full parsed_data object
+    originalFilename: '',
+    jobDescription: '',
+    screeningQuestions: [],   // list of question objects
+    customStages: [],         // custom middle pipeline stages
+    notificationStages: [],
+    currentStep: 1,
+    highestStep: 1,
+};
 
-    // Handle file selection
-    fileInput.addEventListener('change', function() {
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            fileNameDisplay.textContent = `Selected: ${file.name}`;
-            fileNameDisplay.classList.remove('hidden');
-            submitBtn.disabled = false;
+let questionCounter = 0;
+
+// ---- Step navigation ----
+function goToStep(step) {
+    step = String(step);
+    // Map step numbers to panel ids
+    const panelMap = {1:'step1','2a':'step2a','2b':'step2b',2:'step2',3:'step3',4:'step4',5:'step5'};
+
+    // Handle step 2 -> correct sub-panel
+    if (step === '2') step = jobState.mode === 'ai_parse' ? '2a' : '2b';
+
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.add('hidden'));
+    const panel = document.getElementById(panelMap[step] || ('step' + step));
+    if (panel) panel.classList.remove('hidden');
+
+    // Update step indicator
+    const numericStep = step === '2a' || step === '2b' ? 2 : parseInt(step);
+    jobState.currentStep = numericStep;
+    if (numericStep > jobState.highestStep) jobState.highestStep = numericStep;
+    updateStepIndicator(numericStep);
+
+    // If going to review, build summary
+    if (step === '5') buildReviewSummary();
+}
+
+function updateStepIndicator(active) {
+    document.querySelectorAll('.step-dot').forEach(dot => {
+        const s = parseInt(dot.dataset.step);
+        const circle = dot.querySelector('div');
+        if (s <= active) {
+            circle.className = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-primary-600 text-white transition-colors';
+        } else {
+            circle.className = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 transition-colors';
         }
     });
-
-    // Drag and drop functionality
-    uploadContainer.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadContainer.classList.add('border-primary-500', 'bg-primary-50');
+    document.querySelectorAll('.step-line').forEach(line => {
+        const afterStep = parseInt(line.dataset.after);
+        line.className = afterStep < active
+            ? 'flex-1 h-0.5 mx-2 step-line bg-primary-600'
+            : 'flex-1 h-0.5 mx-2 step-line bg-gray-200 dark:bg-gray-700';
     });
+}
 
-    uploadContainer.addEventListener('dragleave', function() {
-        uploadContainer.classList.remove('border-primary-500', 'bg-primary-50');
-    });
+// ---- Mode selection ----
+function selectMode(mode) {
+    jobState.mode = mode;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('border-primary-500','ring-2','ring-primary-300'));
+    document.querySelector(`.mode-card[data-mode="${mode}"]`).classList.add('border-primary-500','ring-2','ring-primary-300');
+    setTimeout(() => goToStep(mode === 'ai_parse' ? '2a' : '2b'), 200);
+}
 
-    uploadContainer.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadContainer.classList.remove('border-primary-500', 'bg-primary-50');
-
-        if (e.dataTransfer.files.length > 0) {
-            fileInput.files = e.dataTransfer.files;
-            const file = e.dataTransfer.files[0];
-            fileNameDisplay.textContent = `Selected: ${file.name}`;
-            fileNameDisplay.classList.remove('hidden');
-            submitBtn.disabled = false;
-        }
-    });
-
-    // Form submission handling
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        if (!fileInput.files.length) {
-            e.preventDefault();
-            Emploify.showToast('Please select a file to upload.', 'error');
-            return;
-        }
-
-        const file = fileInput.files[0];
-
-        // Validate file type
-        const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-        if (!validTypes.includes(file.type) && !file.name.match(/\.(pdf|docx|txt)$/i)) {
-            e.preventDefault();
-            Emploify.showToast('Please upload a PDF, DOCX, or TXT file.', 'error');
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            e.preventDefault();
-            Emploify.showToast('File size should be less than 5MB.', 'error');
-            return;
-        }
-
-        // Show progress
-        progressContainer.classList.remove('hidden');
-        uploadBtn.disabled = true;
-        Emploify.lockButton(submitBtn, 'Processing...');
-
-        // Simulate progress
-        Emploify.createProgressSimulator(progressBar, progressPercent);
-    });
+// ---- AI Parse ----
+document.getElementById('file-upload').addEventListener('change', function() {
+    if (this.files.length) {
+        document.getElementById('file-name-display').textContent = 'Selected: ' + this.files[0].name;
+        document.getElementById('file-name-display').classList.remove('hidden');
+    }
 });
+
+// Drag & drop
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('border-primary-500'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('border-primary-500'));
+uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-primary-500');
+    if (e.dataTransfer.files.length) {
+        document.getElementById('file-upload').files = e.dataTransfer.files;
+        document.getElementById('file-name-display').textContent = 'Selected: ' + e.dataTransfer.files[0].name;
+        document.getElementById('file-name-display').classList.remove('hidden');
+    }
+});
+
+function parseFile() {
+    const fileInput = document.getElementById('file-upload');
+    if (!fileInput.files.length) { Emploify.showToast('Please select a file first', 'warning'); return; }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    const bar = document.getElementById('parse-bar');
+    const pct = document.getElementById('parse-percent');
+    document.getElementById('parse-progress').classList.remove('hidden');
+    document.getElementById('parseBtn').disabled = true;
+
+    // Simulate progress
+    let progress = 0;
+    const interval = setInterval(() => { progress = Math.min(progress + 2, 90); bar.style.width = progress+'%'; pct.textContent = progress+'%'; }, 300);
+
+    fetch('{{ url_for("recruiter.upload_job") }}', {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF},
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        clearInterval(interval);
+        bar.style.width = '100%'; pct.textContent = '100%';
+        if (data.success) {
+            jobState.parsedData = data.parsed_data;
+            jobState.originalFilename = data.original_filename;
+            jobState.jobDescription = data.job_description;
+            populateFormFromParsed(data.parsed_data);
+            document.getElementById('parsed-review').classList.remove('hidden');
+            document.getElementById('parseBtn').classList.add('hidden');
+            document.getElementById('parsedNextBtn').classList.remove('hidden');
+            Emploify.showToast('Job description parsed!', 'success');
+        } else {
+            Emploify.showToast(data.error || 'Parse failed', 'error');
+            document.getElementById('parseBtn').disabled = false;
+        }
+    })
+    .catch(err => {
+        clearInterval(interval);
+        Emploify.showToast('Error: ' + err.message, 'error');
+        document.getElementById('parseBtn').disabled = false;
+    });
+}
+
+function populateFormFromParsed(pd) {
+    // Clone manual form fields into parsed-review area
+    const review = document.getElementById('parsed-review');
+    const manualHTML = document.getElementById('manualForm').innerHTML;
+    review.innerHTML = review.querySelector('.bg-green-50').outerHTML + '<div class="space-y-4">' + manualHTML + '</div>';
+
+    // Remap IDs to avoid conflicts (prefix with 'pr-')
+    review.querySelectorAll('[id^="jf-"]').forEach(el => el.id = 'pr-' + el.id.slice(3));
+
+    // Fill values
+    const v = (id, val) => { const el = review.querySelector('#pr-' + id); if (el && val) el.value = val; };
+    v('title', pd.title);
+    v('company', pd.company?.name || '');
+    v('location', pd.locations?.map(l => l.remote ? 'Remote' : [l.city, l.state, l.country].filter(Boolean).join(', ')).join('; ') || '');
+    v('employment-type', pd.employment_type || 'full_time');
+    v('level', pd.job_level || 'mid');
+    v('exp-min', pd.qualifications?.experience_years?.min || 0);
+    v('exp-max', pd.qualifications?.experience_years?.max || 5);
+    v('department', pd.department || '');
+    v('description', pd.description || '');
+    v('summary', pd.summary || '');
+    v('skills-mandatory', (pd.skills?.mandatory || []).join(', '));
+    v('skills-optional', (pd.skills?.optional || []).join(', '));
+    v('responsibilities', (pd.responsibilities || []).join('\n'));
+    v('requirements', (pd.requirements || []).join('\n'));
+    v('education', pd.qualifications?.education?.map(e => [e.degree, e.field_of_study].filter(Boolean).join(' in ')).join(', ') || '');
+}
+
+// ---- Collect job details from whichever form is active ----
+function collectJobDetails() {
+    const prefix = jobState.mode === 'ai_parse' ? 'pr-' : 'jf-';
+    const g = id => (document.getElementById(prefix + id) || {}).value || '';
+
+    const splitLines = str => str.split('\n').map(s => s.trim()).filter(Boolean);
+    const splitComma = str => str.split(',').map(s => s.trim()).filter(Boolean);
+
+    const title = g('title');
+    if (!title) { Emploify.showToast('Job title is required', 'warning'); return; }
+
+    jobState.parsedData = {
+        title: title,
+        company: { name: g('company'), description: '', website: '' },
+        department: g('department'),
+        function: '',
+        employment_type: g('employment-type'),
+        job_level: g('level'),
+        locations: [{city: g('location'), state: '', country: '', remote: false}],
+        is_remote: false, is_hybrid: false, is_onsite: true,
+        description: g('description'),
+        summary: g('summary'),
+        responsibilities: splitLines(g('responsibilities')),
+        requirements: splitLines(g('requirements')),
+        skills: {
+            mandatory: splitComma(g('skills-mandatory')),
+            optional: splitComma(g('skills-optional')),
+            tools: []
+        },
+        qualifications: {
+            education: [{degree: g('education'), field_of_study: ''}],
+            experience_years: {min: parseInt(g('exp-min')) || 0, max: parseInt(g('exp-max')) || 5}
+        },
+        nice_to_have: [],
+        benefits: [],
+        salary: null,
+        posting_date: new Date().toISOString().split('T')[0],
+        closing_date: '',
+    };
+}
+
+// ---- Screening Questions Builder ----
+function addQuestion() {
+    questionCounter++;
+    const qid = 'q_' + questionCounter + '_' + Date.now();
+    const html = `
+    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 question-card" data-qid="${qid}">
+        <div class="flex justify-between items-start mb-3">
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Question ${questionCounter}</span>
+            <button type="button" onclick="this.closest('.question-card').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="space-y-3">
+            <input type="text" class="q-text w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2 text-sm" placeholder="Question text...">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Type</label>
+                    <select class="q-type w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1.5 text-sm" onchange="toggleQuestionConfig(this)">
+                        <option value="yes_no">Yes / No</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="scale">Scale</option>
+                        <option value="text">Text (not scored)</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <label class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <input type="checkbox" class="q-required rounded border-gray-300 text-primary-600 mr-1" checked>
+                        Required
+                    </label>
+                </div>
+            </div>
+            <!-- Type-specific config -->
+            <div class="q-config">
+                <!-- yes_no default -->
+                <div class="q-yn">
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Preferred answer</label>
+                    <div class="flex gap-4">
+                        <label class="inline-flex items-center text-sm"><input type="radio" name="pref_${qid}" value="Yes" class="q-yn-pref mr-1" checked> Yes</label>
+                        <label class="inline-flex items-center text-sm"><input type="radio" name="pref_${qid}" value="No" class="q-yn-pref mr-1"> No</label>
+                        <label class="inline-flex items-center text-sm"><input type="radio" name="pref_${qid}" value="" class="q-yn-pref mr-1"> No preference</label>
+                    </div>
+                </div>
+                <div class="q-mc hidden">
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Options (comma-separated)</label>
+                    <input type="text" class="q-mc-options w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1.5 text-sm" placeholder="Option A, Option B, Option C">
+                    <label class="block text-xs text-gray-500 dark:text-gray-400 mt-2 mb-1">Preferred options (comma-separated)</label>
+                    <input type="text" class="q-mc-preferred w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-1.5 text-sm" placeholder="Option A">
+                </div>
+                <div class="q-scale hidden">
+                    <div class="grid grid-cols-4 gap-2">
+                        <div><label class="block text-xs text-gray-500 mb-1">Min</label><input type="number" class="q-scale-min w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-2 py-1.5 text-sm" value="1"></div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Max</label><input type="number" class="q-scale-max w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-2 py-1.5 text-sm" value="10"></div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Pref Min</label><input type="number" class="q-scale-pmin w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-2 py-1.5 text-sm" value="7"></div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Pref Max</label><input type="number" class="q-scale-pmax w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-2 py-1.5 text-sm" value="10"></div>
+                    </div>
+                </div>
+                <div class="q-text-note hidden">
+                    <p class="text-xs text-gray-400 italic">Text answers are not auto-scored.</p>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    document.getElementById('questions-list').insertAdjacentHTML('beforeend', html);
+}
+
+function toggleQuestionConfig(select) {
+    const card = select.closest('.question-card');
+    const type = select.value;
+    card.querySelector('.q-yn').classList.toggle('hidden', type !== 'yes_no');
+    card.querySelector('.q-mc').classList.toggle('hidden', type !== 'multiple_choice');
+    card.querySelector('.q-scale').classList.toggle('hidden', type !== 'scale');
+    card.querySelector('.q-text-note').classList.toggle('hidden', type !== 'text');
+}
+
+function collectQuestions() {
+    jobState.screeningQuestions = [];
+    document.querySelectorAll('.question-card').forEach(card => {
+        const qid = card.dataset.qid;
+        const type = card.querySelector('.q-type').value;
+        const q = {
+            id: qid,
+            type: type,
+            question: card.querySelector('.q-text').value,
+            required: card.querySelector('.q-required').checked,
+        };
+        if (type === 'yes_no') {
+            const checked = card.querySelector('.q-yn-pref:checked');
+            q.options = ['Yes', 'No'];
+            q.preferred_answer = checked ? checked.value || null : null;
+        } else if (type === 'multiple_choice') {
+            q.options = card.querySelector('.q-mc-options').value.split(',').map(s => s.trim()).filter(Boolean);
+            q.preferred_options = card.querySelector('.q-mc-preferred').value.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (type === 'scale') {
+            q.scale_min = parseInt(card.querySelector('.q-scale-min').value) || 1;
+            q.scale_max = parseInt(card.querySelector('.q-scale-max').value) || 10;
+            q.preferred_range = [
+                parseInt(card.querySelector('.q-scale-pmin').value) || q.scale_min,
+                parseInt(card.querySelector('.q-scale-pmax').value) || q.scale_max
+            ];
+        }
+        if (q.question) jobState.screeningQuestions.push(q);
+    });
+}
+
+// ---- Pipeline ----
+function addCustomStage() {
+    const input = document.getElementById('new-stage-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const slug = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    if (!slug) return;
+
+    const html = `
+    <div class="flex items-center p-3 bg-primary-50 dark:bg-primary-900/20 rounded-md custom-stage" data-stage="${slug}">
+        <i class="fas fa-grip-vertical text-gray-400 mr-3 cursor-move"></i>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">${name}</span>
+        <label class="inline-flex items-center text-xs text-gray-500 dark:text-gray-400 mr-3">
+            <input type="checkbox" class="notify-checkbox rounded border-gray-300 text-primary-600 mr-1" data-stage="${slug}" checked>
+            Notify
+        </label>
+        <button type="button" onclick="this.closest('.custom-stage').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+    </div>`;
+    document.getElementById('custom-stages').insertAdjacentHTML('beforeend', html);
+    input.value = '';
+}
+
+function collectPipeline() {
+    jobState.customStages = [];
+    document.querySelectorAll('.custom-stage').forEach(el => {
+        jobState.customStages.push(el.dataset.stage);
+    });
+    jobState.notificationStages = [];
+    document.querySelectorAll('.notify-checkbox:checked').forEach(cb => {
+        if (cb.dataset.stage) jobState.notificationStages.push(cb.dataset.stage);
+    });
+}
+
+// ---- Review Summary ----
+function buildReviewSummary() {
+    const pd = jobState.parsedData || {};
+    document.getElementById('review-job').innerHTML = `
+        <p><strong>Title:</strong> ${pd.title || 'N/A'}</p>
+        <p><strong>Company:</strong> ${pd.company?.name || 'N/A'}</p>
+        <p><strong>Type:</strong> ${(pd.employment_type || '').replace('_',' ')} | <strong>Level:</strong> ${pd.job_level || ''}</p>
+        <p><strong>Skills:</strong> ${(pd.skills?.mandatory || []).concat(pd.skills?.optional || []).join(', ') || 'None'}</p>
+        <p><strong>Description:</strong> ${(pd.description || '').substring(0, 200)}${(pd.description||'').length > 200 ? '...' : ''}</p>
+    `;
+
+    const qs = jobState.screeningQuestions;
+    document.getElementById('review-questions').innerHTML = qs.length
+        ? qs.map((q, i) => `<p>${i + 1}. <strong>[${q.type}]</strong> ${q.question} ${q.required ? '<span class="text-red-500">*</span>' : ''}</p>`).join('')
+        : '<p class="text-gray-400 italic">No screening questions</p>';
+
+    const stages = ['submitted', 'reviewed', 'shortlisted'].concat(jobState.customStages).concat(['hired', 'rejected']);
+    document.getElementById('review-pipeline').innerHTML = `
+        <div class="flex flex-wrap gap-2">
+            ${stages.map(s => `<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium ${s === 'hired' ? 'bg-green-100 text-green-800' : s === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-primary-100 text-primary-800'}">${s.replace(/_/g,' ')}</span>`).join('<i class="fas fa-arrow-right text-gray-300 self-center"></i>')}
+        </div>
+        <p class="mt-2 text-xs text-gray-500">Notifications: ${jobState.notificationStages.join(', ') || 'defaults'}</p>
+    `;
+}
+
+// ---- Submit ----
+function submitJob() {
+    if (!jobState.parsedData || !jobState.parsedData.title) {
+        Emploify.showToast('Please complete job details first', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('submitJobBtn');
+    Emploify.lockButton(btn, 'Creating...');
+
+    const payload = {
+        parsed_data: jobState.parsedData,
+        original_filename: jobState.originalFilename,
+        job_description: jobState.jobDescription,
+        creation_mode: jobState.mode || 'manual',
+        screening_questions: jobState.screeningQuestions,
+        custom_pipeline_stages: jobState.customStages,
+        notification_stages: jobState.notificationStages.length ? jobState.notificationStages : null,
+    };
+
+    fetch('{{ url_for("recruiter.save_job") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+        Emploify.unlockButton(btn);
+        if (data.success) {
+            Emploify.showToast('Job created successfully!', 'success');
+            window.location.href = '/recruiter/job/' + data.job_id;
+        } else {
+            Emploify.showToast(data.error || 'Failed to create job', 'error');
+        }
+    })
+    .catch(err => {
+        Emploify.unlockButton(btn);
+        Emploify.showToast('Error: ' + err.message, 'error');
+    });
+}
 </script>
 {% endblock %}

@@ -4,18 +4,25 @@ import logging
 import datetime
 from datetime import timezone
 from collections import defaultdict
-from flask import render_template, request, redirect, url_for, flash, current_app, jsonify
+from flask import render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from bson.objectid import ObjectId
 from blueprints.recruiter import recruiter_bp
 from blueprints.auth.user_models import Recruiter
+import re
 from extensions import (
     jobs_collection, applications_collection, resumes_collection, ai_results_collection, matcher,
-    users_collection
+    users_collection, talent_pool_collection
 )
 from services.llm_service import call_job_llm, extract_text_from_file, allowed_file
-from services.email_service import dispatch_status_email
+from services.email_service import dispatch_status_email, dispatch_interview_email
+from services.pipeline_service import get_pipeline_stages, validate_stage_transition, get_notification_stages, build_pipeline_stages
+from services.google_calendar_service import (
+    google_calendar_configured, build_auth_url, exchange_code_for_tokens,
+    store_google_tokens, recruiter_has_google, disconnect_google,
+    create_calendar_event,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,79 +50,205 @@ def recruiter_dashboard():
                 if candidate.get('overall_score', 0) >= 0.7:
                     top_candidates += 1
 
+    pool_count = talent_pool_collection.count_documents({'recruiter_id': ObjectId(current_user.id)})
+
+    google_configured = google_calendar_configured()
+    google_connected = recruiter_has_google(current_user.id) if google_configured else False
+
     return render_template('recruiter_dashboard.html',
                            jobs=jobs,
                            total_applicants=total_applicants,
                            top_candidates=top_candidates,
-                           ai_analyses_count=ai_analyses_count)
+                           ai_analyses_count=ai_analyses_count,
+                           pool_count=pool_count,
+                           google_configured=google_configured,
+                           google_connected=google_connected)
 
 
-@recruiter_bp.route('/create_job', methods=['GET', 'POST'])
+@recruiter_bp.route('/create_job', methods=['GET'])
 @login_required
 def create_job():
     if not isinstance(current_user, Recruiter):
         flash('Access denied', 'error')
         return redirect(url_for('applicant.landing'))
-
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('No file uploaded', 'error')
-            return redirect(request.url)
-
-        file = request.files['file']
-        if file.filename == '':
-            flash('No selected file', 'error')
-            return redirect(request.url)
-
-        if file and allowed_file(file.filename):
-            try:
-                filename = secure_filename(file.filename)
-                temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                file.save(temp_path)
-
-                file_type = filename.rsplit('.', 1)[-1].lower()
-                job_text = extract_text_from_file(temp_path, file_type)
-
-                llm_response = call_job_llm(job_text)
-
-                if not llm_response.get('output'):
-                    flash('Failed to parse job description', 'error')
-                    return redirect(request.url)
-
-                parsed_job = json.loads(llm_response['output'])
-
-                job_data = {
-                    'recruiter_id': ObjectId(current_user.id),
-                    'company': current_user.company,
-                    'original_filename': filename,
-                    'job_description': job_text,
-                    'parsed_data': parsed_job,
-                    'created_at': datetime.datetime.now(timezone.utc),
-                    'updated_at': datetime.datetime.now(timezone.utc)
-                }
-                jobs_collection.insert_one(job_data)
-                matcher.process_job(jsonJob=parsed_job)
-                try:
-                    os.remove(temp_path)
-                except OSError:
-                    pass
-                flash('Job created successfully!', 'success')
-
-                return redirect(url_for('recruiter.view_job', job_id=str(job_data['_id'])))
-
-            except json.JSONDecodeError:
-                logger.error("LLM returned invalid JSON for job description parsing")
-                flash('Error parsing job description output. Please try again.', 'error')
-                return redirect(request.url)
-            except Exception as e:
-                logger.error(f"Error processing job file: {e}")
-                flash('Error processing job description', 'error')
-                return redirect(request.url)
-        else:
-            flash('File type not allowed', 'error')
-            return redirect(request.url)
-
     return render_template('create_job.html')
+
+
+@recruiter_bp.route('/upload_job', methods=['POST'])
+@login_required
+def upload_job():
+    """AI-parse an uploaded JD file and return parsed data for review."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if not (file and allowed_file(file.filename)):
+        return jsonify({'error': 'File type not allowed'}), 400
+
+    try:
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(temp_path)
+
+        file_type = filename.rsplit('.', 1)[-1].lower()
+        job_text = extract_text_from_file(temp_path, file_type)
+
+        llm_response = call_job_llm(job_text)
+        if not llm_response.get('output'):
+            return jsonify({'error': 'Failed to parse job description'}), 500
+
+        parsed_job = json.loads(llm_response['output'])
+
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
+
+        return jsonify({
+            'success': True,
+            'parsed_data': parsed_job,
+            'original_filename': filename,
+            'job_description': job_text
+        })
+    except json.JSONDecodeError:
+        logger.error("LLM returned invalid JSON for job description parsing")
+        return jsonify({'error': 'Error parsing job description output. Please try again.'}), 500
+    except Exception as e:
+        logger.error(f"Error processing job file: {e}")
+        return jsonify({'error': 'Error processing job description'}), 500
+
+
+@recruiter_bp.route('/save_job', methods=['POST'])
+@login_required
+def save_job():
+    """Save a new job (from either AI-parse review or manual form)."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    parsed_data = data.get('parsed_data')
+    if not parsed_data:
+        return jsonify({'error': 'parsed_data is required'}), 400
+
+    # Ensure parsed_data has all fields the Pydantic model & templates expect
+    import uuid as _uuid
+    now_str = datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    parsed_data.setdefault('job_id', str(_uuid.uuid4()))
+    parsed_data.setdefault('industry', '')
+    parsed_data.setdefault('application_url', '')
+    parsed_data.setdefault('department', '')
+    parsed_data.setdefault('function', '')
+    parsed_data.setdefault('description', '')
+    parsed_data.setdefault('summary', '')
+    parsed_data.setdefault('employment_type', 'full_time')
+    parsed_data.setdefault('job_level', 'mid')
+    parsed_data.setdefault('is_remote', False)
+    parsed_data.setdefault('is_hybrid', False)
+    parsed_data.setdefault('is_onsite', True)
+    parsed_data.setdefault('posting_date', now_str)
+    parsed_data.setdefault('closing_date', '')
+    parsed_data.setdefault('salary', None)
+    parsed_data.setdefault('benefits', [])
+    parsed_data.setdefault('responsibilities', [])
+    parsed_data.setdefault('requirements', [])
+    parsed_data.setdefault('nice_to_have', [])
+    parsed_data.setdefault('languages', [])
+
+    # Nested objects — fill defaults so templates don't crash on attribute access
+    if not parsed_data.get('company') or not isinstance(parsed_data['company'], dict):
+        parsed_data['company'] = {'name': current_user.company or '', 'website': '', 'description': ''}
+    else:
+        parsed_data['company'].setdefault('name', current_user.company or '')
+        parsed_data['company'].setdefault('website', '')
+        parsed_data['company'].setdefault('description', '')
+
+    if not parsed_data.get('skills') or not isinstance(parsed_data['skills'], dict):
+        parsed_data['skills'] = {'mandatory': [], 'optional': [], 'tools': []}
+    else:
+        parsed_data['skills'].setdefault('mandatory', [])
+        parsed_data['skills'].setdefault('optional', [])
+        parsed_data['skills'].setdefault('tools', [])
+
+    if not parsed_data.get('qualifications') or not isinstance(parsed_data['qualifications'], dict):
+        parsed_data['qualifications'] = {
+            'education': [{'degree': '', 'field_of_study': '', 'level': 'bachelor'}],
+            'experience_years': {'min': 0, 'max': 5},
+            'certifications': []
+        }
+    else:
+        q = parsed_data['qualifications']
+        q.setdefault('certifications', [])
+        q.setdefault('experience_years', {'min': 0, 'max': 5})
+        if q.get('education'):
+            for edu in q['education']:
+                edu.setdefault('level', 'bachelor')
+                edu.setdefault('degree', '')
+                edu.setdefault('field_of_study', '')
+        else:
+            q['education'] = [{'degree': '', 'field_of_study': '', 'level': 'bachelor'}]
+
+    # Locations — ensure zip_code exists
+    for loc in parsed_data.get('locations', []):
+        loc.setdefault('zip_code', '')
+        loc.setdefault('city', '')
+        loc.setdefault('state', '')
+        loc.setdefault('country', '')
+        loc.setdefault('remote', False)
+    if not parsed_data.get('locations'):
+        parsed_data['locations'] = [{'city': '', 'state': '', 'country': '', 'zip_code': '', 'remote': False}]
+
+    parsed_data.setdefault('analytics', {'views': 0, 'applications': 0})
+    parsed_data.setdefault('metadata', {
+        'created_at': now_str, 'updated_at': now_str,
+        'created_by_user_id': str(current_user.id), 'source': 'manual'
+    })
+
+    # Build screening questions list (validate ids)
+    screening_questions = data.get('screening_questions', [])
+    for q in screening_questions:
+        if not q.get('id') or not q.get('type') or not q.get('question'):
+            return jsonify({'error': 'Each screening question needs id, type, and question text'}), 400
+
+    # Build pipeline stages
+    custom_stages = data.get('custom_pipeline_stages', [])
+    pipeline_stages = build_pipeline_stages(custom_stages) if custom_stages else None
+
+    # Notification stages
+    notification_stages = data.get('notification_stages')
+
+    creation_mode = data.get('creation_mode', 'manual')
+
+    job_data = {
+        'recruiter_id': ObjectId(current_user.id),
+        'company': current_user.company,
+        'original_filename': data.get('original_filename', ''),
+        'job_description': data.get('job_description', ''),
+        'parsed_data': parsed_data,
+        'creation_mode': creation_mode,
+        'created_at': datetime.datetime.now(timezone.utc),
+        'updated_at': datetime.datetime.now(timezone.utc),
+    }
+
+    if screening_questions:
+        job_data['screening_questions'] = screening_questions
+    if pipeline_stages:
+        job_data['pipeline_stages'] = pipeline_stages
+    if notification_stages:
+        job_data['notification_stages'] = notification_stages
+
+    jobs_collection.insert_one(job_data)
+    matcher.process_job(jsonJob=parsed_data)
+
+    return jsonify({'success': True, 'job_id': str(job_data['_id'])})
 
 
 @recruiter_bp.route('/job/<job_id>')
@@ -241,13 +374,16 @@ def view_job_applicants(job_id):
 
     top_skills = sorted(skills.items(), key=lambda x: x[1], reverse=True)[:10]
 
+    pipeline_stages = get_pipeline_stages(job)
+
     return render_template('recruiter/job_applicants.html',
                            job=job,
                            applications=applications,
                            total_applicants=total_applicants,
                            status_counts=status_counts,
                            top_skills=top_skills,
-                           experience_levels=experience_levels)
+                           experience_levels=experience_levels,
+                           pipeline_stages=pipeline_stages)
 
 
 @recruiter_bp.route('/view_resume/<resume_id>')
@@ -287,10 +423,6 @@ def update_application_status(application_id):
 
     data = request.get_json()
     new_status = data.get('status')
-    valid_statuses = ['submitted', 'reviewed', 'shortlisted', 'rejected', 'hired']
-
-    if new_status not in valid_statuses:
-        return jsonify({'error': 'Invalid status'}), 400
 
     # Verify the application belongs to one of the recruiter's jobs
     application = applications_collection.find_one({'_id': ObjectId(application_id)})
@@ -303,6 +435,11 @@ def update_application_status(application_id):
     })
     if not job:
         return jsonify({'error': 'Access denied'}), 403
+
+    # Validate against this job's pipeline stages (dynamic, not hardcoded)
+    valid_statuses = get_pipeline_stages(job)
+    if not validate_stage_transition(application.get('status'), new_status, valid_statuses):
+        return jsonify({'error': 'Invalid status'}), 400
 
     update_fields = {'status': new_status, 'updated_at': datetime.datetime.now(timezone.utc)}
 
@@ -317,9 +454,10 @@ def update_application_status(application_id):
         {'$set': update_fields}
     )
 
-    # Email notification (non-blocking)
+    # Email notification (non-blocking) — only for notification-enabled stages
     notified = False
-    if data.get('notify_applicant', True) and new_status != 'submitted':
+    notify_stages = get_notification_stages(job)
+    if data.get('notify_applicant', True) and new_status in notify_stages:
         try:
             dispatch_status_email(application_id, new_status, feedback)
             notified = True
@@ -406,7 +544,14 @@ def bulk_update_status():
     data = request.get_json()
     application_ids = data.get('application_ids', [])
     new_status = data.get('status')
-    valid_statuses = ['submitted', 'reviewed', 'shortlisted', 'rejected', 'hired']
+    job_id = data.get('job_id')
+
+    # Validate against pipeline stages if job_id provided, else use defaults
+    if job_id:
+        job = jobs_collection.find_one({'_id': ObjectId(job_id), 'recruiter_id': ObjectId(current_user.id)})
+        valid_statuses = get_pipeline_stages(job) if job else get_pipeline_stages({})
+    else:
+        valid_statuses = get_pipeline_stages({})
 
     if new_status not in valid_statuses:
         return jsonify({'error': 'Invalid status'}), 400
@@ -465,3 +610,418 @@ def candidate_details(resume_id):
         return jsonify({'error': 'Access denied'}), 403
 
     return jsonify({'success': True, 'candidate': resume.get('parsed_data', {})})
+
+
+# ---------------------------------------------------------------------------
+# Google Calendar OAuth routes
+# ---------------------------------------------------------------------------
+
+@recruiter_bp.route('/google/connect')
+@login_required
+def google_connect():
+    """Redirect to Google OAuth consent screen."""
+    if not isinstance(current_user, Recruiter):
+        flash('Access denied', 'error')
+        return redirect(url_for('applicant.landing'))
+
+    if not google_calendar_configured():
+        flash('Google Calendar integration is not configured', 'error')
+        return redirect(url_for('recruiter.recruiter_dashboard'))
+
+    auth_url, code_verifier = build_auth_url()
+    session['google_code_verifier'] = code_verifier
+    return redirect(auth_url)
+
+
+@recruiter_bp.route('/google/callback')
+@login_required
+def google_callback():
+    """Handle OAuth callback — exchange code for tokens."""
+    if not isinstance(current_user, Recruiter):
+        flash('Access denied', 'error')
+        return redirect(url_for('applicant.landing'))
+
+    try:
+        code_verifier = session.pop('google_code_verifier', None)
+        token_data = exchange_code_for_tokens(request.url, code_verifier)
+        store_google_tokens(current_user.id, token_data)
+        flash('Google Calendar connected successfully!', 'success')
+    except Exception as e:
+        logger.error(f"Google OAuth callback failed: {e}")
+        flash('Failed to connect Google Calendar. Please try again.', 'error')
+
+    return redirect(url_for('recruiter.recruiter_dashboard'))
+
+
+@recruiter_bp.route('/google/disconnect', methods=['POST'])
+@login_required
+def google_disconnect():
+    """Remove Google tokens from recruiter document."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    disconnect_google(current_user.id)
+    return jsonify({'success': True})
+
+
+@recruiter_bp.route('/google/status')
+@login_required
+def google_status():
+    """Return JSON with Google Calendar connection status."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    configured = google_calendar_configured()
+    connected = recruiter_has_google(current_user.id) if configured else False
+    return jsonify({'configured': configured, 'connected': connected})
+
+
+# ---------------------------------------------------------------------------
+# Interview scheduling
+# ---------------------------------------------------------------------------
+
+@recruiter_bp.route('/api/applications/<application_id>/schedule-interview', methods=['POST'])
+@login_required
+def schedule_interview(application_id):
+    """Create a calendar event, store interview data, dispatch email."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    if not data or not data.get('datetime'):
+        return jsonify({'error': 'Interview datetime is required'}), 400
+
+    # Verify ownership
+    application = applications_collection.find_one({'_id': ObjectId(application_id)})
+    if not application:
+        return jsonify({'error': 'Application not found'}), 404
+
+    job = jobs_collection.find_one({
+        '_id': application['job_id'],
+        'recruiter_id': ObjectId(current_user.id),
+    })
+    if not job:
+        return jsonify({'error': 'Access denied'}), 403
+
+    # Parse interview details
+    try:
+        interview_dt = datetime.datetime.fromisoformat(data['datetime'])
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid datetime format'}), 400
+
+    duration = int(data.get('duration', 30))
+    notes = data.get('notes', '')
+    tz = data.get('timezone', 'UTC')
+
+    job_title = job.get('parsed_data', {}).get('title', 'Interview')
+    company = job.get('company', '')
+
+    # Get applicant email for calendar invite
+    user = users_collection.find_one({'_id': application['user_id']})
+    applicant_email = user.get('email', '') if user else ''
+    applicant_name = user.get('name', applicant_email.split('@')[0]) if user else 'Candidate'
+
+    meet_link = ''
+    event_id = ''
+
+    # Try Google Calendar if connected
+    if google_calendar_configured() and recruiter_has_google(current_user.id):
+        attendees = [applicant_email] if applicant_email else []
+        summary = f"Interview: {applicant_name} — {job_title} ({company})"
+        description = f"Interview for {job_title} at {company}"
+        if notes:
+            description += f"\n\nNotes: {notes}"
+
+        result = create_calendar_event(
+            current_user.id, summary, description,
+            interview_dt, duration, tz, attendees,
+        )
+        if result.get('error'):
+            logger.warning(f"Calendar event creation failed: {result['error']}")
+        else:
+            meet_link = result.get('meet_link', '')
+            event_id = result.get('event_id', '')
+
+    # Store interview data on application document
+    update_fields = {
+        'status': 'shortlisted',
+        'interview_datetime': interview_dt,
+        'interview_duration': duration,
+        'interview_timezone': tz,
+        'interview_notes': notes,
+        'interview_meet_link': meet_link,
+        'interview_event_id': event_id,
+        'interview_scheduled_at': datetime.datetime.now(datetime.timezone.utc),
+        'interview_scheduled_by': ObjectId(current_user.id),
+        'updated_at': datetime.datetime.now(datetime.timezone.utc),
+    }
+    applications_collection.update_one(
+        {'_id': ObjectId(application_id)},
+        {'$set': update_fields},
+    )
+
+    # Dispatch interview email (non-blocking)
+    try:
+        dispatch_interview_email(application_id, interview_dt, duration, meet_link, notes)
+    except Exception as e:
+        logger.error(f"Interview email dispatch failed for {application_id}: {e}")
+
+    return jsonify({
+        'success': True,
+        'meet_link': meet_link,
+        'event_id': event_id,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Talent Pool / CRM
+# ---------------------------------------------------------------------------
+
+@recruiter_bp.route('/talent-pool')
+@login_required
+def talent_pool():
+    """Main talent pool page with search/filter."""
+    if not isinstance(current_user, Recruiter):
+        flash('Access denied', 'error')
+        return redirect(url_for('applicant.landing'))
+
+    recruiter_id = ObjectId(current_user.id)
+    query = {'recruiter_id': recruiter_id}
+
+    # Search filter
+    search = request.args.get('q', '').strip()
+    if search:
+        search_regex = {'$regex': re.escape(search), '$options': 'i'}
+        query['$or'] = [
+            {'candidate_name': search_regex},
+            {'candidate_title': search_regex},
+            {'candidate_email': search_regex},
+            {'candidate_skills': search_regex},
+            {'tags': search_regex},
+        ]
+
+    # Tag filter
+    tag = request.args.get('tag', '').strip().lower()
+    if tag:
+        query['tags'] = tag
+
+    # Star rating filter
+    min_rating = request.args.get('min_rating', '', type=str)
+    if min_rating and min_rating.isdigit():
+        query['star_rating'] = {'$gte': int(min_rating)}
+
+    # Source job filter
+    source_job_id = request.args.get('source_job', '').strip()
+    if source_job_id:
+        try:
+            query['source_job_id'] = ObjectId(source_job_id)
+        except Exception:
+            pass
+
+    entries = list(talent_pool_collection.find(query).sort('added_at', -1))
+
+    # Recruiter's jobs for the source filter dropdown
+    recruiter_jobs = list(jobs_collection.find(
+        {'recruiter_id': recruiter_id}, {'_id': 1, 'parsed_data.title': 1}
+    ))
+
+    # Distinct tags for filter
+    all_tags = talent_pool_collection.distinct('tags', {'recruiter_id': recruiter_id})
+
+    return render_template('recruiter/talent_pool.html',
+                           entries=entries,
+                           recruiter_jobs=recruiter_jobs,
+                           all_tags=sorted(all_tags),
+                           search=search,
+                           active_tag=tag,
+                           active_rating=min_rating,
+                           active_source=source_job_id)
+
+
+@recruiter_bp.route('/api/talent-pool/add', methods=['POST'])
+@login_required
+def talent_pool_add():
+    """Save a candidate to the talent pool."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    resume_id = data.get('resume_id')
+    job_id = data.get('job_id')
+    if not resume_id or not job_id:
+        return jsonify({'error': 'resume_id and job_id are required'}), 400
+
+    recruiter_id = ObjectId(current_user.id)
+
+    # Check duplicate
+    if talent_pool_collection.find_one({'recruiter_id': recruiter_id, 'resume_id': ObjectId(resume_id)}):
+        return jsonify({'error': 'Candidate already in your talent pool'}), 409
+
+    # Verify job belongs to recruiter
+    job = jobs_collection.find_one({'_id': ObjectId(job_id), 'recruiter_id': recruiter_id})
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    # Get resume data
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        return jsonify({'error': 'Resume not found'}), 404
+
+    parsed = resume.get('parsed_data', {})
+    basic = parsed.get('basic_info', {})
+    skills_list = [s.get('skill_name', s) if isinstance(s, dict) else str(s) for s in parsed.get('skills', [])]
+
+    # Get user_id from application
+    application = applications_collection.find_one({
+        'resume_id': ObjectId(resume_id),
+        'job_id': ObjectId(job_id)
+    })
+
+    # Get AI score if available
+    source_score = None
+    if data.get('score') is not None:
+        try:
+            source_score = round(float(data['score']), 4)
+        except (ValueError, TypeError):
+            pass
+
+    now = datetime.datetime.now(timezone.utc)
+    tags = [t.strip().lower() for t in data.get('tags', []) if t.strip()][:20]
+    notes = str(data.get('notes', ''))[:2000]
+    star_rating = data.get('star_rating')
+    if star_rating is not None:
+        star_rating = max(1, min(5, int(star_rating)))
+
+    entry = {
+        'recruiter_id': recruiter_id,
+        'resume_id': ObjectId(resume_id),
+        'user_id': application['user_id'] if application else None,
+        'source_job_id': ObjectId(job_id),
+        'source_job_title': job.get('parsed_data', {}).get('title', ''),
+        'source_application_id': application['_id'] if application else None,
+        'source_score': source_score,
+        'tags': tags,
+        'notes': notes,
+        'star_rating': star_rating,
+        'candidate_name': basic.get('full_name', 'Unknown'),
+        'candidate_title': basic.get('title', ''),
+        'candidate_email': basic.get('email', ''),
+        'candidate_skills': skills_list,
+        'added_at': now,
+        'updated_at': now,
+    }
+
+    result = talent_pool_collection.insert_one(entry)
+    return jsonify({'success': True, 'entry_id': str(result.inserted_id)})
+
+
+@recruiter_bp.route('/api/talent-pool/<entry_id>', methods=['PUT'])
+@login_required
+def talent_pool_update(entry_id):
+    """Update tags/notes/rating on a talent pool entry."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    entry = talent_pool_collection.find_one({
+        '_id': ObjectId(entry_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not entry:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    data = request.get_json()
+    update = {'updated_at': datetime.datetime.now(timezone.utc)}
+
+    if 'tags' in data:
+        update['tags'] = [t.strip().lower() for t in data['tags'] if t.strip()][:20]
+    if 'notes' in data:
+        update['notes'] = str(data['notes'])[:2000]
+    if 'star_rating' in data:
+        sr = data['star_rating']
+        update['star_rating'] = max(1, min(5, int(sr))) if sr else None
+
+    talent_pool_collection.update_one({'_id': ObjectId(entry_id)}, {'$set': update})
+    return jsonify({'success': True})
+
+
+@recruiter_bp.route('/api/talent-pool/<entry_id>', methods=['DELETE'])
+@login_required
+def talent_pool_delete(entry_id):
+    """Remove a candidate from the talent pool."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    result = talent_pool_collection.delete_one({
+        '_id': ObjectId(entry_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if result.deleted_count == 0:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    return jsonify({'success': True})
+
+
+@recruiter_bp.route('/api/talent-pool/tags')
+@login_required
+def talent_pool_tags():
+    """Distinct tags for autocomplete."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    tags = talent_pool_collection.distinct('tags', {'recruiter_id': ObjectId(current_user.id)})
+    return jsonify({'tags': sorted(tags)})
+
+
+@recruiter_bp.route('/api/talent-pool/match/<job_id>')
+@login_required
+def talent_pool_match(job_id):
+    """Find talent pool candidates matching a job's skills."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    recruiter_id = ObjectId(current_user.id)
+    job = jobs_collection.find_one({'_id': ObjectId(job_id), 'recruiter_id': recruiter_id})
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    # Extract skills from job parsed_data
+    parsed = job.get('parsed_data', {})
+    skills_section = parsed.get('skills', {})
+    job_skills = []
+    if isinstance(skills_section, dict):
+        for key in ('mandatory', 'optional', 'tools'):
+            job_skills.extend(skills_section.get(key, []))
+    elif isinstance(skills_section, list):
+        job_skills = skills_section
+
+    if not job_skills:
+        return jsonify({'count': 0, 'candidates': []})
+
+    # Build regex OR for all job skills
+    patterns = [re.escape(str(s)) for s in job_skills if s]
+    if not patterns:
+        return jsonify({'count': 0, 'candidates': []})
+
+    regex = '|'.join(patterns)
+    pool_entries = list(talent_pool_collection.find({
+        'recruiter_id': recruiter_id,
+        'candidate_skills': {'$regex': regex, '$options': 'i'}
+    }))
+
+    # Score by overlap count
+    results = []
+    for entry in pool_entries:
+        cand_skills_lower = [s.lower() for s in entry.get('candidate_skills', [])]
+        overlap = sum(1 for s in job_skills if str(s).lower() in ' '.join(cand_skills_lower))
+        results.append({
+            'entry_id': str(entry['_id']),
+            'candidate_name': entry.get('candidate_name', ''),
+            'candidate_title': entry.get('candidate_title', ''),
+            'candidate_skills': entry.get('candidate_skills', []),
+            'source_job_title': entry.get('source_job_title', ''),
+            'star_rating': entry.get('star_rating'),
+            'overlap': overlap,
+        })
+
+    results.sort(key=lambda x: x['overlap'], reverse=True)
+    return jsonify({'count': len(results), 'candidates': results})

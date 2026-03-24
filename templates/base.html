@@ -93,6 +93,9 @@
                             <a href="{{ url_for('recruiter.view_applicants') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center {% if request.endpoint == 'recruiter.view_applicants' %}nav-active{% endif %}">
                                 <i class="fas fa-users mr-2"></i> Applicants
                             </a>
+                            <a href="{{ url_for('recruiter.talent_pool') }}" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center {% if request.endpoint == 'recruiter.talent_pool' %}nav-active{% endif %}">
+                                <i class="fas fa-database mr-2"></i> Talent Pool
+                            </a>
                             <div class="relative group ml-2">
                                 <button class="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all duration-200">
                                     <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600">
@@ -186,6 +189,9 @@
                         </a>
                         <a href="{{ url_for('recruiter.view_applicants') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center">
                             <i class="fas fa-users mr-3 w-5 text-center"></i> Applicants
+                        </a>
+                        <a href="{{ url_for('recruiter.talent_pool') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center">
+                            <i class="fas fa-database mr-3 w-5 text-center"></i> Talent Pool
                         </a>
                         <a href="{{ url_for('auth.logout') }}" class="block px-4 py-3 rounded-lg text-base font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center">
                             <i class="fas fa-sign-out-alt mr-3 w-5 text-center"></i> Logout

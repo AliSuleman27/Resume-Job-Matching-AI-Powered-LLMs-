@@ -8,7 +8,8 @@ from blueprints.ai_engine import ai_engine_bp
 from blueprints.auth.user_models import Recruiter
 from extensions import (
     jobs_collection, ai_results_collection, resumes_collection,
-    applications_collection, matcher, task_runner
+    applications_collection, matcher, task_runner,
+    insight_service, chat_service, candidate_insights_collection
 )
 from services.type_convertor import prepare_document_for_mongodb
 
@@ -202,3 +203,190 @@ def get_candidate_details(candidate_id):
     except Exception as e:
         logger.error(f"Error getting candidate details: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+
+# ------------------------------------------------------------------ #
+#  CANDIDATE INSIGHT & COMPARISON ROUTES                              #
+# ------------------------------------------------------------------ #
+
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/insight')
+@login_required
+def candidate_insight(job_id, resume_id):
+    """Main comparison page for a candidate vs job description."""
+    if not isinstance(current_user, Recruiter):
+        flash('Access denied', 'error')
+        return redirect(url_for('applicant.landing'))
+
+    job = jobs_collection.find_one({
+        '_id': ObjectId(job_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        flash('Job not found', 'error')
+        return redirect(url_for('recruiter.recruiter_dashboard'))
+
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        flash('Candidate not found', 'error')
+        return redirect(url_for('ai_engine.view_ai_results', job_id=job_id))
+
+    try:
+        insight = insight_service.get_or_create_insight(
+            job_id, resume_id,
+            resume['parsed_data'], job['parsed_data']
+        )
+        return render_template(
+            'recruiter/candidate_comparison.html',
+            job=job, resume=resume, insight=insight,
+            job_id=job_id, resume_id=resume_id
+        )
+    except Exception as e:
+        logger.error(f"Error loading insight for {resume_id}: {e}")
+        flash('Error loading candidate insight. Please try again.', 'error')
+        return redirect(url_for('ai_engine.view_ai_results', job_id=job_id))
+
+
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/generate-insights', methods=['POST'])
+@login_required
+def generate_insights(job_id, resume_id):
+    """Lazy-load LLM insights via background task."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    job = jobs_collection.find_one({
+        '_id': ObjectId(job_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        return jsonify({'error': 'Candidate not found'}), 404
+
+    # Check if already generated
+    cached = candidate_insights_collection.find_one({
+        'job_id': job_id, 'resume_id': resume_id
+    })
+    if cached and cached.get('llm_insights'):
+        return jsonify({'status': 'completed', 'result': cached['llm_insights']})
+
+    from models.resume_model import Resume as ResumeModel
+    from models.job_description_model import JobDescription
+
+    def _generate():
+        r = ResumeModel(**resume['parsed_data'])
+        j = JobDescription(**job['parsed_data'])
+        insight_doc = candidate_insights_collection.find_one({
+            'job_id': job_id, 'resume_id': resume_id
+        })
+        return insight_service.generate_insights(
+            job_id, resume_id,
+            insight_doc['skills_diff'], insight_doc['experience_diff'],
+            insight_doc['education_diff'], r, j
+        )
+
+    bg_task_id = task_runner.submit(_generate)
+    return jsonify({'status': 'running', 'task_id': bg_task_id})
+
+
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/generate-questions', methods=['POST'])
+@login_required
+def generate_questions(job_id, resume_id):
+    """Lazy-load LLM interview questions via background task."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    job = jobs_collection.find_one({
+        '_id': ObjectId(job_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    resume = resumes_collection.find_one({'_id': ObjectId(resume_id)})
+    if not resume:
+        return jsonify({'error': 'Candidate not found'}), 404
+
+    cached = candidate_insights_collection.find_one({
+        'job_id': job_id, 'resume_id': resume_id
+    })
+    if cached and cached.get('interview_questions'):
+        return jsonify({'status': 'completed', 'result': cached['interview_questions']})
+
+    from models.resume_model import Resume as ResumeModel
+    from models.job_description_model import JobDescription
+
+    def _generate():
+        r = ResumeModel(**resume['parsed_data'])
+        j = JobDescription(**job['parsed_data'])
+        insight_doc = candidate_insights_collection.find_one({
+            'job_id': job_id, 'resume_id': resume_id
+        })
+        return insight_service.generate_interview_questions(
+            job_id, resume_id,
+            insight_doc['skills_diff'], insight_doc['experience_diff'],
+            insight_doc['education_diff'], r, j
+        )
+
+    bg_task_id = task_runner.submit(_generate)
+    return jsonify({'status': 'running', 'task_id': bg_task_id})
+
+
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/chat', methods=['POST'])
+@login_required
+def insight_chat(job_id, resume_id):
+    """Send a chat message about this candidate."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    data = request.get_json()
+    if not data or not data.get('message'):
+        return jsonify({'error': 'Message is required'}), 400
+
+    insight = candidate_insights_collection.find_one({
+        'job_id': job_id, 'resume_id': resume_id
+    })
+    if not insight:
+        return jsonify({'error': 'Insight not found. Open the comparison page first.'}), 404
+
+    try:
+        result = chat_service.send_message(
+            job_id, resume_id, current_user.id,
+            data['message'], insight
+        )
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return jsonify({'error': 'Failed to get response'}), 500
+
+
+@ai_engine_bp.route('/job/<job_id>/candidate/<resume_id>/chat/history')
+@login_required
+def chat_history(job_id, resume_id):
+    """Get chat history for this candidate insight session."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    messages = chat_service.get_chat_history(job_id, resume_id, current_user.id)
+    return jsonify({'messages': messages})
+
+
+@ai_engine_bp.route('/task/<task_id>/status')
+@login_required
+def check_task_status(task_id):
+    """Poll background task status."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    status = task_runner.get_status(task_id)
+    if not status:
+        return jsonify({'error': 'Task not found'}), 404
+
+    response = {'status': status['status']}
+    if status['status'] == 'completed':
+        response['result'] = status['result']
+    elif status['status'] == 'failed':
+        response['error'] = status['error']
+
+    return jsonify(response)
