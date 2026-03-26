@@ -15,7 +15,7 @@ from extensions import (
     jobs_collection, applications_collection, resumes_collection, ai_results_collection, matcher,
     users_collection, talent_pool_collection
 )
-from services.llm_service import call_job_llm, extract_text_from_file, allowed_file
+from services.llm_service import call_job_llm, extract_text_from_file, extract_text_from_stream, allowed_file
 from services.email_service import dispatch_status_email, dispatch_interview_email, dispatch_cancellation_email
 from services.pipeline_service import get_pipeline_stages, validate_stage_transition, get_notification_stages, build_pipeline_stages
 from services.google_calendar_service import (
@@ -144,28 +144,14 @@ def upload_job():
 
     try:
         filename = secure_filename(file.filename)
-        temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.stream.seek(0)
-        file.save(temp_path)
-
-        saved_size = os.path.getsize(temp_path)
-        if saved_size == 0:
-            logger.error(f"Saved file is empty: {filename}")
-            return jsonify({'error': 'Uploaded file appears to be empty. Please try again.'}), 400
-
         file_type = filename.rsplit('.', 1)[-1].lower()
-        job_text = extract_text_from_file(temp_path, file_type)
+        job_text = extract_text_from_stream(file, file_type)
 
         llm_response = call_job_llm(job_text)
         if not llm_response.get('output'):
             return jsonify({'error': 'Failed to parse job description'}), 500
 
         parsed_job = json.loads(llm_response['output'])
-
-        try:
-            os.remove(temp_path)
-        except OSError:
-            pass
 
         return jsonify({
             'success': True,

@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 from blueprints.applicant import applicant_bp
 from blueprints.auth.user_models import Recruiter
 from extensions import resumes_collection, applications_collection, jobs_collection, matcher
-from services.llm_service import call_llm, extract_text_from_file, allowed_file
+from services.llm_service import call_llm, extract_text_from_file, extract_text_from_stream, allowed_file
 from services.get_doc_resume import parse_resume_from_dict, create_pretty_resume_docx
 from services.get_doc_jd import parse_job_description_from_file, create_pretty_jd_docx
 from services.resume_post_processor import post_process_resume
@@ -47,17 +47,8 @@ def upload_file():
     if file and allowed_file(file.filename):
         try:
             filename = secure_filename(file.filename)
-            temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            file.stream.seek(0)
-            file.save(temp_path)
-
-            saved_size = os.path.getsize(temp_path)
-            if saved_size == 0:
-                logger.error(f"Saved file is empty: {filename}")
-                return jsonify({"error": "Uploaded file appears to be empty. Please try again."}), 400
-
             file_type = filename.rsplit('.', 1)[-1].lower()
-            resume_text = extract_text_from_file(temp_path, file_type)
+            resume_text = extract_text_from_stream(file, file_type)
 
             llm_response = call_llm(resume_text)
 
@@ -76,11 +67,6 @@ def upload_file():
             }
             matcher.process_resume(jsonResume=parsed_resume)
             resumes_collection.insert_one(resume_data)
-
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
 
             return jsonify({
                 "status": "success",

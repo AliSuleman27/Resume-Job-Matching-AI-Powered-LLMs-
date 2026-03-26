@@ -63,6 +63,42 @@ def extract_text_from_file(file_path: str, file_type: str) -> str:
         raise
 
 
+def extract_text_from_stream(file_storage, file_type: str) -> str:
+    """Extract text directly from a Werkzeug FileStorage stream (no disk I/O).
+
+    This avoids filesystem issues on serverless platforms like Vercel where
+    saving and re-reading files can corrupt binary data.
+    """
+    import io
+
+    try:
+        file_storage.stream.seek(0)
+        raw = file_storage.stream.read()
+
+        if not raw:
+            raise ValueError("Uploaded file is empty")
+
+        if file_type == 'pdf':
+            reader = PdfReader(io.BytesIO(raw))
+            text = '\n'.join([page.extract_text() or '' for page in reader.pages])
+        elif file_type == 'docx':
+            doc = Document(io.BytesIO(raw))
+            text = '\n'.join([para.text for para in doc.paragraphs])
+        else:
+            for encoding in ['utf-8', 'latin-1', 'windows-1252', 'iso-8859-1']:
+                try:
+                    text = raw.decode(encoding)
+                    break
+                except (UnicodeDecodeError, AttributeError):
+                    continue
+            else:
+                text = raw.decode('utf-8', errors='ignore')
+        return text
+    except Exception as e:
+        logger.error(f"Error extracting text from stream: {e}")
+        raise
+
+
 def call_llm(resume_text: str) -> dict:
     """Calls the Groq API to parse resume text."""
     try:
