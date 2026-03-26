@@ -37,30 +37,39 @@ def upload_cv():
 @applicant_bp.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
-    import base64, io
+    import base64
+
+    logger.info(f"Upload request: content_type={request.content_type}, is_json={request.is_json}")
 
     # Accept base64 JSON payload (used by frontend / Vercel) or multipart form
-    if request.is_json:
-        data = request.get_json()
-        raw_filename = data.get('filename', '')
-        b64 = data.get('data', '')
-        if not raw_filename or not b64:
-            return jsonify({"error": "No file uploaded"}), 400
-        filename = secure_filename(raw_filename)
-        if not allowed_file(filename):
-            return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
-        file_bytes = base64.b64decode(b64)
-    else:
+    file_bytes = None
+    filename = None
+
+    # Try JSON/base64 first (reliable on Vercel)
+    if request.is_json or (request.content_type and 'json' in request.content_type):
+        try:
+            data = request.get_json(force=True)
+            if data and data.get('data') and data.get('filename'):
+                filename = secure_filename(data['filename'])
+                file_bytes = base64.b64decode(data['data'])
+                logger.info(f"Using base64 path: filename={filename}, size={len(file_bytes)}")
+        except Exception as e:
+            logger.warning(f"JSON parse failed, trying multipart: {e}")
+
+    # Fall back to multipart form
+    if file_bytes is None:
         if 'file' not in request.files:
             return jsonify({"error": "No file uploaded"}), 400
         file = request.files['file']
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
         filename = secure_filename(file.filename)
-        if not allowed_file(filename):
-            return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
         file.stream.seek(0)
         file_bytes = file.stream.read()
+        logger.info(f"Using multipart path: filename={filename}, size={len(file_bytes)}")
+
+    if not filename or not allowed_file(filename):
+        return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
 
     if not file_bytes:
         return jsonify({"error": "Uploaded file is empty"}), 400
