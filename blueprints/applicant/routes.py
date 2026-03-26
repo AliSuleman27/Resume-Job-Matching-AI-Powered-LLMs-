@@ -48,7 +48,13 @@ def upload_file():
         try:
             filename = secure_filename(file.filename)
             temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.stream.seek(0)
             file.save(temp_path)
+
+            saved_size = os.path.getsize(temp_path)
+            if saved_size == 0:
+                logger.error(f"Saved file is empty: {filename}")
+                return jsonify({"error": "Uploaded file appears to be empty. Please try again."}), 400
 
             file_type = filename.rsplit('.', 1)[-1].lower()
             resume_text = extract_text_from_file(temp_path, file_type)
