@@ -14,6 +14,7 @@ from extensions import resumes_collection, applications_collection, jobs_collect
 from services.llm_service import call_llm, extract_text_from_file, allowed_file
 from services.get_doc_resume import parse_resume_from_dict, create_pretty_resume_docx
 from services.get_doc_jd import parse_job_description_from_file, create_pretty_jd_docx
+from services.resume_post_processor import post_process_resume
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +59,13 @@ def upload_file():
                 return jsonify({"error": "Failed to parse resume. Please try again."}), 500
 
             parsed_resume = json.loads(llm_response['output'])
+            parsed_resume = post_process_resume(resume_text, parsed_resume)
 
             resume_data = {
                 'user_id': ObjectId(current_user.id),
                 'original_filename': filename,
                 'parsed_data': parsed_resume,
+                'raw_text': resume_text,
                 'created_at': datetime.datetime.now(timezone.utc)
             }
             matcher.process_resume(jsonResume=parsed_resume)

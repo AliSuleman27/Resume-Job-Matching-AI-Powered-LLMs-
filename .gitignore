@@ -15,3 +15,5 @@ research/
 *.index
 .vercel
 client_secret*.json
+node_modules/
+package-lock.json

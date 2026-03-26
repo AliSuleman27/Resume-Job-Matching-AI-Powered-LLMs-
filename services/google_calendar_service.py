@@ -11,6 +11,21 @@ logger = logging.getLogger(__name__)
 # Allow OAuth over HTTP for local development
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+# ---------------------------------------------------------------------------
+# IMPORTANT: GCP OAuth Consent Screen — "Testing" vs "Production" mode
+# ---------------------------------------------------------------------------
+# If only manually-added test users can authenticate (403 access_denied for
+# everyone else), the OAuth consent screen is still in **Testing** mode.
+#
+# To fix:
+#   1. Go to GCP Console → APIs & Services → OAuth consent screen
+#   2. Click "PUBLISH APP" to move from Testing → Production
+#   3. Google may require a verification review for sensitive scopes
+#      (e.g. calendar access). Follow the prompts and submit.
+#
+# This is NOT a code issue — it is a GCP Console configuration step.
+# ---------------------------------------------------------------------------
+
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
@@ -202,4 +217,22 @@ def create_calendar_event(recruiter_id, summary, description, start_dt, duration
         }
     except Exception as e:
         logger.error(f"Failed to create calendar event: {e}")
+        return {'error': str(e)}
+
+
+def delete_calendar_event(recruiter_id, event_id):
+    """Delete a Google Calendar event. Returns dict with success or error."""
+    from googleapiclient.discovery import build
+
+    creds = get_google_credentials(recruiter_id)
+    if not creds:
+        return {'error': 'Google Calendar not connected'}
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        service.events().delete(
+            calendarId='primary', eventId=event_id, sendUpdates='all',
+        ).execute()
+        return {'success': True}
+    except Exception as e:
+        logger.error(f"Failed to delete calendar event {event_id}: {e}")
         return {'error': str(e)}

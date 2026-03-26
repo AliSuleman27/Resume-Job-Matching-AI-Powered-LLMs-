@@ -299,3 +299,106 @@ def dispatch_interview_email(application_id, interview_datetime, duration_minute
         send_interview_notification, app, application_id,
         interview_datetime, duration_minutes, meet_link, notes,
     )
+
+
+# ---------------------------------------------------------------------------
+# Interview cancellation emails
+# ---------------------------------------------------------------------------
+
+def build_cancellation_email_html(applicant_name, job_title, company, interview_datetime):
+    """Build styled HTML email for interview cancellation notification."""
+    date_str = interview_datetime.strftime('%A, %B %d, %Y')
+    time_str = interview_datetime.strftime('%I:%M %p')
+
+    return f'''<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F3F4F6; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #EF4444; padding: 30px; text-align: center;">
+                            <div style="font-size: 36px; margin-bottom: 10px;">&#10060;</div>
+                            <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 700;">Interview Cancelled</h1>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">Hi {applicant_name},</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">We regret to inform you that the scheduled interview for the <strong>{job_title}</strong> position at <strong>{company}</strong> has been cancelled.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FEF2F2; border-radius: 8px; margin-top: 10px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Original Date:</strong> {date_str}</p>
+                                        <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Original Time:</strong> {time_str}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 16px 0 0 0; font-size: 14px; color: #6B7280; line-height: 1.5;">The recruiter may reach out to reschedule. Please check your application status for updates.</p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 30px; border-top: 1px solid #E5E7EB; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">This is an automated notification from Emploify.io</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>'''
+
+
+def send_cancellation_notification(app, application_id, interview_datetime):
+    """Runs inside a background thread. Sends interview cancellation email."""
+    try:
+        with app.app_context():
+            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+                logger.info("Mail credentials not configured — skipping cancellation notification")
+                return
+
+            application = applications_collection.find_one({'_id': ObjectId(application_id)})
+            if not application:
+                logger.warning(f"Application {application_id} not found for cancellation notification")
+                return
+
+            user = users_collection.find_one({'_id': application['user_id']})
+            if not user or not user.get('email'):
+                logger.warning(f"User not found or no email for application {application_id}")
+                return
+
+            job = jobs_collection.find_one({'_id': application['job_id']})
+            if not job:
+                logger.warning(f"Job not found for application {application_id}")
+                return
+
+            job_title = job.get('parsed_data', {}).get('title', 'Unknown Position')
+            company = job.get('company', 'Unknown Company')
+            applicant_name = user.get('name', user['email'].split('@')[0])
+
+            html = build_cancellation_email_html(
+                applicant_name, job_title, company, interview_datetime,
+            )
+
+            msg = Message(
+                subject=f"Interview Cancelled — {job_title} at {company}",
+                recipients=[user['email']],
+                html=html,
+            )
+            mail.send(msg)
+            logger.info(f"Cancellation notification sent to {user['email']}")
+
+    except Exception as e:
+        logger.error(f"Failed to send cancellation notification for application {application_id}: {e}")
+
+
+def dispatch_cancellation_email(application_id, interview_datetime):
+    """Non-blocking dispatch — submits cancellation email task to the background TaskRunner."""
+    app = current_app._get_current_object()
+    task_runner.submit(send_cancellation_notification, app, application_id, interview_datetime)

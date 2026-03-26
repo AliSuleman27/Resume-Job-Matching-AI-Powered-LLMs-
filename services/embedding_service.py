@@ -6,8 +6,8 @@ from huggingface_hub import InferenceClient
 
 logger = logging.getLogger(__name__)
 
-MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-EMBEDDING_DIM = 384
+MODEL = "sentence-transformers/all-mpnet-base-v2"
+EMBEDDING_DIM = 768
 
 _client = None
 _cache_collection = None
@@ -32,7 +32,7 @@ def get_embedding(text: str) -> list:
     if not text or not text.strip():
         return [0.0] * EMBEDDING_DIM
 
-    cache_key = hashlib.sha256(text.strip().encode()).hexdigest()
+    cache_key = hashlib.sha256((MODEL + ":" + text.strip()).encode()).hexdigest()
 
     # Check cache
     if _cache_collection is not None:

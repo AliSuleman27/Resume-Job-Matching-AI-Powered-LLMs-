@@ -45,21 +45,21 @@
         </h3>
         <div class="space-y-4">
             {% set sections = [
-                ('Skills', ai_result.section_scores.skills, 'blue'),
-                ('Education', ai_result.section_scores.education, 'purple'),
-                ('Experience (Domain)', ai_result.section_scores.experience_title, 'green'),
-                ('Experience (Responsibilities)', ai_result.section_scores.experience_responsibilities, 'teal'),
-                ('Projects', ai_result.section_scores.projects, 'orange'),
-                ('Summary', ai_result.section_scores.summary, 'pink')
+                ('Skills', ai_result.section_scores.skills),
+                ('Education', ai_result.section_scores.education),
+                ('Experience (Domain)', ai_result.section_scores.experience_title),
+                ('Experience (Responsibilities)', ai_result.section_scores.experience_responsibilities),
+                ('Projects', ai_result.section_scores.projects),
+                ('Summary', ai_result.section_scores.summary)
             ] %}
-            {% for name, score, color in sections %}
+            {% for name, score in sections %}
             <div>
                 <div class="flex justify-between text-sm mb-1">
                     <span class="font-medium text-gray-700 dark:text-gray-300">{{ name }}</span>
                     <span class="font-semibold text-gray-900 dark:text-white">{{ (score * 100)|round(0) }}%</span>
                 </div>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div class="bg-{{ color }}-500 h-3 rounded-full transition-all duration-500" style="width: {{ (score * 100)|round(0) }}%"></div>
+                    <div class="{% if score >= 0.7 %}bg-green-500{% elif score >= 0.5 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-3 rounded-full transition-all duration-500" style="width: {{ (score * 100)|round(0) }}%"></div>
                 </div>
             </div>
             {% endfor %}

@@ -1,0 +1,28 @@
+{
+  "name": "resume-job-matching-ai-powered-llms-",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tailwind.config.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "npx tailwindcss -i static/css/tailwind-input.css -o static/css/tailwind.css --minify",
+    "watch:css": "npx tailwindcss -i static/css/tailwind-input.css -o static/css/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AliSuleman27/Resume-Job-Matching-AI-Powered-LLMs-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AliSuleman27/Resume-Job-Matching-AI-Powered-LLMs-/issues"
+  },
+  "homepage": "https://github.com/AliSuleman27/Resume-Job-Matching-AI-Powered-LLMs-#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

@@ -48,11 +48,11 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-primary-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-primary-500 rounded-md p-3">
-                        <i class="fas fa-briefcase text-white text-xl"></i>
+                    <div class="flex-shrink-0 bg-primary-100 dark:bg-primary-900/40 rounded-lg p-3">
+                        <i class="fas fa-briefcase text-primary-600 dark:text-primary-400 text-xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Active Jobs</dt>
@@ -61,11 +61,11 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-gray-400">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
-                        <i class="fas fa-user-check text-white text-xl"></i>
+                    <div class="flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
+                        <i class="fas fa-user-check text-gray-600 dark:text-gray-300 text-xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Applicants</dt>
@@ -74,11 +74,11 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-green-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                        <i class="fas fa-star text-white text-xl"></i>
+                    <div class="flex-shrink-0 bg-green-100 dark:bg-green-900/40 rounded-lg p-3">
+                        <i class="fas fa-star text-green-600 dark:text-green-400 text-xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Top Candidates</dt>
@@ -87,11 +87,11 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-gray-300 dark:border-gray-500">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-orange-500 rounded-md p-3">
-                        <i class="fas fa-brain text-white text-xl"></i>
+                    <div class="flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
+                        <i class="fas fa-brain text-gray-500 dark:text-gray-400 text-xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">AI Analyses Run</dt>
@@ -100,11 +100,11 @@
                 </div>
             </div>
         </div>
-        <a href="{{ url_for('recruiter.talent_pool') }}" class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+        <a href="{{ url_for('recruiter.talent_pool') }}" class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border-l-4 border-primary-400 hover:shadow-md transition-shadow group">
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-teal-500 rounded-md p-3">
-                        <i class="fas fa-database text-white text-xl"></i>
+                    <div class="flex-shrink-0 bg-primary-50 dark:bg-primary-900/30 rounded-lg p-3 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 transition-colors">
+                        <i class="fas fa-database text-primary-500 dark:text-primary-400 text-xl"></i>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Talent Pool</dt>
@@ -115,7 +115,21 @@
         </a>
     </div>
 
-    <!-- Recent Jobs -->
+    <!-- Tab Navigation -->
+    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-8">
+        <button data-tab="jobs" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400 focus:outline-none">
+            <i class="fas fa-briefcase mr-2"></i>Job Postings
+        </button>
+        <button data-tab="interviews" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none">
+            <i class="fas fa-calendar-alt mr-2"></i>Interviews
+            {% if interview_count %}
+            <span class="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-primary-600 rounded-full">{{ interview_count }}</span>
+            {% endif %}
+        </button>
+    </div>
+
+    <!-- Jobs Tab -->
+    <div id="tab-jobs">
     <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between flex-wrap">
@@ -153,24 +167,20 @@
                         </p>
                     </div>
                     <div class="ml-4 flex-shrink-0 flex items-center space-x-2">
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full
-                            {% if job['parsed_data']['job_type'] == 'Full-time' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
-                            {% elif job['parsed_data']['job_type'] == 'Part-time' %}bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
-                            {% elif job['parsed_data']['job_type'] == 'Contract' %}bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300
-                            {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                             {{ job['parsed_data']['job_type'] }}
                         </span>
                         <div class="flex items-center space-x-2">
                             <a href="{{ url_for('recruiter.view_job_applicants', job_id=job['_id']) }}"
-                               class="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md transition-colors">
+                               class="text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 px-3 py-1.5 rounded-md transition-colors shadow-sm">
                                 <i class="fas fa-users mr-1"></i> View Applicants
                             </a>
                             <button onclick="runAIEngine('{{ job['_id'] }}')"
-                                    class="ai-engine-btn text-xs font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md transition-colors">
+                                    class="ai-engine-btn text-xs font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 border border-primary-300 dark:border-primary-700 hover:bg-primary-100 dark:hover:bg-primary-900/50 px-3 py-1.5 rounded-md transition-colors">
                                 <i class="fas fa-brain mr-1"></i> Run AI Engine
                             </button>
                             <a href="{{ url_for('ai_engine.view_ai_results', job_id=job['_id']) }}"
-                               class="text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded-md transition-colors">
+                               class="text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 px-3 py-1.5 rounded-md transition-colors">
                                 <i class="fas fa-chart-line mr-1"></i> View AI Results
                             </a>
                             <a href="{{ url_for('recruiter.view_job', job_id=job['_id']) }}" class="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
@@ -195,14 +205,151 @@
         </div>
         {% endif %}
     </div>
+    </div><!-- /tab-jobs -->
+
+    <!-- Interviews Tab -->
+    <div id="tab-interviews" class="hidden">
+        <!-- Sub-tabs: Upcoming / Past -->
+        <div class="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6 w-fit">
+            <button data-subtab="upcoming" class="subtab-btn px-4 py-2 text-sm font-medium rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm">
+                Upcoming ({{ upcoming_interviews|length }})
+            </button>
+            <button data-subtab="past" class="subtab-btn px-4 py-2 text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                Past ({{ past_interviews|length }})
+            </button>
+        </div>
+
+        <!-- Upcoming Interviews -->
+        <div id="subtab-upcoming" class="space-y-4">
+            {% if upcoming_interviews %}
+            {% for iv in upcoming_interviews %}
+            <div class="interview-card bg-white dark:bg-gray-800 shadow rounded-lg p-5 border-l-4 border-blue-500" data-id="{{ iv._id_str }}">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h4 class="text-base font-semibold text-gray-900 dark:text-white truncate">{{ iv.applicant_name or iv.applicant_email }}</h4>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ iv.applicant_email }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            <i class="fas fa-briefcase text-gray-400 mr-1"></i> {{ iv.job_title }}
+                            <span class="mx-2">&bull;</span>
+                            <i class="fas fa-building text-gray-400 mr-1"></i> {{ iv.company }}
+                        </p>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-700 dark:text-gray-300">
+                            <span><i class="fas fa-calendar text-blue-500 mr-1.5"></i>{{ iv.interview_datetime.strftime('%a, %b %d, %Y') }}</span>
+                            <span><i class="fas fa-clock text-blue-500 mr-1.5"></i>{{ iv.interview_datetime.strftime('%I:%M %p') }}</span>
+                            <span><i class="fas fa-hourglass-half text-blue-500 mr-1.5"></i>{{ iv.interview_duration }} min</span>
+                            {% if iv.interview_timezone %}
+                            <span><i class="fas fa-globe text-blue-500 mr-1.5"></i>{{ iv.interview_timezone }}</span>
+                            {% endif %}
+                        </div>
+                        {% if iv.interview_notes %}
+                        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 italic">
+                            <i class="fas fa-sticky-note text-gray-400 mr-1"></i> {{ iv.interview_notes }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-col sm:items-end gap-2 flex-shrink-0">
+                        {% if iv.interview_meet_link %}
+                        <a href="{{ iv.interview_meet_link }}" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-sm">
+                            <i class="fas fa-video mr-2"></i> Join Meet
+                        </a>
+                        {% endif %}
+                        <button onclick="openCancelModal('{{ iv._id_str }}')"
+                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
+                            <i class="fas fa-times mr-2"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
+                <i class="fas fa-calendar-check text-gray-300 dark:text-gray-600 text-4xl mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">No upcoming interviews</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Schedule interviews from the ranked candidates page.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Past Interviews -->
+        <div id="subtab-past" class="space-y-4 hidden">
+            {% if past_interviews %}
+            {% for iv in past_interviews %}
+            <div class="interview-card bg-white dark:bg-gray-800 shadow rounded-lg p-5 border-l-4 border-gray-300 dark:border-gray-600 opacity-75" data-id="{{ iv._id_str }}">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h4 class="text-base font-semibold text-gray-900 dark:text-white truncate">{{ iv.applicant_name or iv.applicant_email }}</h4>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ iv.applicant_email }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            <i class="fas fa-briefcase text-gray-400 mr-1"></i> {{ iv.job_title }}
+                            <span class="mx-2">&bull;</span>
+                            <i class="fas fa-building text-gray-400 mr-1"></i> {{ iv.company }}
+                        </p>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-700 dark:text-gray-300">
+                            <span><i class="fas fa-calendar text-gray-400 mr-1.5"></i>{{ iv.interview_datetime.strftime('%a, %b %d, %Y') }}</span>
+                            <span><i class="fas fa-clock text-gray-400 mr-1.5"></i>{{ iv.interview_datetime.strftime('%I:%M %p') }}</span>
+                            <span><i class="fas fa-hourglass-half text-gray-400 mr-1.5"></i>{{ iv.interview_duration }} min</span>
+                        </div>
+                        {% if iv.interview_notes %}
+                        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 italic">
+                            <i class="fas fa-sticky-note text-gray-400 mr-1"></i> {{ iv.interview_notes }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <i class="fas fa-check-circle mr-1"></i> Completed
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-12 text-center">
+                <i class="fas fa-history text-gray-300 dark:text-gray-600 text-4xl mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">No past interviews</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Past interviews will appear here once their scheduled time has passed.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div><!-- /tab-interviews -->
+</div>
+
+<!-- Cancel Interview Confirmation Modal -->
+<div id="cancelInterviewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50">
+                <i class="fas fa-calendar-times text-red-600 dark:text-red-400 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-4">Cancel Interview?</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    This will cancel the scheduled interview, remove the calendar event, and notify the candidate.
+                </p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="confirmCancelInterview" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-32 mr-2 hover:bg-red-700 transition-colors">
+                    Yes, Cancel
+                </button>
+                <button id="dismissCancelModal" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-base font-medium rounded-md w-20 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                    No
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Rerun Confirmation Modal -->
 <div id="rerunModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:border-gray-700">
         <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/50">
-                <i class="fas fa-exclamation-triangle text-orange-600 dark:text-orange-400 text-xl"></i>
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50">
+                <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400 text-xl"></i>
             </div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mt-4">AI Results Already Exist</h3>
             <div class="mt-2 px-7 py-3">
@@ -211,7 +358,7 @@
                 </p>
             </div>
             <div class="items-center px-4 py-3">
-                <button id="confirmRerun" class="px-4 py-2 bg-orange-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-orange-600">
+                <button id="confirmRerun" class="px-4 py-2 bg-yellow-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-yellow-600">
                     Yes, Rerun
                 </button>
                 <button id="cancelRerun" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-base font-medium rounded-md w-20 hover:bg-gray-400 dark:hover:bg-gray-500">
@@ -322,6 +469,101 @@ document.getElementById('cancelRerun').addEventListener('click', function() {
 
 document.getElementById('rerunModal').addEventListener('click', function(e) {
     if (e.target === this) { this.classList.add('hidden'); currentJobId = null; }
+});
+
+// ---------------------------------------------------------------------------
+// Tab switching
+// ---------------------------------------------------------------------------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const target = this.dataset.tab;
+        // Toggle button styles
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('border-primary-600', 'text-primary-600', 'dark:text-primary-400', 'dark:border-primary-400');
+            b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        });
+        this.classList.add('border-primary-600', 'text-primary-600', 'dark:text-primary-400', 'dark:border-primary-400');
+        this.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        // Toggle content
+        document.getElementById('tab-jobs').classList.toggle('hidden', target !== 'jobs');
+        document.getElementById('tab-interviews').classList.toggle('hidden', target !== 'interviews');
+    });
+});
+
+// Sub-tab switching (Upcoming / Past)
+document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const target = this.dataset.subtab;
+        document.querySelectorAll('.subtab-btn').forEach(b => {
+            b.classList.remove('bg-white', 'dark:bg-gray-800', 'text-gray-900', 'dark:text-white', 'shadow-sm');
+            b.classList.add('text-gray-500', 'dark:text-gray-400');
+        });
+        this.classList.add('bg-white', 'dark:bg-gray-800', 'text-gray-900', 'dark:text-white', 'shadow-sm');
+        this.classList.remove('text-gray-500', 'dark:text-gray-400');
+        document.getElementById('subtab-upcoming').classList.toggle('hidden', target !== 'upcoming');
+        document.getElementById('subtab-past').classList.toggle('hidden', target !== 'past');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Cancel interview
+// ---------------------------------------------------------------------------
+let cancelInterviewId = null;
+
+function openCancelModal(applicationId) {
+    cancelInterviewId = applicationId;
+    document.getElementById('cancelInterviewModal').classList.remove('hidden');
+}
+
+document.getElementById('confirmCancelInterview').addEventListener('click', function() {
+    if (!cancelInterviewId) return;
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+
+    fetch(`/recruiter/api/applications/${cancelInterviewId}/cancel-interview`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('cancelInterviewModal').classList.add('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Yes, Cancel';
+        if (data.success) {
+            // Remove the card from DOM
+            const card = document.querySelector(`.interview-card[data-id="${cancelInterviewId}"]`);
+            if (card) {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => card.remove(), 300);
+            }
+            Emploify.showToast('Interview cancelled successfully', 'success');
+        } else {
+            Emploify.showToast(data.error || 'Failed to cancel interview', 'error');
+        }
+        cancelInterviewId = null;
+    })
+    .catch(() => {
+        document.getElementById('cancelInterviewModal').classList.add('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Yes, Cancel';
+        Emploify.showToast('Error cancelling interview', 'error');
+        cancelInterviewId = null;
+    });
+});
+
+document.getElementById('dismissCancelModal').addEventListener('click', function() {
+    document.getElementById('cancelInterviewModal').classList.add('hidden');
+    cancelInterviewId = null;
+});
+
+document.getElementById('cancelInterviewModal').addEventListener('click', function(e) {
+    if (e.target === this) { this.classList.add('hidden'); cancelInterviewId = null; }
 });
 </script>
 {% endblock %}

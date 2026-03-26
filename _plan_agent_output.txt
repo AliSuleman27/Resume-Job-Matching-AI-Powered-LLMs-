@@ -1,0 +1,1206 @@
+Now I have a thorough understanding of the entire codebase. Let me produce the complete design plan.
+
+---
+
+## Skill Graph-Based Matching System: Complete Design Plan
+
+### 1. Problem Analysis Summary
+
+I have confirmed the three identical matching callsites as described in the requirements. Each follows the same pattern:
+
+**Callsite 1** - `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\hybrid_matcher.py`, lines 87-157 (`SemanticMatcher._compute_skills_score`):
+- Collects JD skills (mandatory + optional + tools) and candidate skills (resume.skills + experience.skills_used)
+- Pre-computes embeddings for both sides
+- Greedy 1-to-1 matching with cosine >= 0.70 threshold
+- Returns `mandatory_rate * 0.75 + optional_rate * 0.25` blended with BM25
+
+**Callsite 2** - `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\constraint_matcher.py`, lines 514-597 (`SkillsMatcher.match_skills`):
+- Identical logic but returns a `MatchScore(0-100)` with explanation strings
+- Tracks `matched_skill_names` and `missing_mandatory` for reporting
+
+**Callsite 3** - `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\candidate_insight_service.py`, lines 27-89 (`CandidateInsightService.compute_skills_diff`):
+- Identical matching logic but produces a structured diff: `matched[]`, `missing_mandatory[]`, `missing_optional[]`, `extra[]`, `match_rate`
+
+The existing `TECH_SKILLS` taxonomy in `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\resume_post_processor.py` has 726 entries across 7 categories. It already contains natural alias groups (11 detected: react/react.js/reactjs, etc.) but these are NOT linked -- they are independent entries that happen to normalize to the same root.
+
+### 2. `SkillGraph` Class Structure and Data Model
+
+The new file: `services/skill_graph.py`
+
+```python
+"""
+Deterministic skill graph for multi-tier skill matching.
+
+Provides normalization, synonym resolution, hierarchy traversal, and
+related-skill awareness. Replaces raw embedding cosine similarity as
+the primary skill-matching mechanism, with embeddings as a fallback
+for unknown skills.
+"""
+
+import re
+import logging
+from typing import Dict, List, Optional, Set, Tuple
+from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SkillNode:
+    """A single node in the skill graph."""
+    canonical_id: str          # lowercase canonical form, e.g. "react"
+    display_name: str          # preferred display, e.g. "React"
+    category: str              # from TECH_SKILLS taxonomy
+    aliases: Set[str]          # all normalized forms that map here
+    parents: Set[str]          # canonical_ids of parent skills (is-a)
+    children: Set[str]         # canonical_ids of child skills
+    related: Set[str]          # canonical_ids of domain siblings (NOT interchangeable)
+
+
+class SkillGraph:
+    """
+    Singleton-style skill graph built from the existing TECH_SKILLS taxonomy,
+    augmented with synonym groups and hierarchy relationships.
+    """
+
+    def __init__(self):
+        # canonical_id -> SkillNode
+        self._nodes: Dict[str, SkillNode] = {}
+        # normalized_alias -> canonical_id (the lookup index)
+        self._alias_index: Dict[str, str] = {}
+        # Build the graph
+        self._build()
+
+    # ------------------------------------------------------------------ #
+    #  NORMALIZATION                                                       #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def normalize(raw: str) -> str:
+        """Normalize a skill string for lookup.
+        
+        Steps:
+        1. lowercase
+        2. strip whitespace
+        3. collapse .js / js suffix variations
+        4. remove dots, hyphens (but keep spaces)
+        5. collapse multiple spaces
+        """
+        s = raw.lower().strip()
+        # Normalize ".js" and "js" suffixes: "react.js" -> "reactjs" -> "react"
+        # But preserve "js" and "javascript" as-is
+        s = re.sub(r'\.js\b', 'js', s)     # "next.js" -> "nextjs"
+        # Remove standalone dots and hyphens between word chars
+        s = re.sub(r'(?<=\w)[.\-](?=\w)', '', s)  # "ci/cd" -> preserved, "c++" -> "c++"
+        # Special: preserve "c++", "c#", "f#"
+        # Remove remaining dots
+        s = s.replace('.', '')
+        # Collapse spaces
+        s = re.sub(r'\s+', ' ', s).strip()
+        return s
+
+    # ------------------------------------------------------------------ #
+    #  GRAPH BUILDING                                                      #
+    # ------------------------------------------------------------------ #
+
+    def _build(self):
+        """Build the graph from taxonomy + synonym groups + hierarchy."""
+        from services.resume_post_processor import TECH_SKILLS, _CANONICAL_CASE
+
+        # Step 1: Create nodes from TECH_SKILLS taxonomy
+        for lowercase_name, category in TECH_SKILLS.items():
+            display = _CANONICAL_CASE.get(lowercase_name, lowercase_name)
+            normalized = self.normalize(lowercase_name)
+            
+            # Check if this normalized form already has a node
+            if normalized in self._alias_index:
+                # Add as alias to existing node
+                existing_id = self._alias_index[normalized]
+                self._nodes[existing_id].aliases.add(lowercase_name)
+                self._alias_index[lowercase_name] = existing_id
+            else:
+                # Create new node
+                node = SkillNode(
+                    canonical_id=normalized,
+                    display_name=display,
+                    category=category,
+                    aliases={lowercase_name, normalized},
+                    parents=set(),
+                    children=set(),
+                    related=set(),
+                )
+                self._nodes[normalized] = node
+                self._alias_index[normalized] = normalized
+                self._alias_index[lowercase_name] = normalized
+
+        # Step 2: Register synonym groups
+        for group in _SYNONYM_GROUPS:
+            self._register_synonym_group(group)
+
+        # Step 3: Register hierarchy relationships
+        for parent_raw, children_raw in _HIERARCHY.items():
+            self._register_hierarchy(parent_raw, children_raw)
+
+        # Step 4: Register related-skill groups
+        for group in _RELATED_GROUPS:
+            self._register_related_group(group)
+
+        logger.info(
+            "SkillGraph built: %d nodes, %d aliases, %d hierarchy edges",
+            len(self._nodes),
+            len(self._alias_index),
+            sum(len(n.children) for n in self._nodes.values()),
+        )
+
+    def _register_synonym_group(self, aliases: List[str]):
+        """Link a list of alias strings to a single canonical node."""
+        # Find the canonical node: prefer the first alias that already exists
+        canonical_id = None
+        for alias in aliases:
+            norm = self.normalize(alias)
+            if norm in self._alias_index:
+                canonical_id = self._alias_index[norm]
+                break
+        
+        if canonical_id is None:
+            # None of the aliases exist yet; create a node from the first alias
+            norm = self.normalize(aliases[0])
+            node = SkillNode(
+                canonical_id=norm,
+                display_name=aliases[0],
+                category="Unknown",
+                aliases=set(),
+                parents=set(),
+                children=set(),
+                related=set(),
+            )
+            self._nodes[norm] = node
+            canonical_id = norm
+
+        # Add all aliases
+        target_node = self._nodes[canonical_id]
+        for alias in aliases:
+            norm = self.normalize(alias)
+            target_node.aliases.add(alias.lower())
+            target_node.aliases.add(norm)
+            self._alias_index[alias.lower()] = canonical_id
+            self._alias_index[norm] = canonical_id
+
+    def _register_hierarchy(self, parent_raw: str, children_raw: List[str]):
+        """Register parent -> children relationships."""
+        parent_id = self.resolve(parent_raw)
+        if not parent_id:
+            return
+        for child_raw in children_raw:
+            child_id = self.resolve(child_raw)
+            if child_id and child_id != parent_id:
+                self._nodes[parent_id].children.add(child_id)
+                self._nodes[child_id].parents.add(parent_id)
+
+    def _register_related_group(self, skill_names: List[str]):
+        """Mark a group of skills as related (domain siblings, NOT interchangeable)."""
+        ids = [self.resolve(s) for s in skill_names]
+        ids = [i for i in ids if i is not None]
+        for i, sid in enumerate(ids):
+            for j, other in enumerate(ids):
+                if i != j:
+                    self._nodes[sid].related.add(other)
+
+    # ------------------------------------------------------------------ #
+    #  LOOKUP                                                              #
+    # ------------------------------------------------------------------ #
+
+    def resolve(self, raw: str) -> Optional[str]:
+        """Resolve a raw skill string to its canonical_id, or None."""
+        low = raw.lower().strip()
+        if low in self._alias_index:
+            return self._alias_index[low]
+        norm = self.normalize(raw)
+        if norm in self._alias_index:
+            return self._alias_index[norm]
+        return None
+
+    def get_node(self, raw: str) -> Optional[SkillNode]:
+        """Get the SkillNode for a raw skill string, or None."""
+        cid = self.resolve(raw)
+        if cid and cid in self._nodes:
+            return self._nodes[cid]
+        return None
+
+    # ------------------------------------------------------------------ #
+    #  MULTI-TIER MATCHING                                                 #
+    # ------------------------------------------------------------------ #
+
+    def match_skill(self, jd_skill: str, candidate_skill: str) -> float:
+        """Multi-tier deterministic skill matching.
+
+        Returns a score 0.0-1.0:
+          Tier 1: Exact match (after normalization)       -> 1.00
+          Tier 2: Synonym (same canonical node)           -> 0.95
+          Tier 3a: Parent-child (candidate has child,
+                   JD wants parent/category)              -> 0.80
+          Tier 3b: Child-parent (candidate has parent,
+                   JD wants specific child)               -> 0.40
+          Tier 4: Same-group related skills               -> 0.30
+          Tier 5: Embedding fallback (unknown skills)     -> capped at 0.60
+          No match:                                       -> 0.00
+        """
+        jd_id = self.resolve(jd_skill)
+        cand_id = self.resolve(candidate_skill)
+
+        # --- Tier 1: Exact match after normalization ---
+        if jd_id and cand_id and jd_id == cand_id:
+            return 1.0
+
+        # --- Tier 2: Synonym match (handled by resolve -> same canonical) ---
+        # Already covered above since synonyms resolve to the same canonical_id.
+        # If we reach here with both resolved, they are different skills.
+
+        if jd_id and cand_id:
+            jd_node = self._nodes[jd_id]
+            cand_node = self._nodes[cand_id]
+
+            # --- Tier 3a: candidate has child, JD wants parent ---
+            if jd_id in cand_node.parents:
+                return 0.80
+            # Walk up candidate's parent chain (depth 2)
+            for cand_parent in cand_node.parents:
+                if cand_parent == jd_id:
+                    return 0.80
+                parent_node = self._nodes.get(cand_parent)
+                if parent_node and jd_id in parent_node.parents:
+                    return 0.75  # grandparent
+
+            # --- Tier 3b: candidate has parent, JD wants specific child ---
+            if cand_id in jd_node.parents:
+                return 0.40
+            for jd_parent in jd_node.parents:
+                if jd_parent == cand_id:
+                    return 0.40
+
+            # --- Tier 4: Related skills (domain siblings) ---
+            if cand_id in jd_node.related:
+                return 0.30
+
+            # Same category but not related -> 0.15 (weak signal)
+            if jd_node.category == cand_node.category:
+                return 0.15
+
+        # --- Tier 5: Embedding fallback ---
+        # Return a sentinel that tells the caller to use embedding,
+        # but capped at 0.60.
+        return -1.0  # sentinel for "use embedding fallback"
+```
+
+The sentinel value `-1.0` from `match_skill` signals the caller to invoke the embedding fallback. The consolidated matching function (described in section 5) will handle this.
+
+### 3. Synonym Groups (130+ groups)
+
+These are defined as `_SYNONYM_GROUPS` in `skill_graph.py`. Each list maps multiple surface forms to a single canonical skill.
+
+```python
+_SYNONYM_GROUPS: List[List[str]] = [
+    # --- Programming Languages ---
+    ["JavaScript", "JS"],
+    ["TypeScript", "TS"],
+    ["Python", "Python3", "Python 3"],
+    ["C++", "CPP", "Cpp"],
+    ["C#", "CSharp", "C Sharp"],
+    ["Objective-C", "ObjC", "Objective C"],
+    ["Visual Basic", "VB", "VB.NET", "VB.Net"],
+    ["PL/SQL", "PLSQL", "PL SQL"],
+    ["T-SQL", "TSQL", "Transact-SQL"],
+    ["Shell", "Bash", "Shell Scripting", "Bash Scripting"],
+    ["F#", "FSharp", "F Sharp"],
+    ["Assembly", "ASM", "Assembly Language"],
+    ["YAML", "YML"],
+
+    # --- Web Frameworks (Frontend) ---
+    ["React", "React.js", "ReactJS"],
+    ["Angular", "AngularJS", "Angular.js"],
+    ["Vue", "Vue.js", "VueJS"],
+    ["Next.js", "NextJS", "Next"],
+    ["Nuxt.js", "NuxtJS", "Nuxt"],
+    ["Svelte", "SvelteJS"],
+    ["Gatsby", "GatsbyJS"],
+    ["jQuery", "JQuery"],
+    ["Redux", "Redux.js", "Redux Toolkit", "RTK"],
+    ["Tailwind CSS", "Tailwind", "TailwindCSS"],
+    ["Material UI", "MUI", "Material-UI"],
+    ["Styled Components", "styled-components"],
+    ["Bootstrap", "Bootstrap CSS", "Twitter Bootstrap"],
+    ["Storybook", "StorybookJS"],
+
+    # --- Web Frameworks (Backend) ---
+    ["Express", "Express.js", "ExpressJS"],
+    ["Node.js", "NodeJS", "Node"],
+    ["Django", "Django Framework"],
+    ["Flask", "Flask Framework"],
+    ["FastAPI", "Fast API"],
+    ["Spring Boot", "SpringBoot", "Spring-Boot"],
+    ["Spring", "Spring Framework"],
+    ["Ruby on Rails", "Rails", "RoR"],
+    ["ASP.NET", "ASPNET", "ASP.NET Core", "ASP.NET MVC"],
+    [".NET", ".NET Core", ".NET Framework", "dotnet", "DotNet"],
+    ["Deno", "DenoJS"],
+    ["NestJS", "Nest.js", "Nest"],
+    ["Hapi", "Hapi.js", "HapiJS"],
+    ["Koa", "Koa.js", "KoaJS"],
+
+    # --- ORMs / Data Access ---
+    ["SQLAlchemy", "SQL Alchemy"],
+    ["Sequelize", "SequelizeJS"],
+    ["TypeORM", "Type ORM"],
+    ["Prisma", "Prisma ORM"],
+    ["Mongoose", "MongooseJS"],
+    ["PyMongo", "pymongo"],
+
+    # --- Databases ---
+    ["PostgreSQL", "Postgres", "psql"],
+    ["MySQL", "My SQL"],
+    ["MongoDB", "Mongo", "Mongo DB"],
+    ["Redis", "Redis DB"],
+    ["Elasticsearch", "Elastic Search", "ElasticSearch", "ES"],
+    ["DynamoDB", "Dynamo DB", "Amazon DynamoDB", "AWS DynamoDB"],
+    ["SQL Server", "MSSQL", "Microsoft SQL Server", "MS SQL", "MS SQL Server"],
+    ["Oracle", "Oracle DB", "Oracle Database"],
+    ["Cassandra", "Apache Cassandra"],
+    ["CouchDB", "Couch DB", "Apache CouchDB"],
+    ["CouchBase", "Couchbase"],
+    ["Neo4j", "Neo4J"],
+    ["InfluxDB", "Influx DB", "InfluxData"],
+    ["ClickHouse", "Click House"],
+    ["BigQuery", "Google BigQuery", "GCP BigQuery"],
+    ["Redshift", "Amazon Redshift", "AWS Redshift"],
+    ["Snowflake", "Snowflake DB"],
+    ["Apache Hive", "Hive"],
+    ["Apache HBase", "HBase"],
+    ["Firebase", "Google Firebase"],
+    ["Firestore", "Cloud Firestore"],
+    ["Supabase", "Supa Base"],
+    ["Amazon RDS", "AWS RDS", "RDS"],
+    ["Amazon Aurora", "AWS Aurora", "Aurora DB"],
+    ["SQLite", "SQLite3"],
+
+    # --- Message Queues ---
+    ["Apache Kafka", "Kafka"],
+    ["RabbitMQ", "Rabbit MQ"],
+    ["Apache Pulsar", "Pulsar"],
+    ["Amazon SQS", "SQS", "AWS SQS"],
+    ["Amazon SNS", "SNS", "AWS SNS"],
+
+    # --- Cloud Providers ---
+    ["AWS", "Amazon Web Services"],
+    ["GCP", "Google Cloud Platform", "Google Cloud"],
+    ["Azure", "Microsoft Azure"],
+
+    # --- Containers & Orchestration ---
+    ["Docker", "Docker Engine"],
+    ["Kubernetes", "K8s", "k8s"],
+    ["Docker Compose", "docker-compose"],
+    ["Helm", "Helm Charts"],
+
+    # --- CI/CD ---
+    ["GitHub Actions", "GH Actions"],
+    ["GitLab CI", "GitLab CI/CD", "GitLab-CI"],
+    ["Jenkins", "Jenkins CI"],
+    ["CircleCI", "Circle CI"],
+    ["Travis CI", "TravisCI"],
+    ["Argo CD", "ArgoCD"],
+    ["CI/CD", "CICD", "CI CD"],
+
+    # --- IaC ---
+    ["Terraform", "HashiCorp Terraform", "TF"],
+    ["CloudFormation", "AWS CloudFormation", "CFN"],
+    ["AWS CDK", "CDK", "Cloud Development Kit"],
+    ["Pulumi", "Pulumi IaC"],
+    ["Infrastructure as Code", "IaC"],
+
+    # --- Monitoring & Observability ---
+    ["Prometheus", "Prom"],
+    ["Grafana", "Grafana Dashboard"],
+    ["Datadog", "Data Dog"],
+    ["New Relic", "NewRelic"],
+    ["ELK Stack", "Elastic Stack", "ELK"],
+    ["Splunk", "Splunk Enterprise"],
+    ["Sentry", "Sentry.io"],
+
+    # --- AI/ML Frameworks ---
+    ["TensorFlow", "Tensor Flow", "TF (ML)"],
+    ["PyTorch", "Py Torch"],
+    ["Scikit-Learn", "sklearn", "scikit learn", "Scikit Learn"],
+    ["HuggingFace", "Hugging Face", "HF"],
+    ["LangChain", "Lang Chain"],
+    ["OpenCV", "Open CV", "cv2"],
+    ["NLTK", "Natural Language Toolkit"],
+    ["XGBoost", "XG Boost"],
+    ["LightGBM", "Light GBM", "LGBM"],
+
+    # --- AI/ML Concepts ---
+    ["Machine Learning", "ML"],
+    ["Deep Learning", "DL"],
+    ["Natural Language Processing", "NLP"],
+    ["Computer Vision", "CV"],
+    ["Reinforcement Learning", "RL"],
+    ["Large Language Models", "LLM", "LLMs"],
+    ["Retrieval Augmented Generation", "RAG"],
+    ["MLOps", "ML Ops", "ML Operations"],
+    ["Prompt Engineering", "Prompt Design"],
+    ["Neural Networks", "NN", "ANN"],
+    ["GANs", "Generative Adversarial Networks", "GAN"],
+    ["Transformers", "Transformer Architecture"],
+    ["Fine-tuning", "Fine Tuning", "Finetuning"],
+    ["Named Entity Recognition", "NER"],
+
+    # --- Data ---
+    ["Pandas", "pandas"],
+    ["NumPy", "numpy", "Num Py"],
+    ["Apache Spark", "Spark", "PySpark"],
+    ["Apache Airflow", "Airflow"],
+    ["Apache Flink", "Flink"],
+    ["Apache Beam", "Beam"],
+    ["ETL", "Extract Transform Load"],
+    ["Data Science", "DS"],
+
+    # --- Tools & IDEs ---
+    ["VS Code", "Visual Studio Code", "VSCode"],
+    ["Visual Studio", "VS"],
+    ["IntelliJ IDEA", "IntelliJ"],
+    ["Jupyter", "Jupyter Notebook", "JupyterLab"],
+    ["Google Colab", "Colab"],
+    ["Vim", "NeoVim", "Neovim"],
+    ["Git", "git"],
+    ["GitHub", "GH"],
+
+    # --- Testing ---
+    ["Jest", "JestJS"],
+    ["Cypress", "Cypress.io"],
+    ["Playwright", "MS Playwright"],
+    ["Selenium", "Selenium WebDriver"],
+    ["pytest", "py.test"],
+    ["React Testing Library", "RTL", "Testing Library"],
+    ["JUnit", "JUnit5"],
+
+    # --- Auth ---
+    ["OAuth", "OAuth2", "OAuth 2.0"],
+    ["JWT", "JSON Web Token", "JSON Web Tokens"],
+    ["OpenID Connect", "OIDC"],
+    ["SAML", "SAML 2.0"],
+
+    # --- Security ---
+    ["Cybersecurity", "Cyber Security"],
+    ["Information Security", "InfoSec"],
+    ["Penetration Testing", "Pen Testing", "PenTest"],
+    ["SOC 2", "SOC2", "SOC II"],
+    ["PCI DSS", "PCI"],
+
+    # --- Methodology ---
+    ["Agile", "Agile Methodology"],
+    ["Scrum", "Scrum Framework"],
+    ["TDD", "Test-Driven Development", "Test Driven Development"],
+    ["BDD", "Behavior-Driven Development"],
+    ["DDD", "Domain-Driven Design"],
+    ["SOLID", "SOLID Principles"],
+    ["Microservices", "Microservice Architecture", "Microservices Architecture"],
+    ["Event-Driven Architecture", "EDA", "Event Driven Architecture"],
+    ["REST", "REST API", "RESTful", "RESTful API"],
+    ["gRPC", "GRPC", "grpc"],
+    ["GraphQL", "Graph QL"],
+    ["WebSocket", "WebSockets", "Web Socket", "Web Sockets"],
+    ["System Design", "Systems Design"],
+
+    # --- AWS Services ---
+    ["S3", "Amazon S3", "AWS S3"],
+    ["EC2", "Amazon EC2", "AWS EC2"],
+    ["Lambda", "AWS Lambda", "Amazon Lambda"],
+    ["ECS", "Amazon ECS", "AWS ECS"],
+    ["EKS", "Amazon EKS", "AWS EKS"],
+    ["API Gateway", "Amazon API Gateway", "AWS API Gateway"],
+    ["Step Functions", "AWS Step Functions"],
+    ["CloudFront", "Amazon CloudFront", "AWS CloudFront"],
+    ["Route 53", "Route53", "Amazon Route 53"],
+    ["Cognito", "Amazon Cognito", "AWS Cognito"],
+
+    # --- GCP Services ---
+    ["Cloud Functions", "Google Cloud Functions", "GCF"],
+    ["Cloud Run", "Google Cloud Run"],
+    ["GKE", "Google Kubernetes Engine"],
+    ["Cloud Storage", "Google Cloud Storage", "GCS"],
+    ["Vertex AI", "Google Vertex AI"],
+
+    # --- Azure Services ---
+    ["Azure Functions", "AZ Functions"],
+    ["Azure DevOps", "ADO"],
+    ["AKS", "Azure Kubernetes Service"],
+    ["Blob Storage", "Azure Blob Storage"],
+    ["Azure ML", "Azure Machine Learning"],
+
+    # --- Visualization ---
+    ["Tableau", "Tableau Desktop"],
+    ["Power BI", "PowerBI", "Power-BI"],
+    ["D3.js", "D3", "d3js"],
+    ["Chart.js", "ChartJS"],
+    ["Plotly", "plotly"],
+    ["Matplotlib", "matplotlib", "MPL"],
+    ["Seaborn", "seaborn"],
+
+    # --- Mobile ---
+    ["React Native", "ReactNative", "RN"],
+    ["Flutter", "Flutter SDK"],
+    ["Jetpack Compose", "Compose"],
+    ["SwiftUI", "Swift UI"],
+
+    # --- CMS ---
+    ["WordPress", "WP", "Wordpress"],
+    ["Strapi", "Strapi CMS"],
+
+    # --- Serverless / Edge ---
+    ["Serverless", "Serverless Framework", "Serverless Architecture"],
+    ["Cloudflare Workers", "CF Workers"],
+    ["Edge Functions", "Edge Compute"],
+    ["Vercel", "Vercel Platform"],
+]
+```
+
+That is 130+ synonym groups. Each group contains 2-5 surface forms that all resolve to the same canonical skill.
+
+### 4. Hierarchy Relationships
+
+These define "is-a" parent-child relationships. When a JD says "NoSQL" and a candidate has "MongoDB", the candidate should get credit (Tier 3a, 0.80).
+
+```python
+_HIERARCHY: Dict[str, List[str]] = {
+    # --- Language categories ---
+    "Programming Languages": [
+        "Python", "JavaScript", "TypeScript", "Java", "C", "C++", "C#",
+        "Go", "Rust", "Ruby", "PHP", "Swift", "Kotlin", "R", "Scala",
+    ],
+
+    # --- Database paradigms ---
+    "Databases": [
+        "PostgreSQL", "MySQL", "MongoDB", "Redis", "Elasticsearch",
+        "DynamoDB", "Cassandra", "Neo4j", "SQLite", "Oracle",
+        "SQL Server", "Firebase", "Snowflake", "BigQuery",
+    ],
+    "SQL": ["PostgreSQL", "MySQL", "SQLite", "SQL Server", "Oracle", "MariaDB",
+            "Amazon RDS", "Amazon Aurora", "Azure SQL", "Cloud SQL",
+            "CockroachDB", "PlanetScale"],
+    "NoSQL": ["MongoDB", "Redis", "DynamoDB", "Cassandra", "CouchDB",
+              "CouchBase", "Firebase", "Firestore", "Neo4j", "ArangoDB"],
+    "Graph Database": ["Neo4j", "ArangoDB"],
+    "Time Series Database": ["InfluxDB", "TimescaleDB"],
+    "Data Warehouse": ["Snowflake", "BigQuery", "Redshift", "Databricks", "ClickHouse"],
+    "Message Queue": ["Apache Kafka", "RabbitMQ", "Apache Pulsar", "NATS",
+                       "Amazon SQS", "Amazon SNS", "ActiveMQ"],
+    "Search Engine": ["Elasticsearch", "OpenSearch", "Solr"],
+
+    # --- Web framework categories ---
+    "Frontend Framework": ["React", "Angular", "Vue", "Svelte", "Next.js",
+                           "Nuxt.js", "Gatsby", "Remix", "Astro", "HTMX"],
+    "Backend Framework": ["Express", "Django", "Flask", "FastAPI", "Spring Boot",
+                          "Ruby on Rails", "ASP.NET", "NestJS", "Gin", "Fiber",
+                          "Phoenix", "Hono", "Koa", "Hapi"],
+    "CSS Framework": ["Tailwind CSS", "Bootstrap", "Material UI", "Chakra UI",
+                      "Ant Design", "Shadcn"],
+    "ORM": ["Prisma", "Sequelize", "TypeORM", "SQLAlchemy", "Mongoose",
+            "Drizzle", "Alembic"],
+    "State Management": ["Redux", "MobX", "Zustand"],
+    "Build Tool": ["Webpack", "Vite", "Rollup", "esbuild", "Parcel", "Turbopack"],
+    "API Protocol": ["REST", "gRPC", "GraphQL", "WebSocket"],
+
+    # --- Cloud categories ---
+    "Cloud Platform": ["AWS", "GCP", "Azure", "DigitalOcean", "Heroku"],
+    "Container": ["Docker", "Podman", "Containerd"],
+    "Container Orchestration": ["Kubernetes", "Docker Compose", "ECS", "EKS",
+                                 "GKE", "AKS"],
+    "CI/CD": ["GitHub Actions", "GitLab CI", "Jenkins", "CircleCI",
+              "Travis CI", "Argo CD", "Bamboo", "TeamCity"],
+    "Infrastructure as Code": ["Terraform", "Pulumi", "CloudFormation",
+                                "Ansible", "AWS CDK"],
+    "Configuration Management": ["Ansible", "Chef", "Puppet", "SaltStack"],
+    "Monitoring": ["Prometheus", "Grafana", "Datadog", "New Relic", "Splunk",
+                   "Sentry", "Honeycomb"],
+    "Log Management": ["ELK Stack", "Logstash", "Kibana", "Fluentd", "Loki"],
+    "Service Mesh": ["Istio", "Linkerd", "Envoy"],
+    "Load Balancer": ["Nginx", "HAProxy", "Traefik", "ELB", "ALB"],
+    "Serverless": ["AWS Lambda", "Cloud Functions", "Azure Functions",
+                    "Cloud Run", "Cloudflare Workers"],
+
+    # --- AI/ML categories ---
+    "Machine Learning": ["Scikit-Learn", "XGBoost", "LightGBM", "CatBoost",
+                         "Random Forest", "SVM"],
+    "Deep Learning": ["PyTorch", "TensorFlow", "Keras"],
+    "NLP": ["spaCy", "NLTK", "HuggingFace", "Transformers", "BERT",
+            "RoBERTa", "Gensim", "Sentence Transformers"],
+    "Computer Vision": ["OpenCV", "YOLO", "Detectron2", "MediaPipe",
+                        "Ultralytics", "MMDetection"],
+    "LLM": ["GPT", "GPT-4", "Claude", "Gemini", "Mistral", "Ollama",
+            "vLLM", "OpenAI API", "Groq"],
+    "Vector Database": ["FAISS", "Chroma", "Pinecone", "Weaviate",
+                        "Milvus", "Qdrant"],
+    "ML Platform": ["SageMaker", "Vertex AI", "Azure ML", "Bedrock",
+                    "MLflow", "Weights & Biases"],
+    "Data Processing": ["Pandas", "NumPy", "SciPy", "Apache Spark", "Dask"],
+    "Visualization": ["Matplotlib", "Seaborn", "Plotly", "Bokeh", "Altair",
+                      "D3.js", "Chart.js"],
+    "BI Tool": ["Tableau", "Power BI", "Looker", "Metabase", "Apache Superset"],
+    "Data Pipeline": ["Apache Airflow", "Prefect", "Dagster", "Luigi",
+                      "dbt", "Apache Flink", "Apache Beam", "Apache NiFi"],
+
+    # --- Testing categories ---
+    "Testing Framework": ["Jest", "Mocha", "Vitest", "pytest", "JUnit",
+                          "RSpec", "Cypress", "Playwright"],
+    "E2E Testing": ["Cypress", "Playwright", "Selenium", "Puppeteer"],
+    "Unit Testing": ["Jest", "pytest", "JUnit", "Mocha", "Vitest"],
+    "Load Testing": ["k6", "Locust", "JMeter", "Gatling"],
+
+    # --- Version Control ---
+    "Version Control": ["Git", "GitHub", "GitLab", "Bitbucket", "SVN"],
+
+    # --- Mobile categories ---
+    "Mobile Framework": ["React Native", "Flutter", "Ionic", "Expo",
+                         "SwiftUI", "Jetpack Compose", "Xamarin"],
+
+    # --- Auth categories ---
+    "Authentication": ["OAuth", "JWT", "SAML", "OpenID Connect",
+                       "Auth0", "Okta", "Keycloak", "Firebase Auth",
+                       "Cognito"],
+
+    # --- Security categories ---
+    "Security Testing": ["Penetration Testing", "Burp Suite", "Metasploit",
+                         "Nmap", "Nessus"],
+    "Compliance": ["GDPR", "HIPAA", "SOC 2", "PCI DSS", "ISO 27001"],
+
+    # --- Project Management ---
+    "Project Management": ["Jira", "Trello", "Asana", "Linear", "ClickUp",
+                           "Notion", "Monday.com"],
+}
+```
+
+### 5. Related Skill Groups
+
+These are domain siblings -- skills in the same competitive space that are NOT interchangeable. A candidate with "Angular" should NOT get high credit for a "React" requirement.
+
+```python
+_RELATED_GROUPS: List[List[str]] = [
+    # Frontend frameworks (competitors, NOT interchangeable)
+    ["React", "Angular", "Vue", "Svelte"],
+    # Backend JS frameworks
+    ["Express", "NestJS", "Koa", "Hapi", "Fastify"],
+    # Python web frameworks
+    ["Django", "Flask", "FastAPI"],
+    # Java frameworks
+    ["Spring Boot", "Spring"],
+    # CSS frameworks
+    ["Tailwind CSS", "Bootstrap", "Material UI", "Chakra UI"],
+    # State management
+    ["Redux", "MobX", "Zustand"],
+    # ORMs
+    ["Prisma", "Sequelize", "TypeORM", "Drizzle"],
+    # Python ORMs
+    ["SQLAlchemy", "Mongoose", "PyMongo"],
+    # SQL databases (competitors)
+    ["PostgreSQL", "MySQL", "MariaDB", "SQLite", "SQL Server", "Oracle"],
+    # NoSQL databases (competitors)
+    ["MongoDB", "DynamoDB", "Cassandra", "CouchDB"],
+    # Cloud providers (competitors)
+    ["AWS", "GCP", "Azure"],
+    # Container runtimes
+    ["Docker", "Podman"],
+    # Container orchestrators
+    ["Kubernetes", "Docker Compose", "ECS"],
+    # CI/CD tools (competitors)
+    ["GitHub Actions", "GitLab CI", "Jenkins", "CircleCI"],
+    # IaC tools (competitors)
+    ["Terraform", "Pulumi", "CloudFormation", "Ansible"],
+    # ML frameworks (competitors)
+    ["PyTorch", "TensorFlow", "Keras"],
+    # Gradient boosting (competitors)
+    ["XGBoost", "LightGBM", "CatBoost"],
+    # NLP libraries (competitors)
+    ["spaCy", "NLTK"],
+    # Vector databases (competitors)
+    ["FAISS", "Chroma", "Pinecone", "Weaviate", "Milvus", "Qdrant"],
+    # LLM providers (competitors)
+    ["OpenAI API", "Claude", "Gemini", "Groq", "Mistral"],
+    # Monitoring (competitors)
+    ["Prometheus", "Datadog", "New Relic", "Splunk"],
+    # BI tools (competitors)
+    ["Tableau", "Power BI", "Looker", "Metabase"],
+    # Testing (competitors)
+    ["Jest", "Mocha", "Vitest"],
+    # E2E testing (competitors)
+    ["Cypress", "Playwright", "Selenium"],
+    # Build tools (competitors)
+    ["Webpack", "Vite", "Rollup", "esbuild"],
+    # Mobile frameworks (competitors)
+    ["React Native", "Flutter", "Ionic"],
+    # Search engines (competitors)
+    ["Elasticsearch", "OpenSearch", "Solr"],
+    # Message queues (competitors)
+    ["Apache Kafka", "RabbitMQ", "Apache Pulsar", "NATS"],
+    # Data pipeline (competitors)
+    ["Apache Airflow", "Prefect", "Dagster", "Luigi"],
+    # IDEs (competitors)
+    ["VS Code", "IntelliJ IDEA", "PyCharm", "WebStorm"],
+    # Package managers
+    ["npm", "yarn", "pnpm"],
+    # Python package managers
+    ["pip", "conda", "poetry", "pipenv"],
+    # Version control hosting
+    ["GitHub", "GitLab", "Bitbucket"],
+    # Auth providers
+    ["Auth0", "Okta", "Keycloak", "Firebase Auth", "Cognito"],
+    # Visualization libs
+    ["Matplotlib", "Seaborn", "Plotly", "Bokeh"],
+]
+```
+
+### 6. Consolidated Matching Function
+
+The key design goal is a single `match_skills_batch` function in `skill_graph.py` that all three callers use. This function encapsulates the entire matching loop, eliminating the duplicated greedy-matching logic.
+
+```python
+# In services/skill_graph.py
+
+@dataclass
+class SkillMatchResult:
+    """Result of matching one JD skill against a candidate skill set."""
+    jd_skill: str
+    candidate_skill: Optional[str]  # None if unmatched
+    score: float                     # 0.0 - 1.0
+    match_tier: str                  # "exact", "synonym", "parent_child", "child_parent",
+                                     # "related", "same_category", "embedding", "none"
+    is_mandatory: bool
+
+
+@dataclass
+class SkillsMatchSummary:
+    """Complete result of matching all JD skills against a candidate's skills."""
+    matches: List[SkillMatchResult]
+    matched_mandatory: int
+    total_mandatory: int
+    matched_optional: int
+    total_optional: int
+    mandatory_rate: float
+    optional_rate: float
+    composite_score: float          # 0.0 - 1.0 (mandatory * 0.75 + optional * 0.25)
+    # For candidate_insight_service diff output:
+    matched_details: List[dict]     # [{jd_skill, candidate_skill, similarity, tier}]
+    missing_mandatory: List[str]
+    missing_optional: List[str]
+    extra_skills: List[str]         # candidate skills not matched to any JD skill
+
+
+# Module-level singleton
+_graph: Optional[SkillGraph] = None
+
+def get_skill_graph() -> SkillGraph:
+    """Lazy singleton for the SkillGraph."""
+    global _graph
+    if _graph is None:
+        _graph = SkillGraph()
+    return _graph
+
+
+def match_skills_batch(
+    jd_mandatory: List[str],
+    jd_optional: List[str],
+    jd_tools: List[str],
+    candidate_skills: List[str],
+    embedding_fallback: bool = True,
+) -> SkillsMatchSummary:
+    """Consolidated skill matching used by all three callers.
+
+    Performs greedy 1-to-1 matching of JD skills against candidate skills
+    using the multi-tier skill graph, with optional embedding fallback.
+
+    Args:
+        jd_mandatory: List of mandatory JD skill strings.
+        jd_optional: List of optional JD skill strings.
+        jd_tools: List of tool JD skill strings.
+        candidate_skills: List of candidate skill name strings.
+        embedding_fallback: Whether to use embeddings for unknown skills.
+
+    Returns:
+        SkillsMatchSummary with full match details.
+    """
+    graph = get_skill_graph()
+
+    all_jd = [(s, True) for s in jd_mandatory] + \
+             [(s, False) for s in jd_optional] + \
+             [(s, False) for s in jd_tools]
+
+    if not all_jd:
+        return SkillsMatchSummary(
+            matches=[], matched_mandatory=0, total_mandatory=0,
+            matched_optional=0, total_optional=0,
+            mandatory_rate=1.0, optional_rate=1.0,
+            composite_score=1.0,
+            matched_details=[], missing_mandatory=[], missing_optional=[],
+            extra_skills=list(candidate_skills),
+        )
+
+    if not candidate_skills:
+        return SkillsMatchSummary(
+            matches=[],
+            matched_mandatory=0, total_mandatory=len(jd_mandatory),
+            matched_optional=0, total_optional=len(jd_optional) + len(jd_tools),
+            mandatory_rate=0.0, optional_rate=0.0,
+            composite_score=0.0,
+            matched_details=[],
+            missing_mandatory=list(jd_mandatory),
+            missing_optional=list(jd_optional) + list(jd_tools),
+            extra_skills=[],
+        )
+
+    # Pre-compute graph scores: full matrix
+    # score_matrix[i][j] = graph.match_skill(jd_skill_i, cand_skill_j)
+    score_matrix = []
+    for jd_skill, _ in all_jd:
+        row = []
+        for cs in candidate_skills:
+            row.append(graph.match_skill(jd_skill, cs))
+        score_matrix.append(row)
+
+    # Embedding fallback: pre-compute embeddings ONLY for pairs that got -1.0
+    if embedding_fallback:
+        from services.embedding_service import get_embedding, cosine_similarity
+        EMBEDDING_CAP = 0.60
+
+        # Collect unique texts that need embeddings
+        need_jd_emb = set()
+        need_cand_emb = set()
+        for i, (jd_skill, _) in enumerate(all_jd):
+            for j, cs in enumerate(candidate_skills):
+                if score_matrix[i][j] == -1.0:
+                    need_jd_emb.add(jd_skill)
+                    need_cand_emb.add(cs)
+
+        jd_emb_cache = {s: get_embedding(s.lower()) for s in need_jd_emb}
+        cand_emb_cache = {s: get_embedding(s.lower()) for s in need_cand_emb}
+
+        for i, (jd_skill, _) in enumerate(all_jd):
+            for j, cs in enumerate(candidate_skills):
+                if score_matrix[i][j] == -1.0:
+                    sim = cosine_similarity(jd_emb_cache[jd_skill], cand_emb_cache[cs])
+                    score_matrix[i][j] = min(sim, EMBEDDING_CAP) if sim >= 0.50 else 0.0
+    else:
+        # No embedding fallback: treat -1.0 as 0.0
+        for i in range(len(all_jd)):
+            for j in range(len(candidate_skills)):
+                if score_matrix[i][j] == -1.0:
+                    score_matrix[i][j] = 0.0
+
+    # Greedy 1-to-1 matching (same logic as before, but using graph scores)
+    MATCH_THRESHOLD = 0.15  # Lower threshold since graph scores are calibrated
+    cand_matched = set()
+    matches = []
+
+    # Sort JD skills: mandatory first, then by best available score descending
+    jd_order = sorted(
+        range(len(all_jd)),
+        key=lambda i: (0 if all_jd[i][1] else 1, -max(score_matrix[i])),
+    )
+
+    for i in jd_order:
+        jd_skill, is_mandatory = all_jd[i]
+        best_score = 0.0
+        best_j = None
+
+        for j, cs in enumerate(candidate_skills):
+            if j in cand_matched:
+                continue
+            s = score_matrix[i][j]
+            if s > best_score:
+                best_score = s
+                best_j = j
+
+        if best_score >= MATCH_THRESHOLD and best_j is not None:
+            cand_matched.add(best_j)
+            tier = _classify_tier(best_score)
+            matches.append(SkillMatchResult(
+                jd_skill=jd_skill,
+                candidate_skill=candidate_skills[best_j],
+                score=best_score,
+                match_tier=tier,
+                is_mandatory=is_mandatory,
+            ))
+        else:
+            matches.append(SkillMatchResult(
+                jd_skill=jd_skill,
+                candidate_skill=None,
+                score=0.0,
+                match_tier="none",
+                is_mandatory=is_mandatory,
+            ))
+
+    # Compute summary statistics
+    matched_mandatory = sum(1 for m in matches if m.is_mandatory and m.candidate_skill)
+    matched_optional = sum(1 for m in matches if not m.is_mandatory and m.candidate_skill)
+    total_mandatory = len(jd_mandatory)
+    total_optional = len(jd_optional) + len(jd_tools)
+
+    mandatory_rate = matched_mandatory / total_mandatory if total_mandatory > 0 else 1.0
+    optional_rate = matched_optional / total_optional if total_optional > 0 else 1.0
+
+    # Weight the score by match quality, not just binary matched/unmatched.
+    # Use the actual tier scores instead of treating all matches equally.
+    if total_mandatory > 0:
+        mandatory_quality = sum(
+            m.score for m in matches if m.is_mandatory and m.candidate_skill
+        ) / total_mandatory
+    else:
+        mandatory_quality = 1.0
+
+    if total_optional > 0:
+        optional_quality = sum(
+            m.score for m in matches if not m.is_mandatory and m.candidate_skill
+        ) / total_optional
+    else:
+        optional_quality = 1.0
+
+    composite_score = mandatory_quality * 0.75 + optional_quality * 0.25
+
+    # Build diff-style outputs
+    matched_details = [
+        {
+            'jd_skill': m.jd_skill,
+            'candidate_skill': m.candidate_skill,
+            'similarity': round(m.score, 3),
+            'tier': m.match_tier,
+        }
+        for m in matches if m.candidate_skill
+    ]
+    missing_mandatory = [m.jd_skill for m in matches if m.is_mandatory and not m.candidate_skill]
+    missing_optional = [m.jd_skill for m in matches if not m.is_mandatory and not m.candidate_skill]
+    extra_skills = [cs for j, cs in enumerate(candidate_skills) if j not in cand_matched]
+
+    return SkillsMatchSummary(
+        matches=matches,
+        matched_mandatory=matched_mandatory,
+        total_mandatory=total_mandatory,
+        matched_optional=matched_optional,
+        total_optional=total_optional,
+        mandatory_rate=mandatory_rate,
+        optional_rate=optional_rate,
+        composite_score=composite_score,
+        matched_details=matched_details,
+        missing_mandatory=missing_mandatory,
+        missing_optional=missing_optional,
+        extra_skills=extra_skills,
+    )
+
+
+def _classify_tier(score: float) -> str:
+    """Classify a score into its match tier name."""
+    if score >= 0.99:
+        return "exact"
+    elif score >= 0.90:
+        return "synonym"
+    elif score >= 0.75:
+        return "parent_child"
+    elif score >= 0.35:
+        return "child_parent"
+    elif score >= 0.25:
+        return "related"
+    elif score >= 0.10:
+        return "same_category"
+    elif score > 0.0:
+        return "embedding"
+    else:
+        return "none"
+```
+
+### 7. Integration Into the Three Callers
+
+Each caller receives a minimal, surgical change. The heavy-lifting logic moves into `match_skills_batch`.
+
+#### Caller 1: `SemanticMatcher._compute_skills_score` (hybrid_matcher.py)
+
+Replace lines 87-157 with:
+
+```python
+def _compute_skills_score(self, resume: Resume, job: JobDescription) -> float:
+    """Per-skill graph+embedding matching with mandatory/optional weighting."""
+    if not job.skills:
+        return 0.0
+
+    mandatory = list(job.skills.mandatory or [])
+    optional = list(job.skills.optional or [])
+    tools = list(job.skills.tools or [])
+
+    # Collect candidate skills from resume.skills + all experience skills_used
+    candidate_skills = [s.skill_name for s in (resume.skills or [])]
+    for exp in (resume.experience or []):
+        for sk in (exp.skills_used or []):
+            if sk not in candidate_skills:
+                candidate_skills.append(sk)
+
+    if not candidate_skills:
+        return 0.0
+
+    from services.skill_graph import match_skills_batch
+    result = match_skills_batch(mandatory, optional, tools, candidate_skills)
+
+    per_skill_score = result.composite_score
+
+    # BM25 keyword overlap as secondary signal
+    all_jd_skills = mandatory + optional + tools
+    jd_text = " ".join(all_jd_skills)
+    resume_text = " ".join(candidate_skills)
+    bm25_score = self._compute_bm25_score(resume_text, jd_text)
+
+    return float(0.40 * bm25_score + 0.60 * per_skill_score)
+```
+
+The signature and return type are unchanged. The BM25 hybrid blend is preserved. The only difference is that `per_skill_score` now comes from the graph-based matcher instead of raw embedding cosine similarity.
+
+#### Caller 2: `SkillsMatcher.match_skills` (constraint_matcher.py)
+
+Replace lines 527-597 with:
+
+```python
+def match_skills(self, resume, job_description) -> MatchScore:
+    if not job_description.skills:
+        return MatchScore(80.0, 100.0, "No specific skill requirements listed")
+
+    mandatory = list(job_description.skills.mandatory or [])
+    optional = list(job_description.skills.optional or [])
+    tools = list(job_description.skills.tools or [])
+
+    if not mandatory and not optional and not tools:
+        return MatchScore(80.0, 100.0, "No specific skill requirements listed")
+
+    # Collect candidate skills
+    candidate_skills = [s.skill_name for s in (resume.skills or [])]
+    for exp in (resume.experience or []):
+        for sk in (exp.skills_used or []):
+            if sk not in candidate_skills:
+                candidate_skills.append(sk)
+
+    if not candidate_skills:
+        return MatchScore(0.0, 100.0, "No skills found in resume")
+
+    from services.skill_graph import match_skills_batch
+    result = match_skills_batch(mandatory, optional, tools, candidate_skills)
+
+    final_score = result.composite_score * 100
+
+    explanation = (
+        f"Matched {result.matched_mandatory + result.matched_optional}/"
+        f"{result.total_mandatory + result.total_optional} skills "
+        f"(mandatory: {result.matched_mandatory}/{result.total_mandatory}, "
+        f"optional: {result.matched_optional}/{result.total_optional})"
+    )
+    if result.missing_mandatory:
+        explanation += f"; Missing mandatory: {', '.join(result.missing_mandatory[:4])}"
+
+    return MatchScore(final_score, 100.0, explanation)
+```
+
+#### Caller 3: `CandidateInsightService.compute_skills_diff` (candidate_insight_service.py)
+
+Replace lines 27-89 with:
+
+```python
+def compute_skills_diff(self, resume: Resume, job: JobDescription) -> dict:
+    """Compare JD skills vs candidate skills using graph-based matching."""
+    mandatory = list(job.skills.mandatory) if job.skills and job.skills.mandatory else []
+    optional = list(job.skills.optional) if job.skills and job.skills.optional else []
+    tools = list(job.skills.tools) if job.skills and job.skills.tools else []
+    jd_skills = mandatory + optional + tools
+
+    candidate_skills = [s.skill_name for s in (resume.skills or [])]
+    for exp in (resume.experience or []):
+        for s in (exp.skills_used or []):
+            if s not in candidate_skills:
+                candidate_skills.append(s)
+
+    from services.skill_graph import match_skills_batch
+    result = match_skills_batch(mandatory, optional, tools, candidate_skills)
+
+    return {
+        'matched': result.matched_details,
+        'missing_mandatory': result.missing_mandatory,
+        'missing_optional': result.missing_optional,
+        'extra': result.extra_skills,
+        'match_rate': round(
+            len(result.matched_details) / len(jd_skills), 3
+        ) if jd_skills else 1.0,
+    }
+```
+
+Note: The `matched` field now includes a `tier` key in each dict entry (e.g., `{"jd_skill": "NoSQL", "candidate_skill": "MongoDB", "similarity": 0.80, "tier": "parent_child"}`). This is additive -- it only enriches the output. The `similarity` key is preserved for backward compatibility with the LLM context builder in `_build_compact_context`.
+
+### 8. Scoring Formula
+
+The core scoring change is in the `composite_score` calculation within `match_skills_batch`. Under the old system:
+
+- A matched skill (cosine >= 0.70) contributed 1.0 to its category's rate
+- An unmatched skill contributed 0.0
+- Binary: matched or not
+
+Under the new system, each matched skill contributes its **tier score** rather than a flat 1.0:
+
+| Scenario | Old Score | New Score | Why |
+|---|---|---|---|
+| "React" vs "React" | 1.0 | 1.0 (exact) | Same |
+| "React.js" vs "React" | 1.0 (cosine ~0.95) | 1.0 (exact, after normalization) | Same outcome, but deterministic |
+| "PostgreSQL" vs "Postgres" | 1.0 (cosine ~0.88) | 0.95 (synonym) | Correct, slightly conservative |
+| "MongoDB" vs "NoSQL" | 0.0 (cosine ~0.55) | 0.80 (parent_child) | **Fixed: was false negative** |
+| "Vue.js" vs "React" | 1.0 (cosine ~0.85) | 0.30 (related) | **Fixed: was false positive** |
+| "ML" vs "Machine Learning" | 0.0 (cosine ~0.60) | 0.95 (synonym) | **Fixed: was false negative** |
+| "K8s" vs "Kubernetes" | 1.0 (cosine ~0.40?!) | 0.95 (synonym) | Deterministic now |
+| Unknown niche skill vs unknown skill | Embedding cosine (0-1.0) | min(cosine, 0.60) | Capped to prevent false positives |
+
+The `composite_score` formula remains `mandatory_quality * 0.75 + optional_quality * 0.25`, but each skill's contribution is now its tier score rather than a binary 1 or 0. This means:
+- A candidate matching all mandatory skills via exact/synonym match gets close to 0.75 from the mandatory component
+- A candidate matching via parent-child (e.g., has "MongoDB" for "NoSQL") gets 0.80 per skill, contributing 0.60 to the mandatory component instead of 0.75
+- A candidate whose only "match" is a related framework (e.g., has "Angular" for "React") gets 0.30 per skill -- much more honest than the old system's 0.85
+
+The upstream blending is unchanged:
+- `SemanticMatcher`: `0.40 * bm25 + 0.60 * graph_score`
+- `HybridMatcher`: `0.60 * semantic + 0.40 * constraint` (or `0.50/0.30/0.20` with questionnaire)
+- `ConstraintMatcher`: skills weight = 0.40 of the constraint total
+
+### 9. Match Threshold Change
+
+The old `MATCH_THRESHOLD = 0.70` was calibrated for embedding cosine similarity. The new graph-based scores are calibrated differently:
+- 1.0, 0.95, 0.80, 0.40, 0.30, 0.15 are deterministic tier scores
+- 0.0-0.60 is the capped embedding range
+
+The new `MATCH_THRESHOLD = 0.15` is appropriate because:
+- Tier scores below 0.15 are `same_category` (0.15) or `none` (0.0)
+- A "same_category" match (e.g., both are databases but no specific relationship) deserves to count as a weak match
+- The embedding fallback is capped at 0.60, and only fires for unknown skills with similarity >= 0.50
+
+The key insight is that the threshold is no longer a quality gate -- the **score itself** encodes match quality. A 0.30 "related" match still counts but contributes less to the composite score than a 1.0 "exact" match.
+
+### 10. Implementation Sequence
+
+1. **Create `services/skill_graph.py`** with the `SkillGraph` class, data structures, `_SYNONYM_GROUPS`, `_HIERARCHY`, `_RELATED_GROUPS`, and `match_skills_batch`
+2. **Write unit tests** for the graph: normalization, synonym resolution, hierarchy traversal, multi-tier scoring, and the batch matching function. Test the specific failure cases from the requirements (React/Vue, ML/Machine Learning, MongoDB/NoSQL, K8s/Kubernetes, Postgres/PostgreSQL)
+3. **Update `hybrid_matcher.py`**: replace `_compute_skills_score` body (lines 87-157)
+4. **Update `constraint_matcher.py`**: replace `SkillsMatcher.match_skills` body (lines 527-597)
+5. **Update `candidate_insight_service.py`**: replace `compute_skills_diff` body (lines 27-89)
+6. **Run integration tests** to verify scores change in the expected direction
+
+### 11. Potential Challenges
+
+**Challenge 1: Circular hierarchy.** The `_HIERARCHY` dict could theoretically create cycles (A is parent of B, B is parent of A). The `match_skill` method limits parent traversal to depth 2, preventing infinite loops. But the `_register_hierarchy` method should include a cycle check.
+
+**Challenge 2: Import ordering.** `skill_graph.py` imports from `resume_post_processor.py` (for `TECH_SKILLS` and `_CANONICAL_CASE`), and optionally from `embedding_service.py` (for fallback). These are both at the same level in the `services/` package. The import of `embedding_service` is deferred to inside `match_skills_batch` to avoid circular imports since `hybrid_matcher.py` also imports from `embedding_service`.
+
+**Challenge 3: Performance.** The score matrix is O(J * C) where J = number of JD skills and C = number of candidate skills. For typical inputs (J ~ 15, C ~ 30), this is 450 graph lookups -- essentially free since it is all dict lookups. The embedding fallback only triggers for skills not in the 726-entry taxonomy, which should be rare. Embeddings are cached in MongoDB, so even fallback lookups hit the cache.
+
+**Challenge 4: Maintaining the synonym/hierarchy data.** The data is stored as Python dicts/lists in `skill_graph.py`, close to the code that uses it. This is appropriate for a 726-entry taxonomy. If the taxonomy grows beyond ~2000 entries, consider moving to a JSON/YAML file.
+
+**Challenge 5: Backward compatibility of the `matched` output.** The `compute_skills_diff` output gains a `tier` field in each match dict. Downstream consumers (the LLM context builder `_build_compact_context` at line 217 of `candidate_insight_service.py`) access `m['jd_skill']`, `m['candidate_skill']`, and `m['similarity']` -- all preserved. The `tier` field is additive.
+
+### Critical Files for Implementation
+- `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\skill_graph.py` - New file: core SkillGraph class, synonym/hierarchy data, and consolidated match_skills_batch function
+- `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\hybrid_matcher.py` - Replace _compute_skills_score (lines 87-157) to call match_skills_batch
+- `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\constraint_matcher.py` - Replace SkillsMatcher.match_skills (lines 527-597) to call match_skills_batch
+- `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\candidate_insight_service.py` - Replace compute_skills_diff (lines 27-89) to call match_skills_batch
+- `D:\Resume-Job-Matching-AI-Powered-LLMs-\services\resume_post_processor.py` - Existing taxonomy (TECH_SKILLS, _CANONICAL_CASE) imported by skill_graph.py -- no changes needed

@@ -35,10 +35,10 @@
                 <p class="text-gray-600 dark:text-gray-400 mt-1">vs. {{ insight.job_title }}</p>
             </div>
             <div class="mt-3 sm:mt-0 flex items-center space-x-3">
-                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-800 dark:text-primary-300">
+                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                     Skills: {{ (insight.skills_diff.match_rate * 100) | round(0) }}%
                 </span>
-                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
+                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">
                     Edu: {{ (insight.education_diff.score * 100) | round(0) }}%
                 </span>
                 <a href="{{ url_for('ai_engine.view_ai_results', job_id=job._id) }}" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -78,22 +78,62 @@
                     <i class="fas fa-code text-primary-600 mr-2"></i>Skills Comparison
                     <span class="ml-2 text-sm font-normal text-gray-500">({{ insight.skills_diff.matched | length }} matched / {{ insight.skills_diff.missing_mandatory | length + insight.skills_diff.missing_optional | length }} missing)</span>
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Matched Skills -->
-                    <div>
-                        <h4 class="text-sm font-medium text-green-700 dark:text-green-400 mb-2"><i class="fas fa-check-circle mr-1"></i>Matched</h4>
-                        <div class="flex flex-wrap gap-2">
+                <!-- Per-skill graph match table -->
+                {% if insight.skills_diff.matched %}
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                <th class="pb-2 pr-3">Required Skill</th>
+                                <th class="pb-2 pr-3">Candidate Skill</th>
+                                <th class="pb-2 pr-3">Match Type</th>
+                                <th class="pb-2 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
                             {% for m in insight.skills_diff.matched %}
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300" title="Candidate: {{ m.candidate_skill }} ({{ (m.similarity * 100) | round(0) }}%)">
-                                {{ m.jd_skill }}
-                            </span>
+                            <tr>
+                                <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white">{{ m.jd_skill }}</td>
+                                <td class="py-2 pr-3 text-gray-600 dark:text-gray-400">{{ m.candidate_skill }}</td>
+                                <td class="py-2 pr-3">
+                                    {% set tier = m.get('tier', 'embedding') if m.get('tier') else 'embedding' %}
+                                    {% if tier == 'exact' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">Exact</span>
+                                    {% elif tier == 'synonym' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">Synonym</span>
+                                    {% elif tier == 'implies' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Implies</span>
+                                    {% elif tier == 'parent' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Parent</span>
+                                    {% elif tier == 'implies_partial' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Partial</span>
+                                    {% elif tier == 'child' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Child</span>
+                                    {% elif tier == 'related' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">Related</span>
+                                    {% elif tier == 'embedding' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">Embedding</span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">{{ tier }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-2 text-right">
+                                    <span class="font-mono text-xs
+                                        {% if m.similarity >= 0.85 %}text-green-600 dark:text-green-400
+                                        {% elif m.similarity >= 0.50 %}text-yellow-600 dark:text-yellow-400
+                                        {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                        {{ (m.similarity * 100) | round(0) }}%
+                                    </span>
+                                </td>
+                            </tr>
                             {% endfor %}
-                            {% if not insight.skills_diff.matched %}
-                            <span class="text-sm text-gray-400">None</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <!-- Missing Skills -->
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Missing Mandatory -->
                     <div>
                         <h4 class="text-sm font-medium text-red-700 dark:text-red-400 mb-2"><i class="fas fa-times-circle mr-1"></i>Missing (Mandatory)</h4>
                         <div class="flex flex-wrap gap-2">
@@ -104,7 +144,10 @@
                             <span class="text-sm text-gray-400">None</span>
                             {% endif %}
                         </div>
-                        <h4 class="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-2 mt-3"><i class="fas fa-exclamation-circle mr-1"></i>Missing (Optional)</h4>
+                    </div>
+                    <!-- Missing Optional -->
+                    <div>
+                        <h4 class="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-2"><i class="fas fa-exclamation-circle mr-1"></i>Missing (Optional)</h4>
                         <div class="flex flex-wrap gap-2">
                             {% for s in insight.skills_diff.missing_optional %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">{{ s }}</span>
@@ -116,10 +159,10 @@
                     </div>
                     <!-- Extra Skills -->
                     <div>
-                        <h4 class="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2"><i class="fas fa-plus-circle mr-1"></i>Extra (Bonus)</h4>
+                        <h4 class="text-sm font-medium text-primary-700 dark:text-primary-400 mb-2"><i class="fas fa-plus-circle mr-1"></i>Extra (Bonus)</h4>
                         <div class="flex flex-wrap gap-2">
                             {% for s in insight.skills_diff.extra %}
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">{{ s }}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800">{{ s }}</span>
                             {% endfor %}
                             {% if not insight.skills_diff.extra %}
                             <span class="text-sm text-gray-400">None</span>
@@ -427,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const rec = insights.hiring_recommendation || 'N/A';
         const recColors = {
             'strong_hire': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-            'hire': 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+            'hire': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
             'maybe': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
             'no_hire': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
         };
@@ -486,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="mt-4">
                 <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Cultural Fit Signals</h4>
                 <div class="flex flex-wrap gap-2">
-                    ${insights.cultural_fit_signals.map(s => `<span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-full">${s}</span>`).join('')}
+                    ${insights.cultural_fit_signals.map(s => `<span class="px-2 py-1 text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full">${s}</span>`).join('')}
                 </div>
             </div>`;
         }
@@ -528,10 +571,14 @@ document.addEventListener('DOMContentLoaded', function() {
         container.classList.remove('hidden');
 
         const categories = [
-            {key: 'skill_gap', label: 'Skill Gap Questions', icon: 'fas fa-puzzle-piece', color: 'primary'},
-            {key: 'technical', label: 'Technical Questions', icon: 'fas fa-cogs', color: 'blue'},
-            {key: 'behavioral', label: 'Behavioral Questions', icon: 'fas fa-users', color: 'green'},
-            {key: 'red_flag_probes', label: 'Red Flag Probes', icon: 'fas fa-flag', color: 'red'}
+            {key: 'skill_gap', label: 'Skill Gap Questions', icon: 'fas fa-puzzle-piece',
+             headerBg: 'bg-primary-50 dark:bg-primary-900/20', iconColor: 'text-primary-600', borderColor: 'border-primary-200 dark:border-primary-800'},
+            {key: 'technical', label: 'Technical Questions', icon: 'fas fa-cogs',
+             headerBg: 'bg-gray-100 dark:bg-gray-700', iconColor: 'text-gray-600 dark:text-gray-300', borderColor: 'border-gray-300 dark:border-gray-600'},
+            {key: 'behavioral', label: 'Behavioral Questions', icon: 'fas fa-users',
+             headerBg: 'bg-green-50 dark:bg-green-900/20', iconColor: 'text-green-600', borderColor: 'border-green-200 dark:border-green-800'},
+            {key: 'red_flag_probes', label: 'Red Flag Probes', icon: 'fas fa-flag',
+             headerBg: 'bg-red-50 dark:bg-red-900/20', iconColor: 'text-red-600', borderColor: 'border-red-200 dark:border-red-800'}
         ];
 
         let html = `<div class="flex justify-between items-center mb-6">
@@ -546,14 +593,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (items.length === 0) return;
             html += `
                 <div class="mb-6">
-                    <button class="accordion-toggle w-full flex items-center justify-between p-3 bg-${cat.color}-50 dark:bg-${cat.color}-900/20 rounded-lg text-left" data-target="acc-${cat.key}">
-                        <span class="font-medium text-gray-900 dark:text-white"><i class="${cat.icon} text-${cat.color}-600 mr-2"></i>${cat.label} (${items.length})</span>
+                    <button class="accordion-toggle w-full flex items-center justify-between p-3 ${cat.headerBg} rounded-lg text-left" data-target="acc-${cat.key}">
+                        <span class="font-medium text-gray-900 dark:text-white"><i class="${cat.icon} ${cat.iconColor} mr-2"></i>${cat.label} (${items.length})</span>
                         <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
                     </button>
                     <div id="acc-${cat.key}" class="mt-2 space-y-3">`;
             items.forEach((q, i) => {
                 html += `
-                        <div class="pl-4 border-l-2 border-${cat.color}-200 dark:border-${cat.color}-800 py-2">
+                        <div class="pl-4 border-l-2 ${cat.borderColor} py-2">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">${i+1}. ${q.question}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><i class="fas fa-bullseye mr-1"></i>${q.purpose}</p>
                         </div>`;

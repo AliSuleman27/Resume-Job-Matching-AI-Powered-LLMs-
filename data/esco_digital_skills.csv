@@ -1,0 +1,294 @@
+label,alt_labels,broader_label
+Software Development,,Digital Skills
+Programming Languages,,Software Development
+Python,Py|CPython|Python3|Python 3,Programming Languages
+JavaScript,JS|ECMAScript|ES6|ES2015,Programming Languages
+TypeScript,TS|Type Script,Programming Languages
+Java,,Programming Languages
+C++,CPP|Cpp,Programming Languages
+C#,CSharp|C Sharp|Csharp,Programming Languages
+Go,Golang,Programming Languages
+Rust,,Programming Languages
+Ruby,,Programming Languages
+PHP,,Programming Languages
+Swift,,Programming Languages
+Kotlin,,Programming Languages
+R,R Language|R Programming,Programming Languages
+Scala,,Programming Languages
+Dart,,Programming Languages
+SQL,Structured Query Language,Programming Languages
+Bash,Shell|Shell Scripting|Bash Scripting,Programming Languages
+Perl,,Programming Languages
+Lua,,Programming Languages
+Haskell,,Programming Languages
+Elixir,,Programming Languages
+Solidity,,Programming Languages
+Frontend Development,,Software Development
+Frontend Frameworks,,Frontend Development
+React,React.js|ReactJS|React JS,Frontend Frameworks
+Vue.js,Vue|VueJS|Vue JS|Vue 3,Frontend Frameworks
+Angular,AngularJS|Angular JS|Angular 2+,Frontend Frameworks
+Svelte,SvelteKit,Frontend Frameworks
+Next.js,NextJS|Next JS,Frontend Frameworks
+Nuxt.js,NuxtJS|Nuxt JS|Nuxt,Frontend Frameworks
+Gatsby,GatsbyJS,Frontend Frameworks
+Remix,,Frontend Frameworks
+Astro,,Frontend Frameworks
+CSS Frameworks,,Frontend Development
+Tailwind CSS,Tailwind|TailwindCSS,CSS Frameworks
+Bootstrap,,CSS Frameworks
+Material UI,MUI,CSS Frameworks
+Chakra UI,,CSS Frameworks
+Ant Design,AntD,CSS Frameworks
+Shadcn,shadcn/ui,CSS Frameworks
+State Management,,Frontend Development
+Redux,Redux Toolkit|RTK,State Management
+MobX,,State Management
+Zustand,,State Management
+React Query,TanStack Query,State Management
+Backend Development,,Software Development
+Backend Frameworks,,Backend Development
+Express.js,Express|ExpressJS,Backend Frameworks
+Flask,,Backend Frameworks
+Django,,Backend Frameworks
+FastAPI,Fast API,Backend Frameworks
+Spring Boot,Spring|Spring Framework,Backend Frameworks
+NestJS,Nest.js|Nest JS,Backend Frameworks
+Ruby on Rails,Rails|RoR,Backend Frameworks
+Laravel,,Backend Frameworks
+ASP.NET,.NET|.NET Core|DotNet|Dotnet,Backend Frameworks
+Gin,,Backend Frameworks
+Fiber,,Backend Frameworks
+Hono,,Backend Frameworks
+Koa,,Backend Frameworks
+Hapi,,Backend Frameworks
+AdonisJS,Adonis.js,Backend Frameworks
+Runtime Environments,,Backend Development
+Node.js,NodeJS|Node JS|Node,Runtime Environments
+Deno,,Runtime Environments
+Bun,,Runtime Environments
+API Technologies,,Backend Development
+REST API,REST|RESTful|REST APIs,API Technologies
+GraphQL,GQL,API Technologies
+gRPC,GRPC,API Technologies
+WebSocket,WebSockets|WS,API Technologies
+tRPC,,API Technologies
+Mobile Development,,Software Development
+React Native,RN,Mobile Development
+Flutter,,Mobile Development
+Ionic,,Mobile Development
+SwiftUI,,Mobile Development
+Jetpack Compose,,Mobile Development
+Expo,,Mobile Development
+Xamarin,,Mobile Development
+Database Technologies,,Digital Skills
+Relational Databases,RDBMS|SQL Databases,Database Technologies
+PostgreSQL,Postgres|PGSQL|Postgre SQL,Relational Databases
+MySQL,,Relational Databases
+SQLite,,Relational Databases
+SQL Server,MSSQL|Microsoft SQL Server,Relational Databases
+Oracle DB,Oracle|Oracle Database,Relational Databases
+MariaDB,,Relational Databases
+NoSQL Databases,NoSQL|Non-relational Databases,Database Technologies
+MongoDB,Mongo|Mongo DB,NoSQL Databases
+Redis,,NoSQL Databases
+Cassandra,Apache Cassandra,NoSQL Databases
+DynamoDB,Amazon DynamoDB|AWS DynamoDB,NoSQL Databases
+CouchDB,,NoSQL Databases
+Couchbase,CouchBase,NoSQL Databases
+Neo4j,,NoSQL Databases
+Search Engines,,Database Technologies
+Elasticsearch,Elastic Search|ES,Search Engines
+Solr,Apache Solr,Search Engines
+OpenSearch,,Search Engines
+Message Queues,,Database Technologies
+Apache Kafka,Kafka,Message Queues
+RabbitMQ,Rabbit MQ,Message Queues
+Amazon SQS,SQS|AWS SQS,Message Queues
+Apache Pulsar,Pulsar,Message Queues
+NATS,,Message Queues
+Data Warehouses,,Database Technologies
+Snowflake,,Data Warehouses
+BigQuery,Google BigQuery|GBQ,Data Warehouses
+Redshift,Amazon Redshift|AWS Redshift,Data Warehouses
+Databricks,,Data Warehouses
+ClickHouse,,Data Warehouses
+Cloud Computing,,Digital Skills
+Cloud Platforms,,Cloud Computing
+AWS,Amazon Web Services|Amazon AWS,Cloud Platforms
+Google Cloud Platform,GCP|Google Cloud,Cloud Platforms
+Microsoft Azure,Azure,Cloud Platforms
+DigitalOcean,Digital Ocean|DO,Cloud Platforms
+Heroku,,Cloud Platforms
+Vercel,,Cloud Platforms
+Netlify,,Cloud Platforms
+Cloudflare,,Cloud Platforms
+Container Technologies,Containerization|Containers,Cloud Computing
+Docker,,Container Technologies
+Kubernetes,K8s|k8s|Kube,Container Technologies
+Docker Compose,,Container Technologies
+Podman,,Container Technologies
+Helm,,Container Technologies
+Container Orchestration,,Container Technologies
+Infrastructure as Code,IaC,Cloud Computing
+Terraform,,Infrastructure as Code
+Pulumi,,Infrastructure as Code
+CloudFormation,AWS CloudFormation|CFN,Infrastructure as Code
+AWS CDK,CDK|Cloud Development Kit,Infrastructure as Code
+Ansible,,Infrastructure as Code
+Chef,,Infrastructure as Code
+Puppet,,Infrastructure as Code
+CI/CD,Continuous Integration|Continuous Deployment|Continuous Delivery|CI CD|CICD,Cloud Computing
+GitHub Actions,GH Actions,CI/CD
+Jenkins,,CI/CD
+GitLab CI,GitLab CI/CD,CI/CD
+CircleCI,Circle CI,CI/CD
+Travis CI,,CI/CD
+ArgoCD,Argo CD,CI/CD
+Monitoring and Observability,Observability|Monitoring,Cloud Computing
+Prometheus,,Monitoring and Observability
+Grafana,,Monitoring and Observability
+Datadog,Data Dog,Monitoring and Observability
+New Relic,NewRelic,Monitoring and Observability
+Splunk,,Monitoring and Observability
+Sentry,,Monitoring and Observability
+ELK Stack,Elasticsearch Logstash Kibana,Monitoring and Observability
+Artificial Intelligence,AI,Digital Skills
+Machine Learning,ML,Artificial Intelligence
+Scikit-Learn,sklearn|Scikit Learn|scikit-learn,Machine Learning
+XGBoost,,Machine Learning
+LightGBM,,Machine Learning
+CatBoost,,Machine Learning
+Random Forest,,Machine Learning
+SVM,Support Vector Machine|Support Vector Machines,Machine Learning
+Deep Learning,DL,Artificial Intelligence
+PyTorch,Torch|py torch,Deep Learning
+TensorFlow,TF|Tensor Flow|tensorflow,Deep Learning
+Keras,,Deep Learning
+Neural Networks,NN|ANN,Deep Learning
+CNNs,Convolutional Neural Networks|CNN,Deep Learning
+RNNs,Recurrent Neural Networks|RNN,Deep Learning
+Transformers,Transformer Architecture,Deep Learning
+Natural Language Processing,NLP|Language Processing|Text Processing,Artificial Intelligence
+spaCy,Spacy,Natural Language Processing
+NLTK,,Natural Language Processing
+Hugging Face,HuggingFace|HF,Natural Language Processing
+Sentence Transformers,,Natural Language Processing
+Named Entity Recognition,NER,Natural Language Processing
+Sentiment Analysis,,Natural Language Processing
+Text Classification,,Natural Language Processing
+Computer Vision,CV|Image Processing|Visual Computing,Artificial Intelligence
+OpenCV,Open CV,Computer Vision
+YOLO,YOLOv5|YOLOv8,Computer Vision
+Detectron2,,Computer Vision
+MediaPipe,,Computer Vision
+Image Classification,,Computer Vision
+Object Detection,,Computer Vision
+Image Segmentation,,Computer Vision
+Large Language Models,LLM|LLMs|GenAI|Generative AI,Artificial Intelligence
+LangChain,Lang Chain,Large Language Models
+LlamaIndex,Llama Index,Large Language Models
+OpenAI API,OpenAI,Large Language Models
+RAG,Retrieval Augmented Generation,Large Language Models
+Prompt Engineering,,Large Language Models
+Fine-tuning,Fine Tuning|Finetuning,Large Language Models
+LoRA,,Large Language Models
+RLHF,Reinforcement Learning from Human Feedback,Large Language Models
+Vector Databases,Vector DB|Vector DBs|VectorDB,Large Language Models
+FAISS,,Vector Databases
+Chroma,ChromaDB,Vector Databases
+Pinecone,,Vector Databases
+Weaviate,,Vector Databases
+Milvus,,Vector Databases
+Qdrant,,Vector Databases
+MLOps,ML Ops|ML Operations,Artificial Intelligence
+MLflow,ML Flow,MLOps
+Weights and Biases,W&B|WandB,MLOps
+DVC,Data Version Control,MLOps
+Data Engineering,,Digital Skills
+Data Processing,,Data Engineering
+Pandas,,Data Processing
+NumPy,Numpy,Data Processing
+SciPy,Scipy,Data Processing
+Apache Spark,Spark|PySpark,Data Processing
+Dask,,Data Processing
+Apache Flink,Flink,Data Processing
+Apache Beam,Beam,Data Processing
+Data Visualization,,Data Engineering
+Matplotlib,,Data Visualization
+Seaborn,,Data Visualization
+Plotly,,Data Visualization
+Tableau,,Data Visualization
+Power BI,PowerBI,Data Visualization
+Looker,,Data Visualization
+D3.js,D3|D3js,Data Visualization
+Data Orchestration,,Data Engineering
+Apache Airflow,Airflow,Data Orchestration
+Prefect,,Data Orchestration
+Dagster,,Data Orchestration
+dbt,Data Build Tool,Data Orchestration
+Luigi,,Data Orchestration
+DevOps,,Digital Skills
+Version Control,,DevOps
+Git,,Version Control
+GitHub,GH,Version Control
+GitLab,,Version Control
+Bitbucket,,Version Control
+Linux Administration,Linux|Linux Admin,DevOps
+Ubuntu,,Linux Administration
+CentOS,,Linux Administration
+Debian,,Linux Administration
+RHEL,Red Hat Enterprise Linux,Linux Administration
+Web Servers,,DevOps
+Nginx,,Web Servers
+Apache HTTP Server,Apache|httpd,Web Servers
+Caddy,,Web Servers
+Traefik,,Web Servers
+Testing,,Software Development
+Unit Testing,,Testing
+Jest,,Unit Testing
+pytest,py.test,Unit Testing
+JUnit,,Unit Testing
+Mocha,,Unit Testing
+Vitest,,Unit Testing
+React Testing Library,RTL,Unit Testing
+E2E Testing,End-to-End Testing|End to End Testing,Testing
+Cypress,,E2E Testing
+Playwright,,E2E Testing
+Selenium,,E2E Testing
+Puppeteer,,E2E Testing
+Performance Testing,Load Testing,Testing
+k6,,Performance Testing
+JMeter,Apache JMeter,Performance Testing
+Locust,,Performance Testing
+Gatling,,Performance Testing
+Security,,Digital Skills
+Cybersecurity,Information Security|InfoSec,Security
+Penetration Testing,Pen Testing|Ethical Hacking,Cybersecurity
+OWASP,,Cybersecurity
+Vulnerability Assessment,,Cybersecurity
+Encryption,Cryptography,Security
+TLS,Transport Layer Security|SSL|TLS/SSL,Encryption
+Authentication and Authorization,Auth,Security
+OAuth,OAuth2|OAuth 2.0,Authentication and Authorization
+JWT,JSON Web Token|JSON Web Tokens,Authentication and Authorization
+SAML,,Authentication and Authorization
+OpenID Connect,OIDC,Authentication and Authorization
+Project Management,,Digital Skills
+Agile,Agile Methodology,Project Management
+Scrum,,Agile
+Kanban,,Agile
+SAFe,Scaled Agile Framework,Agile
+Design Patterns,,Software Development
+Microservices,Microservices Architecture|Micro Services,Design Patterns
+Event-Driven Architecture,EDA,Design Patterns
+CQRS,Command Query Responsibility Segregation,Design Patterns
+Serverless,Serverless Architecture|FaaS,Design Patterns
+Clean Architecture,,Design Patterns
+ORM,Object-Relational Mapping,Backend Development
+Prisma,,ORM
+SQLAlchemy,SQL Alchemy,ORM
+TypeORM,Type ORM,ORM
+Sequelize,,ORM
+Mongoose,,ORM
+Drizzle,Drizzle ORM,ORM

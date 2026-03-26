@@ -16,12 +16,12 @@ from extensions import (
     users_collection, talent_pool_collection
 )
 from services.llm_service import call_job_llm, extract_text_from_file, allowed_file
-from services.email_service import dispatch_status_email, dispatch_interview_email
+from services.email_service import dispatch_status_email, dispatch_interview_email, dispatch_cancellation_email
 from services.pipeline_service import get_pipeline_stages, validate_stage_transition, get_notification_stages, build_pipeline_stages
 from services.google_calendar_service import (
     google_calendar_configured, build_auth_url, exchange_code_for_tokens,
     store_google_tokens, recruiter_has_google, disconnect_google,
-    create_calendar_event,
+    create_calendar_event, delete_calendar_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,54 @@ def recruiter_dashboard():
     google_configured = google_calendar_configured()
     google_connected = recruiter_has_google(current_user.id) if google_configured else False
 
+    # Fetch scheduled interviews
+    upcoming_interviews = []
+    past_interviews = []
+    if job_ids:
+        now = datetime.datetime.utcnow()
+        interview_docs = list(applications_collection.aggregate([
+            {'$match': {
+                'job_id': {'$in': job_ids},
+                'interview_datetime': {'$exists': True},
+            }},
+            {'$lookup': {
+                'from': 'jobs', 'localField': 'job_id',
+                'foreignField': '_id', 'as': 'job',
+            }},
+            {'$unwind': '$job'},
+            {'$lookup': {
+                'from': 'users', 'localField': 'user_id',
+                'foreignField': '_id', 'as': 'user',
+            }},
+            {'$unwind': '$user'},
+            {'$project': {
+                'interview_datetime': 1,
+                'interview_duration': 1,
+                'interview_timezone': 1,
+                'interview_notes': 1,
+                'interview_meet_link': 1,
+                'interview_event_id': 1,
+                'status': 1,
+                'job_title': '$job.parsed_data.title',
+                'company': '$job.company',
+                'applicant_name': '$user.name',
+                'applicant_email': '$user.email',
+            }},
+            {'$sort': {'interview_datetime': 1}},
+        ]))
+
+        for doc in interview_docs:
+            doc['_id_str'] = str(doc['_id'])
+            if doc['interview_datetime'] >= now:
+                upcoming_interviews.append(doc)
+            else:
+                past_interviews.append(doc)
+
+        # Past interviews most recent first
+        past_interviews.reverse()
+
+    interview_count = len(upcoming_interviews) + len(past_interviews)
+
     return render_template('recruiter_dashboard.html',
                            jobs=jobs,
                            total_applicants=total_applicants,
@@ -62,7 +110,10 @@ def recruiter_dashboard():
                            ai_analyses_count=ai_analyses_count,
                            pool_count=pool_count,
                            google_configured=google_configured,
-                           google_connected=google_connected)
+                           google_connected=google_connected,
+                           upcoming_interviews=upcoming_interviews,
+                           past_interviews=past_interviews,
+                           interview_count=interview_count)
 
 
 @recruiter_bp.route('/create_job', methods=['GET'])
@@ -771,6 +822,68 @@ def schedule_interview(application_id):
         'meet_link': meet_link,
         'event_id': event_id,
     })
+
+
+@recruiter_bp.route('/api/applications/<application_id>/cancel-interview', methods=['POST'])
+@login_required
+def cancel_interview(application_id):
+    """Cancel a scheduled interview — remove calendar event, unset fields, notify candidate."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    application = applications_collection.find_one({'_id': ObjectId(application_id)})
+    if not application:
+        return jsonify({'error': 'Application not found'}), 404
+
+    job = jobs_collection.find_one({
+        '_id': application['job_id'],
+        'recruiter_id': ObjectId(current_user.id),
+    })
+    if not job:
+        return jsonify({'error': 'Access denied'}), 403
+
+    if not application.get('interview_datetime'):
+        return jsonify({'error': 'No interview scheduled for this application'}), 400
+
+    interview_datetime = application['interview_datetime']
+    event_id = application.get('interview_event_id', '')
+
+    # Delete Google Calendar event if exists
+    calendar_deleted = False
+    if event_id and google_calendar_configured() and recruiter_has_google(current_user.id):
+        result = delete_calendar_event(current_user.id, event_id)
+        if result.get('success'):
+            calendar_deleted = True
+        else:
+            logger.warning(f"Failed to delete calendar event for {application_id}: {result.get('error')}")
+
+    # Unset all interview fields and revert status
+    interview_fields = [
+        'interview_datetime', 'interview_duration', 'interview_timezone',
+        'interview_notes', 'interview_meet_link', 'interview_event_id',
+        'interview_scheduled_at', 'interview_scheduled_by',
+    ]
+    unset_dict = {field: '' for field in interview_fields}
+
+    new_status = 'shortlisted' if application.get('status') == 'shortlisted' else 'applied'
+    applications_collection.update_one(
+        {'_id': ObjectId(application_id)},
+        {
+            '$unset': unset_dict,
+            '$set': {
+                'status': new_status,
+                'updated_at': datetime.datetime.now(timezone.utc),
+            },
+        },
+    )
+
+    # Send cancellation email (non-blocking)
+    try:
+        dispatch_cancellation_email(application_id, interview_datetime)
+    except Exception as e:
+        logger.error(f"Cancellation email dispatch failed for {application_id}: {e}")
+
+    return jsonify({'success': True, 'calendar_deleted': calendar_deleted})
 
 
 # ---------------------------------------------------------------------------

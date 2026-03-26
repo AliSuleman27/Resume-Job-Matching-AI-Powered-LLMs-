@@ -8,6 +8,7 @@ from models.resume_model import Resume
 from models.job_description_model import JobDescription
 from services.embedding_service import get_embedding, cosine_similarity
 from services.constraint_matcher import ExperienceMatcher, EducationMatcher
+from services.skill_graph import get_skill_graph
 
 logger = logging.getLogger(__name__)
 
@@ -25,67 +26,37 @@ class CandidateInsightService:
     # ------------------------------------------------------------------ #
 
     def compute_skills_diff(self, resume: Resume, job: JobDescription) -> dict:
-        """Compare JD skills vs candidate skills using fuzzy embedding match."""
+        """Compare JD skills vs candidate skills using graph-based matching."""
         mandatory = list(job.skills.mandatory) if job.skills and job.skills.mandatory else []
         optional = list(job.skills.optional) if job.skills and job.skills.optional else []
         tools = list(job.skills.tools) if job.skills and job.skills.tools else []
         jd_skills = mandatory + optional + tools
 
         candidate_skills = [s.skill_name for s in (resume.skills or [])]
-
-        # Also pull skills_used from experience
         for exp in (resume.experience or []):
             for s in (exp.skills_used or []):
                 if s not in candidate_skills:
                     candidate_skills.append(s)
 
-        # Pre-compute embeddings
-        jd_embeddings = {s: get_embedding(s.lower()) for s in jd_skills} if jd_skills else {}
-        cand_embeddings = {s: get_embedding(s.lower()) for s in candidate_skills} if candidate_skills else {}
+        sg = get_skill_graph()
+        result = sg.match_skills_batch(mandatory, optional, tools, candidate_skills)
 
-        MATCH_THRESHOLD = 0.70
-
-        matched = []
-        missing_mandatory = []
-        missing_optional = []
-        jd_matched_set = set()
-        cand_matched_set = set()
-
-        for jd_skill in jd_skills:
-            best_score = 0.0
-            best_cand = None
-            jd_vec = jd_embeddings[jd_skill]
-            for cand_skill in candidate_skills:
-                if cand_skill in cand_matched_set:
-                    continue
-                score = cosine_similarity(jd_vec, cand_embeddings[cand_skill])
-                if score > best_score:
-                    best_score = score
-                    best_cand = cand_skill
-
-            if best_score >= MATCH_THRESHOLD and best_cand:
-                matched.append({
-                    'jd_skill': jd_skill,
-                    'candidate_skill': best_cand,
-                    'similarity': round(best_score, 3)
-                })
-                jd_matched_set.add(jd_skill)
-                cand_matched_set.add(best_cand)
-            else:
-                is_mandatory = jd_skill in mandatory
-                if is_mandatory:
-                    missing_mandatory.append(jd_skill)
-                else:
-                    missing_optional.append(jd_skill)
-
-        extra = [s for s in candidate_skills if s not in cand_matched_set]
+        matched = [
+            {
+                'jd_skill': d.jd_skill,
+                'candidate_skill': d.candidate_skill,
+                'similarity': d.similarity,
+                'tier': d.tier,
+            }
+            for d in result.matched_details
+        ]
 
         return {
             'matched': matched,
-            'missing_mandatory': missing_mandatory,
-            'missing_optional': missing_optional,
-            'extra': extra,
-            'match_rate': round(len(matched) / len(jd_skills), 3) if jd_skills else 1.0
+            'missing_mandatory': result.missing_mandatory,
+            'missing_optional': result.missing_optional,
+            'extra': result.extra_skills,
+            'match_rate': round(len(matched) / len(jd_skills), 3) if jd_skills else 1.0,
         }
 
     def compute_experience_diff(self, resume: Resume, job: JobDescription) -> dict:
@@ -378,8 +349,13 @@ Return ONLY valid JSON with these keys:
             'job_id': job_id, 'resume_id': resume_id
         })
         if cached:
-            cached['_id'] = str(cached['_id'])
-            return cached
+            # Detect stale cache: old entries lack the 'tier' field from SkillGraph
+            matched = (cached.get('skills_diff') or {}).get('matched') or []
+            has_tiers = any(m.get('tier') for m in matched)
+            if has_tiers:
+                cached['_id'] = str(cached['_id'])
+                return cached
+            # Stale — will be replaced atomically below (no delete+insert race)
 
         # Parse pydantic models
         resume = Resume(**resume_data)
@@ -406,6 +382,16 @@ Return ONLY valid JSON with these keys:
             'updated_at': datetime.now(timezone.utc)
         }
 
-        result = self.insights_collection.insert_one(doc)
-        doc['_id'] = str(result.inserted_id)
+        result = self.insights_collection.replace_one(
+            {'job_id': job_id, 'resume_id': resume_id},
+            doc,
+            upsert=True
+        )
+        if result.upserted_id:
+            doc['_id'] = str(result.upserted_id)
+        elif cached:
+            doc['_id'] = str(cached['_id'])
+        else:
+            refreshed = self.insights_collection.find_one({'job_id': job_id, 'resume_id': resume_id})
+            doc['_id'] = str(refreshed['_id']) if refreshed else ''
         return doc

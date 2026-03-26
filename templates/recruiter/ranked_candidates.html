@@ -181,8 +181,7 @@
                                 {% endif %}
                                 <span class="text-sm text-gray-500 dark:text-gray-400">Overall Match</span>
                                 <div class="px-3 py-1 rounded-full text-sm font-semibold
-                                    {% if candidate.overall_score >= 0.8 %}bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300
-                                    {% elif candidate.overall_score >= 0.7 %}bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300
+                                    {% if candidate.overall_score >= 0.7 %}bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300
                                     {% elif candidate.overall_score >= 0.5 %}bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300
                                     {% else %}bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300{% endif %}">
                                     {{ (candidate.overall_score * 100) | round(1) }}%
@@ -239,15 +238,15 @@
 
                 {% if candidate.get('questionnaire_score') is not none %}
                 <!-- Questionnaire Score Detail -->
-                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4">
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-600">
                     <div class="flex items-center justify-between mb-2">
-                        <h5 class="text-sm font-semibold text-purple-800 dark:text-purple-300">
-                            <i class="fas fa-clipboard-list mr-2"></i>Screening Questionnaire Score
+                        <h5 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-clipboard-list mr-2 text-primary-500"></i>Screening Questionnaire Score
                         </h5>
-                        <span class="text-lg font-bold text-purple-600">{{ (candidate.get('questionnaire_score', 0) * 100) | round(1) }}%</span>
+                        <span class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ (candidate.get('questionnaire_score', 0) * 100) | round(1) }}%</span>
                     </div>
                     {% if candidate.get('screening_answers') %}
-                    <div class="space-y-1 text-xs text-purple-700 dark:text-purple-300">
+                    <div class="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                         {% for qid, answer in candidate.get('screening_answers', {}).items() %}
                         <div class="flex justify-between">
                             <span class="truncate mr-2">Q: {{ qid }}</span>
@@ -256,7 +255,7 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                    <p class="mt-2 text-xs text-purple-500 dark:text-purple-400">
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         Score formula: 50% Semantic + 30% Constraint + 20% Questionnaire
                     </p>
                 </div>
@@ -264,6 +263,100 @@
 
                 <!-- Detailed Analysis (Hidden by default) -->
                 <div class="details-panel hidden">
+                    <!-- Skill Graph Matching Detail -->
+                    {% set smd = candidate.constraint_results.get('skills', {}).get('skill_match_details', {}) %}
+                    {% if smd and smd.get('matched') %}
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                        <h5 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
+                            <i class="fas fa-project-diagram text-primary-600 mr-2"></i>Skill Graph Matching
+                            <span class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">powered by MIND + ESCO ontology</span>
+                        </h5>
+                        <!-- Matched Skills Table -->
+                        <div class="overflow-x-auto mb-3">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                        <th class="pb-2 pr-3">JD Skill</th>
+                                        <th class="pb-2 pr-3">Matched To</th>
+                                        <th class="pb-2 pr-3">Match Type</th>
+                                        <th class="pb-2 text-right">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                                    {% for m in smd.matched %}
+                                    <tr>
+                                        <td class="py-1.5 pr-3">
+                                            <span class="font-medium text-gray-900 dark:text-white">{{ m.jd_skill }}</span>
+                                            {% if m.is_mandatory %}<span class="ml-1 text-red-500 text-xs" title="Mandatory">*</span>{% endif %}
+                                        </td>
+                                        <td class="py-1.5 pr-3 text-gray-600 dark:text-gray-400">{{ m.candidate_skill }}</td>
+                                        <td class="py-1.5 pr-3">
+                                            {% if m.tier == 'exact' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">Exact</span>
+                                            {% elif m.tier == 'synonym' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">Synonym</span>
+                                            {% elif m.tier == 'implies' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Implies</span>
+                                            {% elif m.tier == 'parent' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Parent</span>
+                                            {% elif m.tier == 'implies_partial' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Partial</span>
+                                            {% elif m.tier == 'child' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300">Child</span>
+                                            {% elif m.tier == 'related' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">Related</span>
+                                            {% elif m.tier == 'embedding' %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">Embedding</span>
+                                            {% else %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">{{ m.tier }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-1.5 text-right">
+                                            <span class="font-mono text-xs
+                                                {% if m.similarity >= 0.85 %}text-green-600 dark:text-green-400
+                                                {% elif m.similarity >= 0.50 %}text-yellow-600 dark:text-yellow-400
+                                                {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                                {{ (m.similarity * 100) | round(0) }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Missing & Extra -->
+                        <div class="flex flex-wrap gap-3 text-xs">
+                            {% if smd.missing_mandatory %}
+                            <div>
+                                <span class="font-medium text-red-600 dark:text-red-400">Missing (mandatory):</span>
+                                {% for s in smd.missing_mandatory %}
+                                <span class="ml-1 px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if smd.missing_optional %}
+                            <div>
+                                <span class="font-medium text-yellow-600 dark:text-yellow-400">Missing (optional):</span>
+                                {% for s in smd.missing_optional %}
+                                <span class="ml-1 px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 rounded">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if smd.extra_skills %}
+                            <div>
+                                <span class="font-medium text-primary-600 dark:text-primary-400">Extra:</span>
+                                {% for s in smd.extra_skills[:8] %}
+                                <span class="ml-1 px-1.5 py-0.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded">{{ s }}</span>
+                                {% endfor %}
+                                {% if smd.extra_skills|length > 8 %}
+                                <span class="ml-1 text-gray-500">+{{ smd.extra_skills|length - 8 }} more</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Constraint Analysis -->
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
                         <h5 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
@@ -294,39 +387,39 @@
 
                     <!-- Action Buttons -->
                     <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div class="flex space-x-2">
+                        <div class="flex flex-wrap gap-2">
                             <a href="{{ url_for('ai_engine.candidate_insight', job_id=job._id, resume_id=candidate.resume_id) }}"
-                               class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors inline-flex items-center">
+                               class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors inline-flex items-center shadow-sm">
                                 <i class="fas fa-microscope mr-2"></i>Deep Insight
                             </a>
-                            <button class="view-resume-btn px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
+                            <button class="view-resume-btn px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-300 dark:border-primary-700 text-sm font-medium rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
                                     data-resume-id="{{ candidate.resume_id }}">
                                 <i class="fas fa-file-alt mr-2"></i>View Resume
                             </button>
-                            <button class="shortlist-btn px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                            <button class="shortlist-btn px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm"
                                     data-application-id="{{ candidate.application_id }}">
                                 <i class="fas fa-check mr-2"></i>Shortlist
                             </button>
-                            <button class="mark-reviewed-btn px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded-md hover:bg-yellow-600 transition-colors"
+                            <button class="mark-reviewed-btn px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded-md hover:bg-yellow-600 transition-colors shadow-sm"
                                     data-application-id="{{ candidate.application_id }}">
                                 <i class="fas fa-eye mr-2"></i>Mark Reviewed
                             </button>
-                            <button class="contact-btn px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                            <button class="contact-btn px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                                     data-application-id="{{ candidate.application_id }}"
                                     data-applicant-name="{{ candidate.applicant_name }}">
-                                <i class="fas fa-envelope mr-2"></i>Contact
+                                <i class="fas fa-envelope mr-2 text-gray-500"></i>Contact
                             </button>
-                            <button class="schedule-btn px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors"
+                            <button class="schedule-btn px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                                     data-application-id="{{ candidate.application_id }}"
                                     data-applicant-name="{{ candidate.applicant_name }}">
-                                <i class="fas fa-calendar-plus mr-2"></i>Schedule
+                                <i class="fas fa-calendar-plus mr-2 text-gray-500"></i>Schedule
                             </button>
-                            <button class="save-pool-btn px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors"
+                            <button class="save-pool-btn px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                                     data-resume-id="{{ candidate.resume_id }}"
                                     data-job-id="{{ job._id }}"
                                     data-score="{{ candidate.overall_score }}"
                                     data-name="{{ candidate.applicant_name }}">
-                                <i class="fas fa-database mr-2"></i>Save to Pool
+                                <i class="fas fa-database mr-2 text-gray-500"></i>Save to Pool
                             </button>
                         </div>
                         <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -352,7 +445,7 @@
 <div id="emailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-envelope mr-2 text-blue-600"></i>Send Interview Email</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-envelope mr-2 text-gray-600"></i>Send Interview Email</h3>
             <button class="close-email-modal text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -372,7 +465,7 @@
             </div>
             <div class="flex justify-end space-x-3">
                 <button class="close-email-modal px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                <a id="emailMailtoLink" href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                <a id="emailMailtoLink" href="#" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
                     <i class="fas fa-paper-plane mr-2"></i>Open in Email Client
                 </a>
             </div>
@@ -399,7 +492,7 @@
 <div id="scheduleModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-calendar-plus mr-2 text-teal-500"></i>Schedule Interview</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-calendar-plus mr-2 text-gray-600"></i>Schedule Interview</h3>
             <button id="closeScheduleModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -433,7 +526,7 @@
             <input type="hidden" id="scheduleAppId">
             <div class="flex justify-end space-x-3">
                 <button id="cancelSchedule" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                <button id="confirmSchedule" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors">
+                <button id="confirmSchedule" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
                     <i class="fas fa-calendar-check mr-1"></i>Confirm Schedule
                 </button>
             </div>
@@ -445,7 +538,7 @@
 <div id="savePoolModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border border-gray-200 dark:border-gray-700 w-11/12 md:w-2/5 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-database mr-2 text-cyan-600"></i>Save to Talent Pool</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white"><i class="fas fa-database mr-2 text-gray-600"></i>Save to Talent Pool</h3>
             <button id="closeSavePoolModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="space-y-4">
@@ -466,7 +559,7 @@
             <input type="hidden" id="poolScore">
             <div class="flex justify-end space-x-3">
                 <button id="cancelSavePool" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                <button id="confirmSavePool" class="px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-md hover:bg-cyan-700 transition-colors">
+                <button id="confirmSavePool" class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
                     <i class="fas fa-save mr-1"></i>Save
                 </button>
             </div>

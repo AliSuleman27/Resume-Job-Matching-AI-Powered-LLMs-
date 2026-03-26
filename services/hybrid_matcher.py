@@ -7,8 +7,15 @@ from dataclasses import dataclass
 from models.job_description_model import JobDescription
 from models.resume_model import Resume
 from services.constraint_matcher import ConstraintMatcher
-from services.embedding_service import get_embedding, cosine_similarity
+from services.embedding_service import get_embedding, cosine_similarity, EMBEDDING_DIM
 from services.questionnaire_scorer import score_answers
+from services.skill_graph import get_skill_graph
+
+try:
+    from rank_bm25 import BM25Okapi
+    HAS_BM25 = True
+except ImportError:
+    HAS_BM25 = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,11 +33,13 @@ class EmbeddingType(Enum):
 
 @dataclass
 class SectionWeights:
-    skills: float = 0.25
+    # experience_skills was double-counting the skills section — weight set to 0.0
+    # redistributed to skills (0.30) and experience_responsibilities (0.25)
+    skills: float = 0.30
     education: float = 0.15
     experience_title: float = 0.20
-    experience_responsibilities: float = 0.20
-    experience_skills: float = 0.10
+    experience_responsibilities: float = 0.25
+    experience_skills: float = 0.00
     projects: float = 0.05
     summary: float = 0.05
 
@@ -41,14 +50,78 @@ class SemanticMatcher:
 
     def _get_embedding(self, text: str) -> np.ndarray:
         if not text or text.strip() == "":
-            return np.zeros(384)
+            return np.zeros(EMBEDDING_DIM)
 
         try:
             embedding = get_embedding(text)
             return np.array(embedding, dtype=np.float32)
         except Exception as e:
             logger.error(f"Error generating embedding: {e}")
-            return np.zeros(384)
+            return np.zeros(EMBEDDING_DIM)
+
+    def _compute_bm25_score(self, resume_text: str, jd_text: str) -> float:
+        """BM25 keyword overlap score normalized to 0-1 range.
+
+        Normalized by self-score so that a perfect keyword match returns 1.0.
+        Falls back to 0.0 when rank-bm25 is not installed.
+        """
+        if not HAS_BM25 or not resume_text or not jd_text:
+            return 0.0
+
+        jd_tokens = jd_text.lower().split()
+        resume_tokens = resume_text.lower().split()
+
+        if not jd_tokens:
+            return 0.0
+
+        try:
+            bm25 = BM25Okapi([jd_tokens])
+            query_score = bm25.get_scores(resume_tokens)[0]
+            self_score = bm25.get_scores(jd_tokens)[0]  # max possible score
+            if self_score == 0:
+                return 0.0
+            return float(min(1.0, query_score / self_score))
+        except Exception as e:
+            logger.debug(f"BM25 scoring error: {e}")
+            return 0.0
+
+    def _compute_skills_score(self, resume: Resume, job: JobDescription) -> float:
+        """Graph-based skill matching with BM25 keyword blend.
+
+        Uses SkillGraph for multi-tier matching (exact/synonym/implies/hierarchy)
+        instead of raw embedding cosine similarity.  Still blended with BM25
+        keyword overlap (40/60 split).
+        """
+        if not job.skills:
+            return 0.0
+
+        mandatory = list(job.skills.mandatory or [])
+        optional = list(job.skills.optional or [])
+        tools = list(job.skills.tools or [])
+        all_jd_skills = mandatory + optional + tools
+
+        if not all_jd_skills:
+            return 0.0
+
+        candidate_skills = [s.skill_name for s in (resume.skills or [])]
+        for exp in (resume.experience or []):
+            for sk in (exp.skills_used or []):
+                if sk not in candidate_skills:
+                    candidate_skills.append(sk)
+
+        if not candidate_skills:
+            return 0.0
+
+        sg = get_skill_graph()
+        result = sg.match_skills_batch(mandatory, optional, tools, candidate_skills)
+        graph_score = result.composite_score
+
+        # BM25 keyword overlap as secondary signal
+        jd_text = " ".join(all_jd_skills)
+        resume_text = " ".join(candidate_skills)
+        bm25_score = self._compute_bm25_score(resume_text, jd_text)
+
+        return float(0.40 * bm25_score + 0.60 * graph_score)
 
     def _extract_resume_sections(self, resume) -> Dict[str, str]:
         sections = {}
@@ -120,7 +193,15 @@ class SemanticMatcher:
             resp_texts.append(job.description)
         sections[EmbeddingType.EXPERIENCE_RESPONSIBILITIES.value] = ". ".join(resp_texts)
 
-        sections[EmbeddingType.EXPERIENCE_SKILLS.value] = sections[EmbeddingType.SKILLS.value]
+        # Fixed: previously this was a direct copy of the skills section (double-counting).
+        # Now extracts skills context from requirements and nice_to_have to represent
+        # "skills expected in the role" as distinct from the formal skills list.
+        req_skill_texts = []
+        if job.requirements:
+            req_skill_texts.extend(job.requirements)
+        if job.nice_to_have:
+            req_skill_texts.extend(job.nice_to_have)
+        sections[EmbeddingType.EXPERIENCE_SKILLS.value] = ". ".join(req_skill_texts)
 
         proj_texts = []
         if job.requirements:
@@ -143,16 +224,33 @@ class SemanticMatcher:
 
         for section_type in EmbeddingType:
             section_name = section_type.value
+
+            # --- Skills: per-skill embedding + BM25 hybrid ---
+            if section_name == EmbeddingType.SKILLS.value:
+                section_scores[section_name] = self._compute_skills_score(resume, job)
+                continue
+
             resume_text = resume_sections.get(section_name, "")
             job_text = job_sections.get(section_name, "")
 
-            if resume_text and job_text:
-                resume_embedding = self._get_embedding(resume_text)
-                job_embedding = self._get_embedding(job_text)
-                similarity = cosine_similarity(resume_embedding, job_embedding)
-                section_scores[section_name] = max(0.0, similarity)
-            else:
+            if not resume_text or not job_text:
                 section_scores[section_name] = 0.0
+                continue
+
+            # --- Responsibilities: BM25 + embedding hybrid ---
+            if section_name == EmbeddingType.EXPERIENCE_RESPONSIBILITIES.value:
+                resume_emb = self._get_embedding(resume_text)
+                job_emb = self._get_embedding(job_text)
+                emb_score = max(0.0, cosine_similarity(resume_emb, job_emb))
+                bm25_score = self._compute_bm25_score(resume_text, job_text)
+                section_scores[section_name] = float(0.40 * bm25_score + 0.60 * emb_score)
+                continue
+
+            # --- All other sections: standard embedding similarity ---
+            resume_embedding = self._get_embedding(resume_text)
+            job_embedding = self._get_embedding(job_text)
+            similarity = cosine_similarity(resume_embedding, job_embedding)
+            section_scores[section_name] = max(0.0, similarity)
 
         overall_score = (
             section_scores.get(EmbeddingType.SKILLS.value, 0) * self.section_weights.skills +
@@ -245,6 +343,31 @@ class HybridMatcher:
             logger.error(f"Error matching resume {resume_id} to job {job_id}: {e}")
             raise
 
+    def _calibrate_scores(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert raw overall scores to pool-relative percentile ranks.
+
+        Results must already be sorted descending by overall_score.
+        Rank 1 (best) → 1.0, rank n (worst) → 1/n.
+        The original score is preserved as raw_score for transparency.
+
+        This makes the >= 0.7 threshold mean "top 30% of this applicant pool"
+        rather than an absolute quality score, giving recruiters much better
+        differentiation across candidates.
+        """
+        n = len(results)
+        if n == 0:
+            return results
+        if n == 1:
+            results[0]['raw_score'] = round(results[0]['overall_score'], 4)
+            results[0]['overall_score'] = 1.0
+            return results
+
+        for i, r in enumerate(results):
+            r['raw_score'] = round(r['overall_score'], 4)
+            r['overall_score'] = round((n - i) / n, 3)
+
+        return results
+
     def match_all_applicants_for_job(self, job_id: str) -> List[Dict[str, Any]]:
         try:
             logger.info(f"Starting matching process for job {job_id}")
@@ -309,6 +432,7 @@ class HybridMatcher:
                         'applied_at': application.get('applied_at'),
                         'status': application.get('status', 'submitted'),
                         'overall_score': overall,
+                        'raw_score': None,  # populated by _calibrate_scores
                         'section_scores': {
                             'skills': match_result['section_scores'].get('skills', 0.0),
                             'education': match_result['section_scores'].get('education', 0.0),
@@ -333,7 +457,9 @@ class HybridMatcher:
                     logger.error(traceback.format_exc())
                     continue
 
+            # Sort by raw score then calibrate to pool-relative percentile ranks
             results.sort(key=lambda x: x['overall_score'], reverse=True)
+            results = self._calibrate_scores(results)
 
             logger.info(f"Completed matching for job {job_id}. Processed {len(results)} applicants")
             return results

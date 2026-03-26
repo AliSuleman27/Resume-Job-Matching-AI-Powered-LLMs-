@@ -15,8 +15,23 @@ def generate_resume_prompt(resume_text):
 - The **contact info** should be filled based on provided details; if some fields (like email or phone) are missing, mark them as empty strings or `null`.
 - Ensure all sections are accounted for logically based on the content provided in the resume. For example, if no projects are mentioned, leave the **projects** array empty.
 - The **dates** should be formatted as `"YYYY-MM-DD"`. If the exact date is unknown, try to estimate or mark it as `null`.
-- If there is no **summary** or brief description in the resume, the **summary** field should be marked as `null` or an empty string. If found any summary, keep wordings intact.
+- If there is no **summary** or brief description in the resume, generate a brief 1-2 sentence professional summary based on the candidate's overall profile, skills, and experience. Never leave summary as null.
 - Donot change the sentences written for job responsibilites, keep them as it is, any senetence textual data should remain as it is, with sub-headings.
+
+**CRITICAL — Skills Extraction Rules:**
+- Each individual technology, tool, language, or framework MUST be its own separate entry in the `skills` array with `skill_name` set to that specific item.
+- NEVER use a category heading (e.g., "AI & LLM Stack", "Core Engineering", "Tools & Frameworks", "Programming Languages") as a `skill_name`. These headings go in the `category` field instead.
+- For example, if the resume says: `"AI & LLM Stack: LangChain, PyTorch, TensorFlow"`, you must produce THREE separate skill entries:
+  `{"skill_name": "LangChain", "category": "AI & LLM Stack", ...}`
+  `{"skill_name": "PyTorch", "category": "AI & LLM Stack", ...}`
+  `{"skill_name": "TensorFlow", "category": "AI & LLM Stack", ...}`
+- Also extract skills mentioned inside parentheses. E.g., `"Vector DBs (FAISS, Chroma)"` → three entries: "Vector DBs", "FAISS", "Chroma".
+- If proficiency or years_of_experience are not explicitly mentioned, leave them as `null`.
+
+**CRITICAL — Experience skills_used Extraction:**
+- For each experience entry, populate the `skills_used` array with specific technologies, tools, programming languages, and frameworks mentioned in the responsibilities text.
+- For example, if a responsibility says "Built a FastAPI backend using Python and MongoDB", then `skills_used` should include `["FastAPI", "Python", "MongoDB"]`.
+- Never leave `skills_used` as null — use an empty list `[]` if no specific technologies are mentioned.
 
 **Structured JSON Schema:**
 

@@ -102,11 +102,15 @@ const Emploify = {
         html.classList.toggle('dark');
         const isDark = html.classList.contains('dark');
         localStorage.setItem('emploify-theme', isDark ? 'dark' : 'light');
+        this._syncThemeIcons(isDark);
+    },
 
-        const icon = document.getElementById('theme-icon');
-        if (icon) {
-            icon.className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-gray-600';
-        }
+    _syncThemeIcons(isDark) {
+        const cls = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-gray-600';
+        ['theme-icon', 'theme-icon-mobile'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.className = cls;
+        });
     },
 
     /**
@@ -117,11 +121,8 @@ const Emploify = {
         if (saved === 'dark') {
             document.documentElement.classList.add('dark');
         }
-        const icon = document.getElementById('theme-icon');
-        if (icon) {
-            const isDark = document.documentElement.classList.contains('dark');
-            icon.className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-gray-600';
-        }
+        const isDark = document.documentElement.classList.contains('dark');
+        this._syncThemeIcons(isDark);
     },
 
     /**
