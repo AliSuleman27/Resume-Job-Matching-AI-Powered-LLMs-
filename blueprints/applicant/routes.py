@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 from blueprints.applicant import applicant_bp
 from blueprints.auth.user_models import Recruiter
 from extensions import resumes_collection, applications_collection, jobs_collection, matcher
-from services.llm_service import call_llm, extract_text_from_file, extract_text_from_stream, allowed_file
+from services.llm_service import call_llm, extract_text_from_file, extract_text_from_bytes, allowed_file
 from services.get_doc_resume import parse_resume_from_dict, create_pretty_resume_docx
 from services.get_doc_jd import parse_job_description_from_file, create_pretty_jd_docx
 from services.resume_post_processor import post_process_resume
@@ -37,52 +37,69 @@ def upload_cv():
 @applicant_bp.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    import base64, io
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if file and allowed_file(file.filename):
-        try:
-            filename = secure_filename(file.filename)
-            file_type = filename.rsplit('.', 1)[-1].lower()
-            resume_text = extract_text_from_stream(file, file_type)
-
-            llm_response = call_llm(resume_text)
-
-            if not llm_response.get('output'):
-                return jsonify({"error": "Failed to parse resume. Please try again."}), 500
-
-            parsed_resume = json.loads(llm_response['output'])
-            parsed_resume = post_process_resume(resume_text, parsed_resume)
-
-            resume_data = {
-                'user_id': ObjectId(current_user.id),
-                'original_filename': filename,
-                'parsed_data': parsed_resume,
-                'raw_text': resume_text,
-                'created_at': datetime.datetime.now(timezone.utc)
-            }
-            matcher.process_resume(jsonResume=parsed_resume)
-            resumes_collection.insert_one(resume_data)
-
-            return jsonify({
-                "status": "success",
-                "parsed_resume": parsed_resume,
-                "tokens_used": llm_response['tokens'],
-                "filename": filename
-            })
-
-        except json.JSONDecodeError:
-            logger.error("LLM returned invalid JSON for resume parsing")
-            return jsonify({"error": "Failed to parse resume output. Please try again."}), 500
-        except Exception as e:
-            logger.error(f"Error processing file: {e}")
-            return jsonify({"error": "An error occurred while processing your file."}), 500
+    # Accept base64 JSON payload (used by frontend / Vercel) or multipart form
+    if request.is_json:
+        data = request.get_json()
+        raw_filename = data.get('filename', '')
+        b64 = data.get('data', '')
+        if not raw_filename or not b64:
+            return jsonify({"error": "No file uploaded"}), 400
+        filename = secure_filename(raw_filename)
+        if not allowed_file(filename):
+            return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
+        file_bytes = base64.b64decode(b64)
     else:
-        return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+        filename = secure_filename(file.filename)
+        if not allowed_file(filename):
+            return jsonify({"error": "File type not allowed. Use PDF, DOCX, or TXT."}), 400
+        file.stream.seek(0)
+        file_bytes = file.stream.read()
+
+    if not file_bytes:
+        return jsonify({"error": "Uploaded file is empty"}), 400
+
+    try:
+        file_type = filename.rsplit('.', 1)[-1].lower()
+        resume_text = extract_text_from_bytes(file_bytes, file_type)
+
+        llm_response = call_llm(resume_text)
+
+        if not llm_response.get('output'):
+            return jsonify({"error": "Failed to parse resume. Please try again."}), 500
+
+        parsed_resume = json.loads(llm_response['output'])
+        parsed_resume = post_process_resume(resume_text, parsed_resume)
+
+        resume_data = {
+            'user_id': ObjectId(current_user.id),
+            'original_filename': filename,
+            'parsed_data': parsed_resume,
+            'raw_text': resume_text,
+            'created_at': datetime.datetime.now(timezone.utc)
+        }
+        matcher.process_resume(jsonResume=parsed_resume)
+        resumes_collection.insert_one(resume_data)
+
+        return jsonify({
+            "status": "success",
+            "parsed_resume": parsed_resume,
+            "tokens_used": llm_response['tokens'],
+            "filename": filename
+        })
+
+    except json.JSONDecodeError:
+        logger.error("LLM returned invalid JSON for resume parsing")
+        return jsonify({"error": "Failed to parse resume output. Please try again."}), 500
+    except Exception as e:
+        logger.error(f"Error processing file: {e}")
+        return jsonify({"error": "An error occurred while processing your file."}), 500
 
 
 @applicant_bp.route('/dashboard')

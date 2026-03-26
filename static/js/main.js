@@ -251,15 +251,31 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
-
         progressContainer.classList.remove('hidden');
         Emploify.lockButton(uploadBtn, 'Uploading...');
 
         const sim = Emploify.createProgressSimulator(progressBar, progressPercent);
 
-        fetch('/upload', { method: 'POST', body: formData })
+        const reader = new FileReader();
+        reader.onload = function() {
+            const base64 = reader.result.split(',')[1];
+            const payload = JSON.stringify({ filename: file.name, data: base64 });
+            _doUpload(payload, sim);
+        };
+        reader.onerror = function() {
+            sim.fail();
+            showError('Failed to read the file.');
+            Emploify.unlockButton(uploadBtn);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function _doUpload(payload, sim) {
+        fetch('/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+        })
             .then(response => {
                 sim.complete();
                 if (!response.ok) return response.json().then(err => { throw err; });
