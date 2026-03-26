@@ -34,6 +34,7 @@ embedding_cache_collection = None
 candidate_insights_collection = None
 insight_chats_collection = None
 talent_pool_collection = None
+background_tasks_collection = None
 
 # AI/ML components (set during init)
 cm = None
@@ -87,7 +88,7 @@ def init_extensions(app):
     global db, users_collection, resumes_collection, recruiters_collection
     global jobs_collection, applications_collection, ai_results_collection
     global embedding_cache_collection, candidate_insights_collection, insight_chats_collection
-    global talent_pool_collection
+    global talent_pool_collection, background_tasks_collection
     global cm, manager, matcher, task_runner, insight_service, chat_service
 
     # Flask-Login
@@ -125,6 +126,7 @@ def init_extensions(app):
     candidate_insights_collection = db['candidate_insights']
     insight_chats_collection = db['insight_chats']
     talent_pool_collection = db['talent_pool']
+    background_tasks_collection = db['background_tasks']
 
     # Create indexes for query performance
     _create_indexes()
@@ -181,6 +183,11 @@ def _create_indexes():
         talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('tags', ASCENDING)])
         talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('star_rating', ASCENDING)])
         talent_pool_collection.create_index([('recruiter_id', ASCENDING), ('candidate_skills', ASCENDING)])
+        background_tasks_collection.create_index([('task_id', ASCENDING)], unique=True)
+        background_tasks_collection.create_index(
+            [('created_at', ASCENDING)],
+            expireAfterSeconds=86400,  # 24h TTL auto-cleanup
+        )
         logger.info("MongoDB indexes created successfully")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")

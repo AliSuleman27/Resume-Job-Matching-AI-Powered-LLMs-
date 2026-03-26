@@ -436,18 +436,29 @@ function executeAIEngine(jobId, isRerun, btn) {
     document.getElementById('loadingModal').classList.remove('hidden');
     if (btn) Emploify.lockButton(btn, 'Running...');
 
-    const formData = new FormData();
-    if (isRerun) formData.append('confirm_rerun', 'true');
+    const payload = {};
+    if (isRerun) payload.confirm_rerun = 'true';
 
-    fetch(`/recruiter/job/${jobId}/run_ai_engine`, { method: 'POST', body: formData })
-    .then(response => {
+    fetch(`/recruiter/job/${jobId}/run_ai_engine`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, data })))
+    .then(({ ok, status, data }) => {
         document.getElementById('loadingModal').classList.add('hidden');
         if (btn) Emploify.unlockButton(btn);
-        if (response.ok) {
-            Emploify.showToast('AI analysis completed!', 'success');
-            window.location.href = `/recruiter/job/${jobId}/view_ai_results`;
+
+        if (ok && data.task_id) {
+            // Redirect to progress page — CF is running in background
+            window.location.href = `/recruiter/job/${jobId}/matching_progress?task_id=${data.task_id}`;
+        } else if (status === 409 && data.error === 'rerun_required') {
+            document.getElementById('rerunModal').classList.remove('hidden');
         } else {
-            Emploify.showToast('Error running AI analysis. Please try again.', 'error');
+            Emploify.showToast(data.error || 'Error running AI analysis. Please try again.', 'error');
         }
     })
     .catch(() => {

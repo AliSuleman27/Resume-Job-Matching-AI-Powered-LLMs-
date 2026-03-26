@@ -1,15 +1,98 @@
-import os
-import logging
-import requests as http_requests
-from flask import current_app
-from flask_mail import Message
-from extensions import mail, applications_collection, users_collection, jobs_collection, task_runner
-from bson.objectid import ObjectId
+"""Google Cloud Function: Email Notifications.
 
+HTTP-triggered, 2nd gen. Receives {type, application_id, ...},
+looks up data in MongoDB, sends email via Gmail SMTP.
+"""
+
+import os
+import smtplib
+import logging
+import datetime
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import timezone
+
+import functions_framework
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+from dateutil import parser as dateutil_parser
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-CF_EMAIL_URL = os.environ.get('CF_EMAIL_URL', '')
-CF_AUTH_TOKEN = os.environ.get('CF_AUTH_TOKEN', '')
+# ── Module-level globals ─────────────────────────────────────────────
+_mongo_client = None
+_db = None
+
+
+def _get_db():
+    global _mongo_client, _db
+    if _db is None:
+        _mongo_client = MongoClient(
+            os.environ['MONGO_URI'],
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
+        )
+        _db = _mongo_client['resume_parser']
+    return _db
+
+
+def _validate_auth(request):
+    expected = os.environ.get('CF_AUTH_TOKEN', '')
+    if not expected:
+        return False
+    auth_header = request.headers.get('Authorization', '')
+    return auth_header == f'Bearer {expected}'
+
+
+def _send_email(recipient, subject, html_body):
+    """Send email via Gmail SMTP."""
+    mail_user = os.environ.get('MAIL_USERNAME', '')
+    mail_pass = os.environ.get('MAIL_PASSWORD', '')
+    if not mail_user or not mail_pass:
+        logger.warning("Mail credentials not configured — skipping")
+        return
+
+    msg = MIMEMultipart('alternative')
+    msg['From'] = mail_user
+    msg['To'] = recipient
+    msg['Subject'] = subject
+    msg.attach(MIMEText(html_body, 'html'))
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(mail_user, mail_pass)
+        server.sendmail(mail_user, [recipient], msg.as_string())
+
+    logger.info(f"Email sent to {recipient}: {subject}")
+
+
+def _lookup_app_context(db, application_id):
+    """Look up application, user, and job from MongoDB. Returns tuple or None."""
+    app_doc = db['application_collections'].find_one({'_id': ObjectId(application_id)})
+    if not app_doc:
+        logger.warning(f"Application {application_id} not found")
+        return None
+
+    user = db['users'].find_one({'_id': app_doc['user_id']})
+    if not user or not user.get('email'):
+        logger.warning(f"User not found for application {application_id}")
+        return None
+
+    job = db['jobs'].find_one({'_id': app_doc['job_id']})
+    if not job:
+        logger.warning(f"Job not found for application {application_id}")
+        return None
+
+    return {
+        'applicant_name': user.get('name', user['email'].split('@')[0]),
+        'email': user['email'],
+        'job_title': job.get('parsed_data', {}).get('title', 'Unknown Position'),
+        'company': job.get('company', 'Unknown Company'),
+    }
+
+
+# ── Email Config ─────────────────────────────────────────────────────
 
 STATUS_CONFIG = {
     'reviewed': {
@@ -19,8 +102,8 @@ STATUS_CONFIG = {
         'icon': '&#128065;',
     },
     'shortlisted': {
-        'subject': 'Great news! You\'ve been shortlisted',
-        'heading': 'You\'ve Been Shortlisted!',
+        'subject': "Great news! You've been shortlisted",
+        'heading': "You've Been Shortlisted!",
         'color': '#10B981',
         'icon': '&#11088;',
     },
@@ -31,7 +114,7 @@ STATUS_CONFIG = {
         'icon': '&#128232;',
     },
     'hired': {
-        'subject': 'Congratulations! You\'ve been hired',
+        'subject': "Congratulations! You've been hired",
         'heading': 'Congratulations!',
         'color': '#8B5CF6',
         'icon': '&#127881;',
@@ -46,8 +129,7 @@ STATUS_BODY = {
 }
 
 
-def get_status_config(status):
-    """Return email config for a status, with fallback for custom pipeline stages."""
+def _get_status_config(status):
     return STATUS_CONFIG.get(status, {
         'subject': f'Application Update: {status.replace("_", " ").title()}',
         'heading': status.replace('_', ' ').title(),
@@ -56,17 +138,18 @@ def get_status_config(status):
     })
 
 
-def get_status_body(status):
-    """Return email body text for a status, with fallback for custom stages."""
+def _get_status_body(status):
     return STATUS_BODY.get(status,
         f'Your application status has been updated to: {status.replace("_", " ").title()}. '
         'We will be in touch with more details soon.'
     )
 
 
-def build_status_email_html(applicant_name, job_title, company, status, feedback=None):
-    cfg = get_status_config(status)
-    body_text = get_status_body(status)
+# ── HTML Builders ────────────────────────────────────────────────────
+
+def _build_status_email_html(applicant_name, job_title, company, status, feedback=None):
+    cfg = _get_status_config(status)
+    body_text = _get_status_body(status)
 
     feedback_block = ''
     if feedback:
@@ -92,14 +175,12 @@ def build_status_email_html(applicant_name, job_title, company, status, feedback
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                    <!-- Header -->
                     <tr>
                         <td style="background-color: {cfg['color']}; padding: 30px; text-align: center;">
                             <div style="font-size: 36px; margin-bottom: 10px;">{cfg['icon']}</div>
                             <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 700;">{cfg['heading']}</h1>
                         </td>
                     </tr>
-                    <!-- Body -->
                     <tr>
                         <td style="padding: 30px;">
                             <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">Hi {applicant_name},</p>
@@ -108,7 +189,6 @@ def build_status_email_html(applicant_name, job_title, company, status, feedback
                         </td>
                     </tr>
                     {feedback_block}
-                    <!-- Footer -->
                     <tr>
                         <td style="padding: 24px 30px; border-top: 1px solid #E5E7EB; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: #9CA3AF;">This is an automated notification from Emploify.io</p>
@@ -122,71 +202,7 @@ def build_status_email_html(applicant_name, job_title, company, status, feedback
 </html>'''
 
 
-def send_status_notification(app, application_id, status, feedback=None):
-    """Runs inside a background thread. Sends email notification for status change."""
-    try:
-        with app.app_context():
-            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-                logger.info("Mail credentials not configured — skipping notification")
-                return
-
-            application = applications_collection.find_one({'_id': ObjectId(application_id)})
-            if not application:
-                logger.warning(f"Application {application_id} not found for email notification")
-                return
-
-            user = users_collection.find_one({'_id': application['user_id']})
-            if not user or not user.get('email'):
-                logger.warning(f"User not found or no email for application {application_id}")
-                return
-
-            job = jobs_collection.find_one({'_id': application['job_id']})
-            if not job:
-                logger.warning(f"Job not found for application {application_id}")
-                return
-
-            job_title = job.get('parsed_data', {}).get('title', 'Unknown Position')
-            company = job.get('company', 'Unknown Company')
-            applicant_name = user.get('name', user['email'].split('@')[0])
-
-            cfg = get_status_config(status)
-            html = build_status_email_html(applicant_name, job_title, company, status, feedback)
-
-            msg = Message(
-                subject=f"{cfg['subject']} — {job_title}",
-                recipients=[user['email']],
-                html=html,
-            )
-            mail.send(msg)
-            logger.info(f"Status notification sent to {user['email']} (status={status})")
-
-    except Exception as e:
-        logger.error(f"Failed to send status notification for application {application_id}: {e}")
-
-
-def dispatch_status_email(application_id, status, feedback=None):
-    """Non-blocking dispatch — POST to Cloud Function or fall back to local TaskRunner."""
-    if CF_EMAIL_URL:
-        try:
-            payload = {'type': 'status', 'application_id': str(application_id), 'status': status}
-            if feedback:
-                payload['feedback'] = feedback
-            http_requests.post(
-                CF_EMAIL_URL, json=payload,
-                headers={'Authorization': f'Bearer {CF_AUTH_TOKEN}', 'Content-Type': 'application/json'},
-                timeout=3,
-            )
-        except Exception as e:
-            logger.warning(f"CF email dispatch failed (status), falling back: {e}")
-            app = current_app._get_current_object()
-            task_runner.submit(send_status_notification, app, application_id, status, feedback)
-    else:
-        app = current_app._get_current_object()
-        task_runner.submit(send_status_notification, app, application_id, status, feedback)
-
-
-def build_interview_email_html(applicant_name, job_title, company, interview_datetime, duration_minutes, meet_link=None, notes=None):
-    """Build styled HTML email for interview scheduling notification."""
+def _build_interview_email_html(applicant_name, job_title, company, interview_datetime, duration_minutes, meet_link=None, notes=None):
     date_str = interview_datetime.strftime('%A, %B %d, %Y')
     time_str = interview_datetime.strftime('%I:%M %p')
 
@@ -226,14 +242,12 @@ def build_interview_email_html(applicant_name, job_title, company, interview_dat
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                    <!-- Header -->
                     <tr>
                         <td style="background-color: #1a73e8; padding: 30px; text-align: center;">
                             <div style="font-size: 36px; margin-bottom: 10px;">&#128197;</div>
                             <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 700;">Interview Scheduled</h1>
                         </td>
                     </tr>
-                    <!-- Body -->
                     <tr>
                         <td style="padding: 30px;">
                             <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">Hi {applicant_name},</p>
@@ -251,7 +265,6 @@ def build_interview_email_html(applicant_name, job_title, company, interview_dat
                     </tr>
                     {meet_block}
                     {notes_block}
-                    <!-- Footer -->
                     <tr>
                         <td style="padding: 24px 30px; border-top: 1px solid #E5E7EB; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: #9CA3AF;">This is an automated notification from Emploify.io</p>
@@ -265,84 +278,7 @@ def build_interview_email_html(applicant_name, job_title, company, interview_dat
 </html>'''
 
 
-def send_interview_notification(app, application_id, interview_datetime, duration_minutes, meet_link=None, notes=None):
-    """Runs inside a background thread. Sends interview scheduling email."""
-    try:
-        with app.app_context():
-            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-                logger.info("Mail credentials not configured — skipping interview notification")
-                return
-
-            application = applications_collection.find_one({'_id': ObjectId(application_id)})
-            if not application:
-                logger.warning(f"Application {application_id} not found for interview notification")
-                return
-
-            user = users_collection.find_one({'_id': application['user_id']})
-            if not user or not user.get('email'):
-                logger.warning(f"User not found or no email for application {application_id}")
-                return
-
-            job = jobs_collection.find_one({'_id': application['job_id']})
-            if not job:
-                logger.warning(f"Job not found for application {application_id}")
-                return
-
-            job_title = job.get('parsed_data', {}).get('title', 'Unknown Position')
-            company = job.get('company', 'Unknown Company')
-            applicant_name = user.get('name', user['email'].split('@')[0])
-
-            html = build_interview_email_html(
-                applicant_name, job_title, company,
-                interview_datetime, duration_minutes, meet_link, notes,
-            )
-
-            msg = Message(
-                subject=f"Interview Scheduled — {job_title} at {company}",
-                recipients=[user['email']],
-                html=html,
-            )
-            mail.send(msg)
-            logger.info(f"Interview notification sent to {user['email']}")
-
-    except Exception as e:
-        logger.error(f"Failed to send interview notification for application {application_id}: {e}")
-
-
-def dispatch_interview_email(application_id, interview_datetime, duration_minutes, meet_link=None, notes=None):
-    """Non-blocking dispatch — POST to Cloud Function or fall back to local TaskRunner."""
-    if CF_EMAIL_URL:
-        try:
-            payload = {
-                'type': 'interview',
-                'application_id': str(application_id),
-                'interview_datetime': interview_datetime.isoformat(),
-                'duration_minutes': duration_minutes,
-            }
-            if meet_link:
-                payload['meet_link'] = meet_link
-            if notes:
-                payload['notes'] = notes
-            http_requests.post(
-                CF_EMAIL_URL, json=payload,
-                headers={'Authorization': f'Bearer {CF_AUTH_TOKEN}', 'Content-Type': 'application/json'},
-                timeout=3,
-            )
-        except Exception as e:
-            logger.warning(f"CF email dispatch failed (interview), falling back: {e}")
-            app = current_app._get_current_object()
-            task_runner.submit(send_interview_notification, app, application_id, interview_datetime, duration_minutes, meet_link, notes)
-    else:
-        app = current_app._get_current_object()
-        task_runner.submit(send_interview_notification, app, application_id, interview_datetime, duration_minutes, meet_link, notes)
-
-
-# ---------------------------------------------------------------------------
-# Interview cancellation emails
-# ---------------------------------------------------------------------------
-
-def build_cancellation_email_html(applicant_name, job_title, company, interview_datetime):
-    """Build styled HTML email for interview cancellation notification."""
+def _build_cancellation_email_html(applicant_name, job_title, company, interview_datetime):
     date_str = interview_datetime.strftime('%A, %B %d, %Y')
     time_str = interview_datetime.strftime('%I:%M %p')
 
@@ -354,14 +290,12 @@ def build_cancellation_email_html(applicant_name, job_title, company, interview_
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.07);">
-                    <!-- Header -->
                     <tr>
                         <td style="background-color: #EF4444; padding: 30px; text-align: center;">
                             <div style="font-size: 36px; margin-bottom: 10px;">&#10060;</div>
                             <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 700;">Interview Cancelled</h1>
                         </td>
                     </tr>
-                    <!-- Body -->
                     <tr>
                         <td style="padding: 30px;">
                             <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">Hi {applicant_name},</p>
@@ -377,7 +311,6 @@ def build_cancellation_email_html(applicant_name, job_title, company, interview_
                             <p style="margin: 16px 0 0 0; font-size: 14px; color: #6B7280; line-height: 1.5;">The recruiter may reach out to reschedule. Please check your application status for updates.</p>
                         </td>
                     </tr>
-                    <!-- Footer -->
                     <tr>
                         <td style="padding: 24px 30px; border-top: 1px solid #E5E7EB; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: #9CA3AF;">This is an automated notification from Emploify.io</p>
@@ -391,67 +324,104 @@ def build_cancellation_email_html(applicant_name, job_title, company, interview_
 </html>'''
 
 
-def send_cancellation_notification(app, application_id, interview_datetime):
-    """Runs inside a background thread. Sends interview cancellation email."""
+# ── Handlers by type ─────────────────────────────────────────────────
+
+def _handle_status(db, data):
+    application_id = data.get('application_id')
+    status = data.get('status')
+    feedback = data.get('feedback')
+
+    if not application_id or not status:
+        return ({'error': 'application_id and status are required'}, 400)
+
+    ctx = _lookup_app_context(db, application_id)
+    if not ctx:
+        return ({'error': 'Application/user/job not found'}, 404)
+
+    cfg = _get_status_config(status)
+    html = _build_status_email_html(ctx['applicant_name'], ctx['job_title'], ctx['company'], status, feedback)
+    _send_email(ctx['email'], f"{cfg['subject']} — {ctx['job_title']}", html)
+    return ({'status': 'sent'}, 200)
+
+
+def _handle_interview(db, data):
+    application_id = data.get('application_id')
+    interview_datetime_str = data.get('interview_datetime')
+    duration_minutes = data.get('duration_minutes', 30)
+    meet_link = data.get('meet_link')
+    notes = data.get('notes')
+
+    if not application_id or not interview_datetime_str:
+        return ({'error': 'application_id and interview_datetime are required'}, 400)
+
+    ctx = _lookup_app_context(db, application_id)
+    if not ctx:
+        return ({'error': 'Application/user/job not found'}, 404)
+
+    interview_datetime = dateutil_parser.parse(interview_datetime_str)
+    html = _build_interview_email_html(
+        ctx['applicant_name'], ctx['job_title'], ctx['company'],
+        interview_datetime, duration_minutes, meet_link, notes,
+    )
+    _send_email(ctx['email'], f"Interview Scheduled — {ctx['job_title']} at {ctx['company']}", html)
+    return ({'status': 'sent'}, 200)
+
+
+def _handle_cancellation(db, data):
+    application_id = data.get('application_id')
+    interview_datetime_str = data.get('interview_datetime')
+
+    if not application_id or not interview_datetime_str:
+        return ({'error': 'application_id and interview_datetime are required'}, 400)
+
+    ctx = _lookup_app_context(db, application_id)
+    if not ctx:
+        return ({'error': 'Application/user/job not found'}, 404)
+
+    interview_datetime = dateutil_parser.parse(interview_datetime_str)
+    html = _build_cancellation_email_html(
+        ctx['applicant_name'], ctx['job_title'], ctx['company'], interview_datetime,
+    )
+    _send_email(ctx['email'], f"Interview Cancelled — {ctx['job_title']} at {ctx['company']}", html)
+    return ({'status': 'sent'}, 200)
+
+
+_HANDLERS = {
+    'status': _handle_status,
+    'interview': _handle_interview,
+    'cancellation': _handle_cancellation,
+}
+
+
+# ── Entry point ──────────────────────────────────────────────────────
+
+@functions_framework.http
+def send_notification(request):
+    """GCF entry point — HTTP POST with JSON body."""
+    if request.method == 'OPTIONS':
+        return ('', 204, {'Access-Control-Allow-Origin': '*',
+                          'Access-Control-Allow-Methods': 'POST',
+                          'Access-Control-Allow-Headers': 'Authorization, Content-Type'})
+
+    if request.method != 'POST':
+        return ({'error': 'Method not allowed'}, 405)
+
+    if not _validate_auth(request):
+        return ({'error': 'Unauthorized'}, 401)
+
+    data = request.get_json(silent=True)
+    if not data:
+        return ({'error': 'Missing JSON body'}, 400)
+
+    email_type = data.get('type')
+    handler = _HANDLERS.get(email_type)
+    if not handler:
+        return ({'error': f'Unknown type: {email_type}. Must be one of: {list(_HANDLERS.keys())}'}, 400)
+
+    db = _get_db()
+
     try:
-        with app.app_context():
-            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-                logger.info("Mail credentials not configured — skipping cancellation notification")
-                return
-
-            application = applications_collection.find_one({'_id': ObjectId(application_id)})
-            if not application:
-                logger.warning(f"Application {application_id} not found for cancellation notification")
-                return
-
-            user = users_collection.find_one({'_id': application['user_id']})
-            if not user or not user.get('email'):
-                logger.warning(f"User not found or no email for application {application_id}")
-                return
-
-            job = jobs_collection.find_one({'_id': application['job_id']})
-            if not job:
-                logger.warning(f"Job not found for application {application_id}")
-                return
-
-            job_title = job.get('parsed_data', {}).get('title', 'Unknown Position')
-            company = job.get('company', 'Unknown Company')
-            applicant_name = user.get('name', user['email'].split('@')[0])
-
-            html = build_cancellation_email_html(
-                applicant_name, job_title, company, interview_datetime,
-            )
-
-            msg = Message(
-                subject=f"Interview Cancelled — {job_title} at {company}",
-                recipients=[user['email']],
-                html=html,
-            )
-            mail.send(msg)
-            logger.info(f"Cancellation notification sent to {user['email']}")
-
+        return handler(db, data)
     except Exception as e:
-        logger.error(f"Failed to send cancellation notification for application {application_id}: {e}")
-
-
-def dispatch_cancellation_email(application_id, interview_datetime):
-    """Non-blocking dispatch — POST to Cloud Function or fall back to local TaskRunner."""
-    if CF_EMAIL_URL:
-        try:
-            http_requests.post(
-                CF_EMAIL_URL,
-                json={
-                    'type': 'cancellation',
-                    'application_id': str(application_id),
-                    'interview_datetime': interview_datetime.isoformat(),
-                },
-                headers={'Authorization': f'Bearer {CF_AUTH_TOKEN}', 'Content-Type': 'application/json'},
-                timeout=3,
-            )
-        except Exception as e:
-            logger.warning(f"CF email dispatch failed (cancellation), falling back: {e}")
-            app = current_app._get_current_object()
-            task_runner.submit(send_cancellation_notification, app, application_id, interview_datetime)
-    else:
-        app = current_app._get_current_object()
-        task_runner.submit(send_cancellation_notification, app, application_id, interview_datetime)
+        logger.error(f"Email notification failed ({email_type}): {e}")
+        return ({'error': str(e)}, 500)

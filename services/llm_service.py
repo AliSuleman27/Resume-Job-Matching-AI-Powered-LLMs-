@@ -70,9 +70,15 @@ def extract_text_from_bytes(raw: bytes, file_type: str) -> str:
     if not raw:
         raise ValueError("Uploaded file is empty")
 
+    logger.info(f"extract_text_from_bytes: type={file_type}, size={len(raw)}, header={raw[:8]}")
+
     try:
         if file_type == 'pdf':
-            reader = PdfReader(io.BytesIO(raw))
+            # Validate PDF magic bytes
+            if not raw[:5].startswith(b'%PDF-'):
+                logger.error(f"Invalid PDF: starts with {raw[:20]!r} (expected %PDF-)")
+                raise ValueError("File does not appear to be a valid PDF")
+            reader = PdfReader(io.BytesIO(raw), strict=False)
             text = '\n'.join([page.extract_text() or '' for page in reader.pages])
         elif file_type == 'docx':
             doc = Document(io.BytesIO(raw))

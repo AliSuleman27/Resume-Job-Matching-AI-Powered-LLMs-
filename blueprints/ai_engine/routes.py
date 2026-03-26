@@ -1,6 +1,9 @@
 import datetime
+import os
+import uuid
 from datetime import timezone
 import logging
+import requests as http_requests
 from flask import render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 from bson.objectid import ObjectId
@@ -8,67 +11,78 @@ from blueprints.ai_engine import ai_engine_bp
 from blueprints.auth.user_models import Recruiter
 from extensions import (
     jobs_collection, ai_results_collection, resumes_collection,
-    applications_collection, matcher, task_runner,
+    applications_collection, task_runner, background_tasks_collection,
     insight_service, chat_service, candidate_insights_collection
 )
-from services.type_convertor import prepare_document_for_mongodb
+
+CF_MATCHING_URL = os.environ.get('CF_MATCHING_URL', '')
+CF_AUTH_TOKEN = os.environ.get('CF_AUTH_TOKEN', '')
 
 logger = logging.getLogger(__name__)
-
-
-def _run_matching(job_id, recruiter_id):
-    """Background task: run AI matching and store results in MongoDB."""
-    ranked_candidates = matcher.match_all_applicants_for_job(job_id)
-
-    total_candidates = len(ranked_candidates)
-    high_score_candidates = len([c for c in ranked_candidates if c['overall_score'] >= 0.7])
-    medium_score_candidates = len([c for c in ranked_candidates if 0.5 <= c['overall_score'] < 0.7])
-    low_score_candidates = len([c for c in ranked_candidates if c['overall_score'] < 0.5])
-
-    all_skills = []
-    for candidate in ranked_candidates:
-        if 'section_scores' in candidate and 'skills' in candidate['section_scores']:
-            all_skills.extend(candidate.get('skills', []))
-
-    skill_frequency = {}
-    for skill in all_skills:
-        skill_frequency[skill] = skill_frequency.get(skill, 0) + 1
-
-    top_skills = sorted(skill_frequency.items(), key=lambda x: x[1], reverse=True)[:10]
-
-    ai_results_data = {
-        'job_id': ObjectId(job_id),
-        'recruiter_id': ObjectId(recruiter_id),
-        'ranked_candidates': ranked_candidates,
-        'statistics': {
-            'total_candidates': total_candidates,
-            'high_score': high_score_candidates,
-            'medium_score': medium_score_candidates,
-            'low_score': low_score_candidates,
-            'top_skills': top_skills
-        },
-        'created_at': datetime.datetime.now(timezone.utc),
-        'updated_at': datetime.datetime.now(timezone.utc)
-    }
-
-    ai_results_data = prepare_document_for_mongodb(ai_results_data)
-
-    existing_results = ai_results_collection.find_one({'job_id': ObjectId(job_id)})
-    if existing_results:
-        ai_results_collection.update_one(
-            {'job_id': ObjectId(job_id)},
-            {'$set': ai_results_data}
-        )
-    else:
-        ai_results_collection.insert_one(ai_results_data)
-
-    return {'total_candidates': total_candidates}
 
 
 @ai_engine_bp.route('/job/<job_id>/run_ai_engine', methods=['POST'])
 @login_required
 def run_ai_engine(job_id):
-    """Run AI inference for matching candidates to a specific job (background)"""
+    """Fire-and-forget: dispatch matching to Cloud Function, return task_id."""
+    if not isinstance(current_user, Recruiter):
+        return jsonify({'error': 'Access denied'}), 403
+
+    job = jobs_collection.find_one({
+        '_id': ObjectId(job_id),
+        'recruiter_id': ObjectId(current_user.id)
+    })
+
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    try:
+        existing_results = ai_results_collection.find_one({'job_id': ObjectId(job_id)})
+        if existing_results:
+            rerun_confirmed = request.form.get('confirm_rerun') or (request.get_json(silent=True) or {}).get('confirm_rerun', 'false')
+            if rerun_confirmed not in ('true', True):
+                return jsonify({'error': 'rerun_required', 'job_id': job_id}), 409
+
+        task_id = str(uuid.uuid4())
+
+        # Insert task doc into MongoDB (replaces in-memory TaskRunner for matching)
+        background_tasks_collection.insert_one({
+            'task_id': task_id,
+            'job_id': str(job_id),
+            'recruiter_id': str(current_user.id),
+            'status': 'running',
+            'created_at': datetime.datetime.now(timezone.utc),
+            'updated_at': datetime.datetime.now(timezone.utc),
+        })
+
+        # Fire-and-forget POST to Cloud Function
+        if CF_MATCHING_URL:
+            try:
+                http_requests.post(
+                    CF_MATCHING_URL,
+                    json={'task_id': task_id, 'job_id': str(job_id), 'recruiter_id': str(current_user.id)},
+                    headers={'Authorization': f'Bearer {CF_AUTH_TOKEN}', 'Content-Type': 'application/json'},
+                    timeout=5,
+                )
+            except http_requests.exceptions.Timeout:
+                pass  # Expected — CF is still running
+            except Exception as e:
+                logger.warning(f"CF dispatch warning (task will still run): {e}")
+        else:
+            logger.warning("CF_MATCHING_URL not set — matching will not run")
+
+        logger.info(f"AI engine task {task_id} dispatched for job {job_id}")
+        return jsonify({'task_id': task_id, 'status': 'running'})
+
+    except Exception as e:
+        logger.error(f"Error starting AI engine for job {job_id}: {e}")
+        return jsonify({'error': 'Failed to start AI analysis'}), 500
+
+
+@ai_engine_bp.route('/job/<job_id>/matching_progress')
+@login_required
+def ai_matching_progress(job_id):
+    """Render the matching progress page with spinner + polling."""
     if not isinstance(current_user, Recruiter):
         flash('Access denied', 'error')
         return redirect(url_for('applicant.landing'))
@@ -77,33 +91,12 @@ def run_ai_engine(job_id):
         '_id': ObjectId(job_id),
         'recruiter_id': ObjectId(current_user.id)
     })
-
     if not job:
         flash('Job not found', 'error')
         return redirect(url_for('recruiter.recruiter_dashboard'))
 
-    try:
-        existing_results = ai_results_collection.find_one({
-            'job_id': ObjectId(job_id)
-        })
-
-        if existing_results:
-            rerun_confirmed = request.form.get('confirm_rerun', 'false') == 'true'
-            if not rerun_confirmed:
-                flash('AI results already exist for this job. Please confirm if you want to rerun the analysis.', 'warning')
-                return redirect(url_for('recruiter.recruiter_dashboard') + f'?show_rerun_modal={job_id}')
-
-        # Submit to background task runner instead of blocking
-        bg_task_id = task_runner.submit(_run_matching, job_id, current_user.id)
-        logger.info(f"AI engine task {bg_task_id} started for job {job_id}")
-
-        flash('AI analysis started. This may take a few minutes. Refresh the page to check for results.', 'success')
-        return redirect(url_for('ai_engine.view_ai_results', job_id=job_id))
-
-    except Exception as e:
-        logger.error(f"Error starting AI engine for job {job_id}: {e}")
-        flash('Error starting AI analysis. Please try again.', 'error')
-        return redirect(url_for('recruiter.recruiter_dashboard'))
+    task_id = request.args.get('task_id', '')
+    return render_template('recruiter/matching_progress.html', job=job, task_id=task_id, job_id=job_id)
 
 
 @ai_engine_bp.route('/job/<job_id>/view_ai_results')
@@ -375,10 +368,19 @@ def chat_history(job_id, resume_id):
 @ai_engine_bp.route('/task/<task_id>/status')
 @login_required
 def check_task_status(task_id):
-    """Poll background task status."""
+    """Poll background task status — checks MongoDB first, then in-memory TaskRunner."""
     if not isinstance(current_user, Recruiter):
         return jsonify({'error': 'Access denied'}), 403
 
+    # Check MongoDB background_tasks collection (for CF-dispatched matching)
+    bg_task = background_tasks_collection.find_one({'task_id': task_id})
+    if bg_task:
+        response = {'status': bg_task['status']}
+        if bg_task['status'] == 'failed':
+            response['error'] = bg_task.get('error', 'Unknown error')
+        return jsonify(response)
+
+    # Fall back to in-memory TaskRunner (for insight/question generation)
     status = task_runner.get_status(task_id)
     if not status:
         return jsonify({'error': 'Task not found'}), 404
